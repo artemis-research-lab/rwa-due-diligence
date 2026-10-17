@@ -39,4 +39,10 @@ A skill package ships only run-time components: `SKILL.md`, `scripts/` and `lib/
 Run-time constraints, data caveats and output contracts go in `SKILL.md` or `references/`, never here. Skill code and `SKILL.md` run instructions stay OS-neutral (`pathlib`, "python3, or python on Windows").
 
 ## PROJECT LAYOUT
-(Filled by the project handoff spec.)
+- scripts/dd.py: CLI entry point (argparse); imports lib/ via sys.path.
+- lib/schema.py: the only definition of schema rwa-dd/1.0; references/schema.md is generated from it (`python3 scripts/dd.py schema-doc > references/schema.md`) and must be regenerated in the same commit whenever schema.py changes.
+- lib/claims.py, lib/validate.py: claim rules and whole-document validation.
+- lib/ledger.py, lib/runstate.py: source ledger and run directory contract; the only writers of audit/.
+- lib/directives.py, lib/review.py, lib/render_md.py, lib/textutil.py: review loop and Markdown rendering.
+- tests/unit: pytest, offline, deterministic (fixed clock injected). tests/golden: byte-exact expected renders.
+- Golden files are updated only when a spec says so; never "fix" a failing golden by regenerating it.
