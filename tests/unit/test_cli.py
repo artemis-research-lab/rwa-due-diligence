@@ -2,7 +2,6 @@
 
 import json
 import os
-import warnings
 from pathlib import Path
 
 import pytest
@@ -10,9 +9,6 @@ import pytest
 from test_support import build_run, load_fixture, merge_fixture_body, run_cli, source_argv, walk
 from lib import flow, runstate
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
-    D2_MARK = pytest.mark.d2
 NEEDS_D2 = pytest.mark.skipif(flow.find_d2() is None, reason="d2 %s not on PATH" % flow.D2_VERSION)
 
 
@@ -20,7 +16,7 @@ def cli(root, *argv):
     return run_cli(list(argv[:1]) + ["--slug", "acme", "--root", str(root)] + list(argv[1:]))
 
 
-@D2_MARK
+@pytest.mark.d2
 @NEEDS_D2
 def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     fixture = load_fixture()
@@ -155,3 +151,77 @@ def test_help_mentions_exit_4():
     with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
         load_cli().main(["--help"])
     assert "4 diagram renderer d2 missing" in " ".join(buf.getvalue().split())
+
+
+# P4 helpers ----------------------------------------------------------------------------------------------
+
+def test_help_lists_research_helpers():
+    import contextlib
+    import io
+    from test_support import load_cli
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
+        load_cli().main(["--help"])
+    assert "fetch-file" in buf.getvalue() and "pdf-text" in buf.getvalue()
+
+
+def test_fetch_file_and_pdf_text_cli(tmp_path, monkeypatch):
+    from test_fetch import FakeResponse, serve
+    from test_support import FIXTURES
+    pdf = (FIXTURES / "sample.pdf").read_bytes()
+    url = "https://docs.example.com/sample.pdf"
+    assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
+    serve(monkeypatch, {url: lambda: FakeResponse(body=pdf, headers={"Content-Type": "application/pdf"})})
+
+    code, out, err = cli(tmp_path, "fetch-file", "--url", url, "--name", "sample.pdf")
+    assert (code, err) == (0, "")
+    result = json.loads(out)
+    assert list(result) == ["path", "bytes", "sha256", "content_type", "final_url", "http_status"]
+    assert result["bytes"] == len(pdf) and result["http_status"] == 200
+
+    code, out, err = cli(tmp_path, "fetch-file", "--url", url, "--name", "sample.pdf")
+    assert code == 2 and "already exists" in out
+    assert cli(tmp_path, "fetch-file", "--url", url, "--name", "sample.pdf", "--overwrite")[0] == 0
+
+    code, out, err = cli(tmp_path, "pdf-text", "--name", "sample.pdf")
+    assert (code, err) == (0, "")
+    assert json.loads(out)["pages"] == 2
+    text = tmp_path / "acme" / ".scratch" / "text" / "sample.pdf.txt"
+    assert text.read_bytes() == b"=== page 1 ===\nSample page one\n=== page 2 ===\nSample page two\n"
+    assert all(p == "acme" or p.startswith("acme" + os.sep) for p in walk(tmp_path))
+
+
+def test_fetch_file_exit_codes(tmp_path, monkeypatch):
+    import email.message
+    import urllib.error
+    from test_fetch import FakeResponse, serve
+    url = "https://docs.example.com/doc.pdf"
+    assert cli(tmp_path, "fetch-file", "--url", url, "--name", "doc.pdf")[0] == 3      # no run yet
+    assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
+    serve(monkeypatch, {
+        url: urllib.error.HTTPError(url, 404, "Not Found", email.message.Message(), None),
+        "https://docs.example.com/r": FakeResponse(302, headers={"Location": "http://docs.example.com/doc.pdf"}),
+    })
+    code, out, _ = cli(tmp_path, "fetch-file", "--url", "http://docs.example.com/doc.pdf", "--name", "doc.pdf")
+    assert code == 2 and out == "url: scheme must be https\n"
+    assert cli(tmp_path, "fetch-file", "--url", "https://localhost/doc.pdf", "--name", "doc.pdf")[0] == 2
+    assert cli(tmp_path, "fetch-file", "--url", url, "--name", "../doc.pdf")[0] == 2
+    code, out, err = cli(tmp_path, "fetch-file", "--url", url, "--name", "doc.pdf")
+    assert (code, out) == (4, "") and err == "network error: HTTP 404 Not Found for %s\n" % url
+    code, out, err = cli(tmp_path, "fetch-file", "--url", "https://docs.example.com/r", "--name", "doc.pdf")
+    assert code == 4 and "refused: scheme must be https" in err
+
+
+def test_pdf_text_exit_codes(tmp_path, monkeypatch):
+    import shutil
+    import sys
+    from test_support import FIXTURES
+    from lib import pdftext
+    assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
+    assert cli(tmp_path, "pdf-text", "--name", "absent.pdf")[0] == 2
+    shutil.copyfile(FIXTURES / "sample.pdf", tmp_path / "acme" / ".scratch" / "raw" / "sample.pdf")
+    monkeypatch.setitem(sys.modules, "pypdf", None)
+    code, out, err = cli(tmp_path, "pdf-text", "--name", "sample.pdf")
+    v = pdftext.PYPDF_VERSION
+    assert (code, out) == (4, "")
+    assert err == "dependency error: pypdf %s required: python -m pip install --user pypdf==%s\n" % (v, v)

@@ -25,6 +25,9 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D21 - Diagram pipeline - 2026-10-18 - D2 source is built only from schema ids and a restricted label alphabet; d2 v0.9.0 runs as a subprocess with explicit flags (ELK, theme 0) so environment variables cannot change output; the SVG is sanitised before embedding.
 - D22 - Version per phase - 2026-10-18 - Every phase spec sets SKILL_VERSION explicitly (v0.3.0 for P3).
 - D23 - Cloud branches - 2026-10-18 - Cloud sessions push only their assigned session branch; specs do not name branches and acceptance is anchored on the commit hash.
+- D24 - Fetch helper - 2026-10-18 - The only network code is dd.py fetch-file: HTTPS GET, honest User-Agent, host and redirect checks, 25 MB cap, atomic write into .scratch/raw.
+- D25 - PDF text - 2026-10-18 - pypdf, pinned, optional at import time; missing pypdf is exit code 4 with the install command.
+- D26 - Windows verification - 2026-10-18 - Code built in cloud sessions is accepted only after a fresh-clone test run on Windows (P1-P3 each failed there first: CRLF twice, temp directory once).
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -35,3 +38,4 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 ## Baselines
 - 2026-10-18 - P1 cloud build cost about 4 USD of cloud credit (whole-dollar display), no plan-limit change.
 - 2026-10-18 - P2 cloud build cost about 3 USD of cloud credit.
+- 2026-10-18 - P3 cloud build cost about 4 USD of cloud credit; P1-P3 total about 11 USD.

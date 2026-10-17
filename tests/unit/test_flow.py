@@ -5,7 +5,6 @@ import os
 import re
 import subprocess
 import sys
-import warnings
 
 import pytest
 
@@ -14,11 +13,7 @@ from lib import flow
 
 D2 = flow.find_d2()
 # The d2 tests run only when the binary is on PATH; Block B of every build must show them as passed.
-# pytest.ini (out of scope for P3) does not register the d2 marker yet, hence the local warning filter.
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
-    D2_MARK = pytest.mark.d2
-needs_d2 = [D2_MARK, pytest.mark.skipif(D2 is None, reason="d2 %s not on PATH" % flow.D2_VERSION)]
+needs_d2 = [pytest.mark.d2, pytest.mark.skipif(D2 is None, reason="d2 %s not on PATH" % flow.D2_VERSION)]
 
 HOSTILE = 'a"b\\c}d{e#f$g|h<i>j\nk \u00e9\u4e2d ${x} \'ok\' (1/2) & 50% @x_y=z-1;:,.'
 

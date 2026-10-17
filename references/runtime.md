@@ -3,9 +3,10 @@ Run-time constraints, data caveats and the output contract of this skill. This f
 Keep it platform-neutral: no PowerShell, no Windows paths. Developer-session rules belong in CLAUDE.md, which does not ship.
 
 ## Constraints
-- Python 3.11 or newer, standard library only; the d2 binary v0.9.0 must be on PATH for diagrams (finalize requires it).
+- Python 3.11 or newer; pypdf (pinned in references/third-party.md) for PDF text; the d2 binary v0.9.0 on PATH for diagrams.
+- dd.py fetch-file is the only network access in the scripts: HTTPS GET of public files with an honest User-Agent,
+  25 MB cap, saved under .scratch/raw/.
 - The script writes only inside <root>/<slug>/. Timestamps come only from the script clock.
-- No network access from the scripts in v0.1; research is done by the agent with its own tools.
 
 ## Data sources and caveats
 - Claim status is derived from source origin: first_party sources can only support self_reported;

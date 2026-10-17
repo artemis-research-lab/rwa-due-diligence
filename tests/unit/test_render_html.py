@@ -235,5 +235,5 @@ def test_css_c6_and_flow_rules():
     css = (ASSETS / "report.css").read_bytes().decode("utf-8")
     assert ".dd-table td:first-child, .dd-table th:first-child { white-space: nowrap; }" in css
     assert ".dd-meta__row dd { margin: 0; overflow-wrap: break-word; }" in css
-    assert ".dd-flow svg { width: 100%; height: auto; max-height: 80vh; }" in css
+    assert ".dd-flow svg { width: 100%; height: auto; }" in css and "max-height" not in css  # C10
     assert ".dd-flow { break-inside: avoid; }" in css

@@ -40,8 +40,14 @@ Read-only due diligence on an RWA project from its URL: record legal structure, 
 - Output: One diagram per product, embedded in or linked from the reports.
 - Depends on: Schema.
 
+### Research support
+- Responsibility: Give the agent a written research method and two read-only helpers for public files.
+- Input: The project URL and the analyst's directives.
+- Output: Downloaded public files and their extracted text inside the project's scratch area.
+- Depends on: Run directory.
+
 ## Known Limits
-- v0.3 has no research automation.
+- Research quality depends on public disclosure; private materials enter only through analyst add-source directives.
 - Diagrams need the external d2 binary at the pinned version; without it only draft reports can be produced.
 - Public information rarely covers issuer identity, fee stacks and loss order; these remain gaps until the analyst adds private material.
 

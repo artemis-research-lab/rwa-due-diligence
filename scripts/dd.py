@@ -1,7 +1,7 @@
 """rwa-due-diligence CLI: run directory, source ledger, validation, review loop and reports.
 
-Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state),
-4 diagram renderer d2 missing, wrong version or failed.
+Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state),
+4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.
 """
 
 import argparse
@@ -13,7 +13,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
-from lib import flow, runstate, schema  # noqa: E402
+from lib import fetch, flow, pdftext, runstate, schema  # noqa: E402
 
 EXIT_OK = 0
 EXIT_INVALID = 2
@@ -33,8 +33,8 @@ def build_parser():
     parser = argparse.ArgumentParser(
         prog="dd.py",
         description="Read-only RWA due diligence: run directory, source ledger, validation, review loop, reports.",
-        epilog="Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state), "
-               "4 diagram renderer d2 missing, wrong version or failed.")
+        epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state), "
+               "4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     def with_slug(name, help_text):
@@ -72,6 +72,12 @@ def build_parser():
     with_slug("render", "draft render into .scratch/draft/ (any phase)")
     with_slug("status", "print run state and counts as JSON")
     with_slug("finalize", "write the final outputs (after a finalize directive)")
+    p = with_slug("fetch-file", "download one public HTTPS file into .scratch/raw/NAME (does not add a source)")
+    p.add_argument("--url", required=True, help="https URL of a public file")
+    p.add_argument("--name", required=True, help="file name, ^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+    p.add_argument("--overwrite", action="store_true", help="replace an existing .scratch/raw/NAME")
+    p = with_slug("pdf-text", "extract the text of .scratch/raw/NAME into .scratch/text/NAME.txt (needs pypdf)")
+    p.add_argument("--name", required=True, help="file name under .scratch/raw/")
     sub.add_parser("schema-doc", help="print references/schema.md to stdout",
                    description="print references/schema.md to stdout")
     return parser
@@ -115,6 +121,10 @@ def run(args):
         _json(runstate.status(args.root, args.slug))
     elif cmd == "finalize":
         _json(runstate.finalize(args.root, args.slug))
+    elif cmd == "fetch-file":
+        _json(fetch.fetch_file(args.root, args.slug, args.url, args.name, overwrite=args.overwrite))
+    elif cmd == "pdf-text":
+        _json(pdftext.pdf_text(args.root, args.slug, args.name))
     return EXIT_OK
 
 
@@ -126,8 +136,11 @@ def main(argv=None):
         for line in sorted(exc.errors):
             _out(line)
         return EXIT_INVALID
-    except (flow.DependencyError, flow.RenderError) as exc:
+    except (flow.DependencyError, flow.RenderError, pdftext.DependencyError) as exc:
         sys.stderr.write("dependency error: %s\n" % exc)
+        return EXIT_DEPENDENCY
+    except fetch.FetchError as exc:
+        sys.stderr.write("network error: %s\n" % exc)
         return EXIT_DEPENDENCY
     except runstate.ContractError as exc:
         sys.stderr.write("contract violation: %s\n" % exc)

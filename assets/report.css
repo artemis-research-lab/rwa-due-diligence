@@ -102,7 +102,7 @@ body {
 /* fund flows (D11 style map colours) */
 .dd-flow { margin: 0; }
 .dd-flow:empty { display: none; }
-.dd-flow svg { width: 100%; height: auto; max-height: 80vh; }
+.dd-flow svg { width: 100%; height: auto; }
 .dd-flow figcaption { margin-top: 0.25rem; color: var(--dd-muted); font-size: 0.8rem; }
 .dd-kind { display: inline-block; padding: 0 0.4em; border-radius: 0.25rem; border: 1px solid currentColor; font-size: 0.8em; font-weight: 600; white-space: nowrap; }
 .dd-kind--subscription { color: #2563eb; }

@@ -47,3 +47,8 @@ SOFTWARE.
 - Linux release used in cloud builds: d2-v0.9.0-linux-amd64.tar.gz, sha256 5669ddc46b99e942cc96078f4a4e36d5e62103348f4c05179ede27802fdd87a9.
 - Windows: winget package Terrastruct.D2, version 0.9.0.
 - Output of v0.9.0 with the ELK layout was verified byte-identical on Linux and Windows (probe-1, 2026-10-17).
+
+## pypdf
+- Name: pypdf (PyPI), version 6.21.1, BSD-3-Clause. Not vendored; installed separately.
+- Install: `python -m pip install --user pypdf==6.21.1`.
+- Purpose: text extraction from downloaded PDFs (`dd.py pdf-text`); imported only when that command runs.
