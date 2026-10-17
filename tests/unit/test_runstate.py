@@ -155,8 +155,10 @@ def test_full_cycle_and_new_run_archives(tmp_path):
 
 def test_init_on_draft_refused_without_new_run(tmp_path):
     runstate.init(tmp_path, "acme", "https://a.example/", clock=clock_at())
-    with pytest.raises(runstate.ContractError):
+    with pytest.raises(runstate.ContractError) as exc:
         runstate.init(tmp_path, "acme", "https://a.example/", clock=clock_at())
+    assert str(exc.value) == ('run exists (phase research); use "dd.py status" to inspect or --new-run to archive it'
+                              ' and start again')
 
 
 def test_finalized_document_is_schema_ordered(tmp_path):
@@ -174,3 +176,5 @@ def test_render_draft_any_phase(tmp_path):
     out = runstate.render_draft(tmp_path, "acme")
     assert out["outputs"][0].endswith(os.path.join(".scratch", "draft", "acme.report.md"))
     assert open(out["outputs"][0], encoding="utf-8").read().startswith("# RWA Due Diligence: acme\n")
+    assert out["outputs"][1].endswith(os.path.join(".scratch", "draft", "acme.report.html"))
+    assert "<h1>RWA Due Diligence: acme</h1>" in open(out["outputs"][1], encoding="utf-8").read()

@@ -32,6 +32,7 @@ Legal paths: entities, relationships, governing_law, eligibility.
   regulator, registry, auditor or onchain.
 - self_reported: at least one self evidence.
 - inferred: at least one evidence and a non-empty note.
+- verified, self_reported and inferred: value is not null.
 - not_found: value is null; if evidence is non-empty the note must be non-empty.
 - subject references an existing entity or product, or is null.
 
@@ -153,7 +154,7 @@ Legal paths: entities, relationships, governing_law, eligibility.
     - `lane`: enum lane
     - `kind`: enum node_kind
     - `chain`: string <=24 | null
-    - `ref`: E<n>|P<n>|0x<hex, 1..64> | null
+    - `ref`: E<n>|P<n>|chain address <alphanumeric, 1..64> | null
   - `edges`: array of object
     - `from`: id n<n>
     - `to`: id n<n>

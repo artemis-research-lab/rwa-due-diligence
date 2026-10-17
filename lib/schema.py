@@ -287,8 +287,8 @@ DOCUMENT = Obj(
             ("lane", Enum("lane")),
             ("kind", Enum("node_kind")),
             ("chain", Str(24, nullable=True)),
-            ("ref", Pattern(r"^((E|P)[1-9][0-9]*|0x[0-9a-fA-F]{1,64})$",
-                            "E<n>|P<n>|0x<hex, 1..64>", nullable=True)),
+            ("ref", Pattern(r"^((E|P)[1-9][0-9]*|[A-Za-z0-9]{1,64})$",
+                            "E<n>|P<n>|chain address <alphanumeric, 1..64>", nullable=True)),
         ))),
         ("edges", Arr(Obj(
             ("from", Ref("n")),
@@ -486,6 +486,7 @@ def schema_doc():
         "  regulator, registry, auditor or onchain.",
         "- self_reported: at least one self evidence.",
         "- inferred: at least one evidence and a non-empty note.",
+        "- verified, self_reported and inferred: value is not null.",
         "- not_found: value is null; if evidence is non-empty the note must be non-empty.",
         "- subject references an existing entity or product, or is null.",
         "",

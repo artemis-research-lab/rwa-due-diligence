@@ -18,3 +18,6 @@ Keep it platform-neutral: no PowerShell, no Windows paths. Developer-session rul
 - <slug>.report.md is rendered deterministically from <slug>.dd.json; it contains no text that is not in the JSON
   except fixed headings, labels and the legend.
 - finalize prints {"project_dir", "outputs", "audit_dir", "scratch_dir", "rounds"} as JSON on stdout.
+- <slug>.report.html is one self-contained file: inline CSS (vendored Lism CSS, see references/third-party.md, plus
+  report styles), no JavaScript, no external resources; links to sources open in a new tab. It mirrors the Markdown
+  report section for section.

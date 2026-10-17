@@ -188,7 +188,7 @@ def semantic_errors(doc):
         _need(a["report_ref"], sids, "audits[%d].report_ref" % i, errors, "source")
     for i, n in enumerate(nodes):
         ref = n["ref"]
-        if ref is not None and not ref.startswith("0x"):
+        if ref is not None and re.match(r"^(E|P)[0-9]+$", ref):
             _need(ref, eids | pids, "flows.nodes[%d].ref" % i, errors, "entity/product")
     for i, e in enumerate(edges):
         _need(e["from"], nids, "flows.edges[%d].from" % i, errors, "node")

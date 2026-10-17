@@ -120,3 +120,23 @@ def test_errors_are_sorted_and_unique():
         doc["flows"]["edges"][1]["to"] = "n42"
     errs = errors_for(m)
     assert errs == sorted(set(errs)) and len(errs) == 2
+
+
+# --------------------------------------------------------------------------- C1: flow node ref accepts chain addresses
+
+def _with_ref(ref):
+    def m(doc):
+        doc["flows"]["nodes"][0]["ref"] = ref
+    return errors_for(m)
+
+
+def test_node_ref_accepts_chain_addresses():
+    assert _with_ref("7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV" + "1") == []      # base58 Solana, 44 chars
+    assert _with_ref("pb1w6ul64t5fjcg65mmscec758dgyml6xmmw5fy2vyxxc9gvzrvkqls7zr4t") == []  # Provenance bech32
+    assert _with_ref("0x00000000000000000000000000000000000000a1") == []          # EVM
+
+
+def test_node_ref_rejects_malformed():
+    assert _with_ref("0x00 a1") == ["flows.nodes[0].ref: must be E<n>|P<n>|chain address <alphanumeric, 1..64>"]
+    assert _with_ref("a" * 65) == ["flows.nodes[0].ref: must be E<n>|P<n>|chain address <alphanumeric, 1..64>"]
+    assert _with_ref("E0") == ["flows.nodes[0].ref: unknown entity/product E0"]

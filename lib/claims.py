@@ -41,6 +41,9 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
             roles.append(evidence_role(source, claim))
     independent = [r.split(":", 1)[1] for r in roles if r.startswith("independent:")]
 
+    if status != "not_found" and claim["value"] is None:
+        errors.append("%s: %s requires a non-null value" % (path, status))
+
     if status == "verified":
         if is_legal_path(parts):
             if not any(o in LEGAL_VERIFIERS for o in independent):

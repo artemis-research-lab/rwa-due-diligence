@@ -87,3 +87,23 @@ def test_unknown_subject_and_evidence():
     def m(doc):
         doc["governing_law"].update({"subject": "E9", "evidence": ["S8", "S99"]})
     assert errors_for(m) == ["governing_law.evidence: unknown source S99", "governing_law.subject: unknown id E9"]
+
+
+# --------------------------------------------------------------------------- C2: non-not_found claims need a value
+
+def test_verified_requires_value():
+    def m(doc):
+        doc["project"]["products"][0]["symbol"]["value"] = None
+    assert errors_for(m) == ["project.products[0].symbol: verified requires a non-null value"]
+
+
+def test_self_reported_requires_value():
+    def m(doc):
+        doc["project"]["name"]["value"] = None
+    assert errors_for(m) == ["project.name: self_reported requires a non-null value"]
+
+
+def test_inferred_requires_value():
+    def m(doc):
+        doc["relationships"][0]["claim"]["value"] = None
+    assert errors_for(m) == ["relationships[0].claim: inferred requires a non-null value"]

@@ -19,10 +19,15 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D15 - Research etiquette - 2026-10-18 - Honest User-Agent; respect ToS automated-access clauses and robots.txt; public registry searches allowed without login, personal data or CAPTCHA; browser fallback is read-only.
 - D16 - Budgets - 2026-10-18 - Round 1: 60 fetch/search calls; later rounds: 20 (probe-2 measured 70-80 calls and 17-25 minutes per target).
 - D17 - Bounded free text - 2026-10-18 - Free text only in declared fields with maximum lengths; everything is escaped on render.
+- D18 - Renderer registry - 2026-10-18 - Reports are registered renderers over the same document; HTML mirrors Markdown section for section and is tested for parity.
+- D19 - HTML safety - 2026-10-18 - All document text is HTML-escaped and ASCII-encoded; only http(s) source URLs become links; the page has no script, no external resource and no event attribute.
+- D20 - Line endings - 2026-10-18 - Text data files (json, jsonl, txt, html, css, svg, tmpl) are LF in the repository on every OS (found when a Windows checkout broke a byte-exact fixture test).
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
+- 2026-10-18 - P1 accepted at 903f20f after independent re-run; one test failed only on a Windows checkout (CRLF in fixtures), fixed by D20.
 
 ## Incidents
 
 ## Baselines
+- 2026-10-18 - P1 cloud build cost about 4 USD of cloud credit (whole-dollar display), no plan-limit change.

@@ -6,7 +6,7 @@ This module and lib/ledger.py are the only writers of <root>/<slug>/.
 import re
 from pathlib import Path
 
-from lib import directives, ledger, render_md, review, schema, validate
+from lib import directives, ledger, render_html, render_md, review, schema, validate
 from lib.textutil import dump_json, load_json_text
 
 PHASE_RESEARCH = "research"
@@ -29,8 +29,8 @@ class InvalidError(Exception):
         self.errors = list(errors)
 
 
-# Renderers that finalize runs: (output suffix, function(doc, rounds) -> text). P2 appends HTML here.
-RENDERERS = [("report.md", render_md.render)]
+# Renderers that finalize runs: (output suffix, function(doc, rounds) -> text).
+RENDERERS = [("report.md", render_md.render), ("report.html", render_html.render)]
 
 
 def check_slug(slug):
@@ -164,8 +164,8 @@ def init(root, slug, url, clock=ledger.system_clock, new_run=False):
             if state.get("status") == "final":
                 raise ContractError("run %s is final; use --new-run to archive it and start again"
                                     % state.get("run_id"))
-            raise ContractError("run %s is in progress; use --new-run to archive it and start again"
-                                % state.get("run_id"))
+            raise ContractError('run exists (phase %s); use "dd.py status" to inspect or --new-run to archive it'
+                                ' and start again' % state.get("phase"))
         dest = project.archive / state["run_id"]
         if dest.exists():
             raise ContractError("archive %s already exists" % dest)

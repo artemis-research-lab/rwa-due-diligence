@@ -53,7 +53,7 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert result["rounds"] == 2
     base = (tmp_path / "acme").resolve()
     assert Path(result["project_dir"]) == base
-    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md"]
+    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md", "acme.report.html"]
     for p in result["outputs"] + [result["audit_dir"], result["scratch_dir"]]:
         assert os.path.exists(p) and base in Path(p).resolve().parents
 
@@ -63,6 +63,9 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert "### Round 1\n\n```text\naccept N1\n```" in report
     assert "### Round 2\n\n```text\nnote good enough\nfinalize\n```" in report
     assert "DRAFT" not in report
+    page = Path(result["outputs"][2]).read_bytes().decode("utf-8")
+    assert '<pre class="dd-pre">note good enough\nfinalize</pre>' in page
+    assert "DRAFT" not in page
 
     # Nothing was created outside <tmp>/acme.
     assert before == []
@@ -78,7 +81,17 @@ def test_exit_codes(tmp_path):
                                  "project.products[0]: P1 has no yield entry\n")
     assert cli(tmp_path, "review")[0] == 2
     assert cli(tmp_path, "finalize")[0] == 3
-    assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 3
+    code, _, err = cli(tmp_path, "init", "--url", "https://a.example/")
+    assert code == 3 and 'run exists (phase research); use "dd.py status" to inspect or --new-run' in err
+
+
+def test_render_writes_draft_html(tmp_path):
+    assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
+    code, out, _ = cli(tmp_path, "render")
+    assert code == 0
+    draft = tmp_path / "acme" / ".scratch" / "draft"
+    assert (draft / "acme.report.md").is_file() and (draft / "acme.report.html").is_file()
+    assert '<p class="dd-banner dd-banner--draft">' in (draft / "acme.report.html").read_bytes().decode("utf-8")
 
 
 def test_help_lists_all_commands():

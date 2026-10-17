@@ -1,5 +1,6 @@
 """Escaping, truncation and JSON helpers shared by the renderers and the run directory."""
 
+import html
 import json
 
 # Characters escaped with a backslash in Markdown output. The backslash is handled first.
@@ -35,6 +36,22 @@ def md_escape(text):
 def md_text(text, limit=None):
     """Clip, then escape: the only way free text enters a Markdown render."""
     return md_escape(clip(text, limit))
+
+
+def html_text(text, limit=None):
+    """Clip, blank control characters, HTML-escape and ASCII-encode: the only way free text enters HTML."""
+    text = clip(text, limit).replace("\r\n", " ")
+    text = "".join(" " if ord(ch) < 32 or ord(ch) == 127 else ch for ch in text)
+    return html.escape(text, quote=True).encode("ascii", "xmlcharrefreplace").decode("ascii")
+
+
+def html_url(url):
+    """Escaped URL for an href if it is plain http(s) without control characters or whitespace, else None."""
+    if not url.lower().startswith(("https://", "http://")):
+        return None
+    if has_control(url) or any(ch.isspace() for ch in url):
+        return None
+    return html_text(url)
 
 
 def _reject_constant(name):
