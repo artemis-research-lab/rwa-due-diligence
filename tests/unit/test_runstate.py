@@ -1,11 +1,18 @@
 """Test groups 5 (path safety) and 6 (state machine)."""
 
 import os
+import warnings
 
 import pytest
 
-from test_support import build_run, clock_at, walk
-from lib import runstate
+from test_support import GOLDEN, build_run, clock_at, walk
+from lib import flow, runstate
+
+# finalize requires d2 v0.9.0 since P3; these tests run only where it is on PATH (see test_flow.py).
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
+    D2_MARK = pytest.mark.d2
+NEEDS_D2 = pytest.mark.skipif(flow.find_d2() is None, reason="d2 %s not on PATH" % flow.D2_VERSION)
 
 
 def _to_awaiting(tmp_path):
@@ -127,6 +134,8 @@ def test_directives_advance_round_and_update_work_doc(tmp_path):
     assert runstate.check(tmp_path, "acme") == []
 
 
+@D2_MARK
+@NEEDS_D2
 def test_full_cycle_and_new_run_archives(tmp_path):
     project = _to_awaiting(tmp_path)
     _directives(tmp_path, project, "finalize\n")
@@ -148,6 +157,7 @@ def test_full_cycle_and_new_run_archives(tmp_path):
     out = runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=later, new_run=True)
     archive = project.archive / old_id
     assert (archive / "acme.dd.json").is_file() and (archive / "acme.report.md").is_file()
+    assert (archive / "acme.flow-P1.svg").is_file() and (archive / "acme.flow-P2.svg").is_file()
     assert (archive / "audit" / "state.json").is_file()
     assert not any(p.exists() for p in project.outputs())
     assert runstate.load_state(project)["run_id"] == out["run_id"] == "acme-20261101T000000Z"
@@ -161,6 +171,8 @@ def test_init_on_draft_refused_without_new_run(tmp_path):
                               ' and start again')
 
 
+@D2_MARK
+@NEEDS_D2
 def test_finalized_document_is_schema_ordered(tmp_path):
     project = _to_awaiting(tmp_path)
     _directives(tmp_path, project, "finalize\n")
@@ -178,3 +190,74 @@ def test_render_draft_any_phase(tmp_path):
     assert open(out["outputs"][0], encoding="utf-8").read().startswith("# RWA Due Diligence: acme\n")
     assert out["outputs"][1].endswith(os.path.join(".scratch", "draft", "acme.report.html"))
     assert "<h1>RWA Due Diligence: acme</h1>" in open(out["outputs"][1], encoding="utf-8").read()
+
+
+# --------------------------------------------------------------------------- P3 figures pipeline
+
+def _ready(tmp_path):
+    project = _to_awaiting(tmp_path)
+    _directives(tmp_path, project, "finalize\n")
+    return project
+
+
+def test_finalize_without_d2_writes_nothing(tmp_path, monkeypatch):
+    project = _ready(tmp_path)
+    before = walk(project.dir)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    with pytest.raises(flow.DependencyError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert str(exc.value) == "d2 v0.9.0 required, found none on PATH"
+    assert walk(project.dir) == before
+    assert not any(p.exists() for p in project.outputs())
+    assert runstate.load_state(project)["phase"] == "ready_to_finalize"
+
+
+def test_finalize_with_wrong_d2_writes_nothing(tmp_path, monkeypatch):
+    project = _ready(tmp_path)
+    before = walk(project.dir)
+    monkeypatch.setattr(flow, "find_d2", lambda: "d2-fake")
+
+    def wrong(path):
+        raise flow.DependencyError("d2 v0.9.0 required, found v0.8.0")
+    monkeypatch.setattr(flow, "check_d2", wrong)
+    with pytest.raises(flow.DependencyError):
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert walk(project.dir) == before
+    assert runstate.load_state(project)["phase"] == "ready_to_finalize"
+
+
+def test_render_draft_without_d2_warns_and_omits_figures(tmp_path, monkeypatch):
+    build_run(tmp_path)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    out = runstate.render_draft(tmp_path, "acme")
+    assert out["warnings"] == ["d2 v0.9.0 not found: diagrams omitted"]
+    assert [os.path.basename(p) for p in out["outputs"]] == ["acme.report.md", "acme.report.html"]
+    page = open(out["outputs"][1], encoding="utf-8").read()
+    assert '<figure class="dd-flow" id="flow-P1"></figure>' in page and "<svg" not in page
+    assert "![Fund flow" not in open(out["outputs"][0], encoding="utf-8").read()
+
+
+@D2_MARK
+@NEEDS_D2
+def test_render_draft_with_d2_writes_svgs(tmp_path):
+    project = build_run(tmp_path)
+    out = runstate.render_draft(tmp_path, "acme")
+    assert "warnings" not in out
+    names = [os.path.basename(p) for p in out["outputs"]]
+    assert names == ["acme.report.md", "acme.report.html", "acme.flow-P1.svg", "acme.flow-P2.svg"]
+    assert all(os.path.dirname(p) == str(project.scratch / "draft") for p in out["outputs"])
+    assert '<figure class="dd-flow" id="flow-P1">\n<svg ' in open(out["outputs"][1], encoding="utf-8").read()
+
+
+@D2_MARK
+@NEEDS_D2
+def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
+    project = _ready(tmp_path)
+    result = runstate.finalize(tmp_path, "acme", clock=clock_at())
+    names = [os.path.basename(p) for p in result["outputs"]]
+    assert names == ["acme.dd.json", "acme.report.md", "acme.report.html", "acme.flow-P1.svg", "acme.flow-P2.svg"]
+    for pid in ("P1", "P2"):
+        assert project.flow_output(pid).read_bytes() == (GOLDEN / ("acme.flow-%s.svg" % pid)).read_bytes()
+    md = project.output("report.md").read_bytes().decode("utf-8")
+    assert "![Fund flow P1](acme.flow-P1.svg)" in md and "![Fund flow P2](acme.flow-P2.svg)" in md
+    assert [p.name for p in project.outputs()] == names

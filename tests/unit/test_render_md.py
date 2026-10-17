@@ -4,9 +4,13 @@ from test_support import GOLDEN, load_fixture
 from lib import render_md
 
 
+def _figures():
+    return {pid: (GOLDEN / ("acme.flow-%s.svg" % pid)).read_bytes().decode("utf-8") for pid in ("P1", "P2")}
+
+
 def test_report_matches_golden():
     expected = (GOLDEN / "acme.report.md").read_bytes().decode("utf-8")
-    assert render_md.render(load_fixture()) == expected
+    assert render_md.render(load_fixture(), (), _figures()) == expected
 
 
 def test_render_twice_identical():
@@ -58,3 +62,10 @@ def test_section_order():
         "## 13. Open questions", "## 14. Sources", "## Appendix A. Analyst interventions",
         "## Appendix B. Unmapped facts", "## Appendix C. Legend"]
     assert text.endswith("\n") and not text.endswith("\n\n")
+
+
+def test_flow_image_links_only_with_figures():
+    with_fig = render_md.render(load_fixture(), (), {"P2": "<svg/>"})
+    assert "### P2 Acme Treasury Vault\n\n![Fund flow P2](acme.flow-P2.svg)\n\n| from |" in with_fig
+    assert "![Fund flow P1]" not in with_fig
+    assert "![Fund flow" not in render_md.render(load_fixture())

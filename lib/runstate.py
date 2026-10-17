@@ -6,8 +6,8 @@ This module and lib/ledger.py are the only writers of <root>/<slug>/.
 import re
 from pathlib import Path
 
-from lib import directives, ledger, render_html, render_md, review, schema, validate
-from lib.textutil import dump_json, load_json_text
+from lib import directives, flow, ledger, render_html, render_md, review, schema, validate
+from lib.textutil import dump_json, id_key, load_json_text
 
 PHASE_RESEARCH = "research"
 PHASE_AWAITING = "awaiting_directives"
@@ -29,7 +29,8 @@ class InvalidError(Exception):
         self.errors = list(errors)
 
 
-# Renderers that finalize runs: (output suffix, function(doc, rounds) -> text).
+# Renderers that finalize runs: (output suffix, function(doc, rounds, figures) -> text);
+# figures maps product id -> sanitized SVG text and may be empty.
 RENDERERS = [("report.md", render_md.render), ("report.html", render_html.render)]
 
 
@@ -59,8 +60,22 @@ class Project:
     def output(self, suffix):
         return self.dir / ("%s.%s" % (self.slug, suffix))
 
+    def flow_output(self, product_id):
+        return self.output("flow-%s.svg" % product_id)
+
+    def flow_outputs(self):
+        """Existing flow diagram outputs, by product id."""
+        pattern = re.compile(r"^%s\.flow-(P[1-9][0-9]*)\.svg$" % re.escape(self.slug))
+        found = {}
+        for path in self.dir.glob("%s.flow-P*.svg" % self.slug):
+            match = pattern.match(path.name)
+            if match:
+                found[match.group(1)] = path
+        return [found[pid] for pid in sorted(found, key=id_key)]
+
     def outputs(self):
-        return [self.output("dd.json")] + [self.output(suffix) for suffix, _ in RENDERERS]
+        return ([self.output("dd.json")] + [self.output(suffix) for suffix, _ in RENDERERS]
+                + self.flow_outputs())
 
     def round_dir(self, k):
         return self.rounds / ("r%d" % k)
@@ -264,11 +279,23 @@ def render_draft(root, slug):
     errors = validate.structural_errors(doc)
     if errors:
         raise InvalidError(sorted(set(errors)))
+    warnings = []
+    try:
+        figures = render_figures(doc)
+    except flow.DependencyError:
+        figures = {}
+        warnings.append("d2 %s not found: diagrams omitted" % flow.D2_VERSION)
+    draft = project.scratch / "draft"
     outputs = []
     for suffix, fn in RENDERERS:
-        outputs.append(str(project.write_text(project.scratch / "draft" / ("%s.%s" % (slug, suffix)),
-                                              fn(doc, round_records(project, state["round"])))))
-    return {"outputs": outputs}
+        outputs.append(str(project.write_text(draft / ("%s.%s" % (slug, suffix)),
+                                              fn(doc, round_records(project, state["round"]), figures))))
+    for pid, svg in figures.items():
+        outputs.append(str(project.write_text(draft / project.flow_output(pid).name, svg)))
+    result = {"outputs": outputs}
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 def status(root, slug):
@@ -290,6 +317,15 @@ def status(root, slug):
     return {"state": state, "counts": counts, "valid": not errors, "errors": len(errors)}
 
 
+def render_figures(doc):
+    """Sanitized SVG per product; DependencyError when d2 is missing or not the pinned version."""
+    d2_path = flow.find_d2()
+    if d2_path is None:
+        raise flow.DependencyError("d2 %s required, found none on PATH" % flow.D2_VERSION)
+    flow.check_d2(d2_path)
+    return flow.render_all(doc, d2_path)
+
+
 def finalize(root, slug, clock=ledger.system_clock):
     project = open_project(root, slug)
     state = load_state(project)
@@ -304,9 +340,12 @@ def finalize(root, slug, clock=ledger.system_clock):
         raise InvalidError(errors)
     doc = schema.order_like_schema(doc)
     rounds = round_records(project, state["round"])
+    figures = render_figures(doc)  # d2 is mandatory here: fails before anything is written
     outputs = [project.write_json(project.output("dd.json"), doc)]
     for suffix, fn in RENDERERS:
-        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds)))
+        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures)))
+    for pid, svg in figures.items():
+        outputs.append(project.write_text(project.flow_output(pid), svg))
     save_work(project, doc)
     state["status"] = "final"
     state["phase"] = PHASE_FINAL

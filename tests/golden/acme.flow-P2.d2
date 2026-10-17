@@ -1,0 +1,40 @@
+direction: down
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+  }
+}
+
+offchain: "Off-chain" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n6: "Issuer bank account" {shape: cylinder; style.font-size: 13; style.fill: "#ffffff"}
+  n9: "Manager" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+boundary: "Boundary" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n5: "Off-ramp desk" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+onchain: "On-chain" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n1: "Investor wallet" {shape: person; style.font-size: 13; style.fill: "#ffffff"}
+  n3: "Treasury vault" {shape: rectangle; style.border-radius: 8; style.font-size: 13; style.fill: "#ffffff"}
+  n4: "Ops multisig" {shape: rectangle; style.border-radius: 8; style.double-border: true; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+boundary.n5 -> offchain.n6: "stablecoin to fiat [S]" {style.stroke: "#0891b2"; style.font-size: 12; style.stroke-dash: 3}
+offchain.n6 -> offchain.n9: "management fee [S]" {style.stroke: "#6b7280"; style.font-size: 12; style.stroke-dash: 2}
+onchain.n3 -> onchain.n4: "reserve pledge [N]" {style.stroke: "#b91c1c"; style.font-size: 12; style.stroke-dash: 4; style.opacity: 0.5}
+onchain.n1 -> onchain.n3: "vault deposit [S]" {style.stroke: "#2563eb"; style.font-size: 12}
+onchain.n3 -> onchain.n1: "daily yield [S]" {style.stroke: "#16a34a"; style.font-size: 12}

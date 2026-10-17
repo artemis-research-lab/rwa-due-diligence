@@ -3,7 +3,7 @@ Run-time constraints, data caveats and the output contract of this skill. This f
 Keep it platform-neutral: no PowerShell, no Windows paths. Developer-session rules belong in CLAUDE.md, which does not ship.
 
 ## Constraints
-- Python 3.11 or newer, standard library only (v0.1). Later versions add pypdf and the d2 binary (v0.9.0).
+- Python 3.11 or newer, standard library only; the d2 binary v0.9.0 must be on PATH for diagrams (finalize requires it).
 - The script writes only inside <root>/<slug>/. Timestamps come only from the script clock.
 - No network access from the scripts in v0.1; research is done by the agent with its own tools.
 
@@ -21,3 +21,6 @@ Keep it platform-neutral: no PowerShell, no Windows paths. Developer-session rul
 - <slug>.report.html is one self-contained file: inline CSS (vendored Lism CSS, see references/third-party.md, plus
   report styles), no JavaScript, no external resources; links to sources open in a new tab. It mirrors the Markdown
   report section for section.
+- <slug>.flow-<product>.svg: one per product, generated from dd.json flows by d2 v0.9.0 with the ELK layout and fixed
+  flags; lanes off-chain, boundary, on-chain; edge colour = flow kind, label suffix = claim status. The same SVG is
+  embedded in the HTML report and linked from the Markdown report.

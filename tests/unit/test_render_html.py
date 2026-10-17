@@ -27,9 +27,13 @@ def _hostile():
 
 # 1. golden ------------------------------------------------------------------------------------------------
 
+def _figures():
+    return {pid: (GOLDEN / ("acme.flow-%s.svg" % pid)).read_bytes().decode("utf-8") for pid in ("P1", "P2")}
+
+
 def test_report_matches_golden():
     expected = (GOLDEN / "acme.report.html").read_bytes().decode("utf-8")
-    assert render_html.render(load_fixture()) == expected
+    assert render_html.render(load_fixture(), (), _figures()) == expected
 
 
 def test_render_twice_identical():
@@ -188,3 +192,48 @@ def test_lism_sha256_recorded():
     notes = (ROOT / "references" / "third-party.md").read_bytes().decode("utf-8")
     assert "sha256: `%s`" % digest in notes
     assert render_html.LISM_CSS in notes
+
+
+# P3: inline flow figures ----------------------------------------------------------------------------------
+
+def test_figures_embedded_with_caption():
+    page = render_html.render(load_fixture(), (), _figures())
+    for pid in ("P1", "P2"):
+        fig = re.search(r'<figure class="dd-flow" id="flow-%s">\n(<svg .*?)\n<figcaption>(.*?)</figcaption></figure>'
+                        % pid, page, re.S)
+        assert fig and fig.group(1) == _figures()[pid].rstrip("\n")
+        assert fig.group(2) == ("Fund flow %s: lanes off-chain / boundary / on-chain; marker after each label"
+                                " = claim status" % pid)
+    assert "<?xml" not in page
+
+
+def test_partial_figures_keep_empty_placeholder():
+    page = render_html.render(load_fixture(), (), {"P1": _figures()["P1"]})
+    assert '<figure class="dd-flow" id="flow-P2"></figure>' in page
+    assert '<figure class="dd-flow" id="flow-P1"></figure>' not in page
+
+
+def test_page_with_figures_has_no_active_content():
+    low = render_html.render(load_fixture(), (), _figures()).lower()
+    for needle in ("<script", "<foreignobject", "<link", "<iframe", "javascript:", "@import", "src="):
+        assert needle not in low, needle
+    assert not any(re.search(r"\son[a-z]+=", tag) for tag in re.findall(r"<[^>]*>", low))
+    assert not re.search(r"""href\s*=\s*["']?\s*(https?:|//)""", low.split("<section id=\"s14\"")[0])
+    rest = low.replace(LISM.read_bytes().decode("utf-8").lower(), "")
+    assert rest.count("url(") == len(re.findall(r"""url\(\s*["']?(?:data:application/font-woff;|#)""", rest)) > 0
+    assert low.isascii()
+
+
+def test_heading_parity_with_figures():
+    md = render_md.render(load_fixture(), (), _figures()).split("\n")
+    page = render_html.render(load_fixture(), (), _figures())
+    md_heads = [_md_plain(line[4:]) for line in md if line.startswith("### ")]
+    assert [_html_plain(h) for h in re.findall(r"<h3>(.*?)</h3>", page)] == md_heads
+
+
+def test_css_c6_and_flow_rules():
+    css = (ASSETS / "report.css").read_bytes().decode("utf-8")
+    assert ".dd-table td:first-child, .dd-table th:first-child { white-space: nowrap; }" in css
+    assert ".dd-meta__row dd { margin: 0; overflow-wrap: break-word; }" in css
+    assert ".dd-flow svg { width: 100%; height: auto; max-height: 80vh; }" in css
+    assert ".dd-flow { break-inside: avoid; }" in css

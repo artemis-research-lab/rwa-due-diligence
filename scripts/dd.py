@@ -1,6 +1,7 @@
 """rwa-due-diligence CLI: run directory, source ledger, validation, review loop and reports.
 
-Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state).
+Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state),
+4 diagram renderer d2 missing, wrong version or failed.
 """
 
 import argparse
@@ -12,11 +13,12 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
-from lib import runstate, schema  # noqa: E402
+from lib import flow, runstate, schema  # noqa: E402
 
 EXIT_OK = 0
 EXIT_INVALID = 2
 EXIT_CONTRACT = 3
+EXIT_DEPENDENCY = 4
 
 
 def _out(text):
@@ -31,7 +33,8 @@ def build_parser():
     parser = argparse.ArgumentParser(
         prog="dd.py",
         description="Read-only RWA due diligence: run directory, source ledger, validation, review loop, reports.",
-        epilog="Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state).")
+        epilog="Exit codes: 0 ok, 2 invalid document or directives, 3 contract violation (paths or state), "
+               "4 diagram renderer d2 missing, wrong version or failed.")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     def with_slug(name, help_text):
@@ -123,6 +126,9 @@ def main(argv=None):
         for line in sorted(exc.errors):
             _out(line)
         return EXIT_INVALID
+    except (flow.DependencyError, flow.RenderError) as exc:
+        sys.stderr.write("dependency error: %s\n" % exc)
+        return EXIT_DEPENDENCY
     except runstate.ContractError as exc:
         sys.stderr.write("contract violation: %s\n" % exc)
         return EXIT_CONTRACT

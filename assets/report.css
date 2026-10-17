@@ -39,7 +39,7 @@ body {
 }
 .dd-meta__row { display: flex; gap: 0.5rem; border-bottom: 1px dotted var(--dd-line); padding-block: 0.15rem; }
 .dd-meta__row dt { color: var(--dd-muted); min-width: 7.5rem; }
-.dd-meta__row dd { margin: 0; overflow-wrap: anywhere; }
+.dd-meta__row dd { margin: 0; overflow-wrap: break-word; }
 
 .dd-banner {
   display: inline-block;
@@ -71,6 +71,7 @@ body {
 .dd-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
 .dd-table th, .dd-table td { border: 1px solid var(--dd-line); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
 .dd-table thead th { background: var(--dd-soft); font-weight: 600; white-space: nowrap; }
+.dd-table td:first-child, .dd-table th:first-child { white-space: nowrap; }
 .dd-table tbody tr:nth-child(even) { background: #fafafa; }
 .dd-table tr:target { background: #fef9c3; }
 
@@ -101,6 +102,8 @@ body {
 /* fund flows (D11 style map colours) */
 .dd-flow { margin: 0; }
 .dd-flow:empty { display: none; }
+.dd-flow svg { width: 100%; height: auto; max-height: 80vh; }
+.dd-flow figcaption { margin-top: 0.25rem; color: var(--dd-muted); font-size: 0.8rem; }
 .dd-kind { display: inline-block; padding: 0 0.4em; border-radius: 0.25rem; border: 1px solid currentColor; font-size: 0.8em; font-weight: 600; white-space: nowrap; }
 .dd-kind--subscription { color: #2563eb; }
 .dd-kind--redemption { color: #2563eb; }
@@ -135,6 +138,7 @@ body {
   .dd-table { font-size: 0.75rem; }
   .dd-table tr { break-inside: avoid; page-break-inside: avoid; }
   .dd-section { break-inside: auto; }
+  .dd-flow { break-inside: avoid; }
   .dd-report h2, .dd-report h3 { break-after: avoid; }
   .dd-report a { color: inherit; text-decoration: none; }
   .dd-banner--draft, .dd-badge, .dd-panel { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

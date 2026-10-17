@@ -41,3 +41,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## d2
+- Name: d2 (Terrastruct), version v0.9.0, MPL-2.0. Not vendored; installed separately and invoked as a subprocess.
+- Linux release used in cloud builds: d2-v0.9.0-linux-amd64.tar.gz, sha256 5669ddc46b99e942cc96078f4a4e36d5e62103348f4c05179ede27802fdd87a9.
+- Windows: winget package Terrastruct.D2, version 0.9.0.
+- Output of v0.9.0 with the ELK layout was verified byte-identical on Linux and Windows (probe-1, 2026-10-17).

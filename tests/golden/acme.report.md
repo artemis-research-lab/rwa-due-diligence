@@ -122,6 +122,8 @@ Nodes:
 
 ### P1 Acme Senior Note
 
+![Fund flow P1](acme.flow-P1.svg)
+
 | from | to | kind | mechanism | rail | label | claim |
 |---|---|---|---|---|---|---|
 | n1 Investor wallet | n2 aSN token | subscription | deposit | stablecoin | USDC in, aSN minted | true [V] (S4) |
@@ -132,6 +134,8 @@ Nodes:
 | n2 aSN token | n1 Investor wallet | redemption | burn | burn | aSN burned on redemption | true [V] (S4) |
 
 ### P2 Acme Treasury Vault
+
+![Fund flow P2](acme.flow-P2.svg)
 
 | from | to | kind | mechanism | rail | label | claim |
 |---|---|---|---|---|---|---|

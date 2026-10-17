@@ -2,16 +2,26 @@
 
 import json
 import os
+import warnings
 from pathlib import Path
 
-from test_support import load_fixture, merge_fixture_body, run_cli, source_argv, walk
-from lib import runstate
+import pytest
+
+from test_support import build_run, load_fixture, merge_fixture_body, run_cli, source_argv, walk
+from lib import flow, runstate
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
+    D2_MARK = pytest.mark.d2
+NEEDS_D2 = pytest.mark.skipif(flow.find_d2() is None, reason="d2 %s not on PATH" % flow.D2_VERSION)
 
 
 def cli(root, *argv):
     return run_cli(list(argv[:1]) + ["--slug", "acme", "--root", str(root)] + list(argv[1:]))
 
 
+@D2_MARK
+@NEEDS_D2
 def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     fixture = load_fixture()
     before = walk(tmp_path)
@@ -53,7 +63,8 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert result["rounds"] == 2
     base = (tmp_path / "acme").resolve()
     assert Path(result["project_dir"]) == base
-    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md", "acme.report.html"]
+    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md", "acme.report.html",
+                                                         "acme.flow-P1.svg", "acme.flow-P2.svg"]
     for p in result["outputs"] + [result["audit_dir"], result["scratch_dir"]]:
         assert os.path.exists(p) and base in Path(p).resolve().parents
 
@@ -107,3 +118,40 @@ def test_help_lists_all_commands():
     for name in ("init", "add-source", "validate", "review", "directives", "render", "status", "finalize",
                  "schema-doc"):
         assert name in buf.getvalue()
+
+
+def _ready(tmp_path):
+    project = build_run(tmp_path)
+    runstate.make_review(tmp_path, "acme")
+    reply = project.scratch / "logs" / "r1.txt"
+    reply.write_bytes(b"finalize\n")
+    runstate.apply_directives(tmp_path, "acme", reply)
+    return project
+
+
+def test_finalize_without_d2_exit_4(tmp_path, monkeypatch):
+    project = _ready(tmp_path)
+    before = walk(tmp_path)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    code, out, err = cli(tmp_path, "finalize")
+    assert (code, out) == (4, "")
+    assert err == "dependency error: d2 v0.9.0 required, found none on PATH\n"
+    assert walk(tmp_path) == before
+    assert runstate.load_state(project)["phase"] == "ready_to_finalize"
+
+
+def test_render_without_d2_warns(tmp_path, monkeypatch):
+    build_run(tmp_path)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    code, out, _ = cli(tmp_path, "render")
+    assert code == 0 and json.loads(out)["warnings"] == ["d2 v0.9.0 not found: diagrams omitted"]
+
+
+def test_help_mentions_exit_4():
+    import contextlib
+    import io
+    from test_support import load_cli
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
+        load_cli().main(["--help"])
+    assert "4 diagram renderer d2 missing" in " ".join(buf.getvalue().split())

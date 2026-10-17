@@ -213,7 +213,7 @@ def _yield(r):
     return out
 
 
-def _flows(r):
+def _flows(r, figures):
     doc = r.doc
     nodes = {n["id"]: n for n in doc["flows"]["nodes"]}
 
@@ -227,8 +227,14 @@ def _flows(r):
                    text(n["chain"], 24), text(n["ref"])] for n in sorted(doc["flows"]["nodes"], key=id_key)])
     for p in sorted(doc["project"]["products"], key=id_key):
         out += h3(product_title(p))
-        # Placeholder: P3 fills this figure with the product's inline SVG flow diagram.
-        out.append('<figure class="dd-flow" id="flow-%s"></figure>' % html_text(p["id"]))
+        pid = html_text(p["id"])
+        if p["id"] in figures:
+            # The SVG was sanitized by flow.sanitize_svg; it is the only unescaped content in the page.
+            out += ['<figure class="dd-flow" id="flow-%s">' % pid, figures[p["id"]].rstrip("\n"),
+                    "<figcaption>Fund flow %s: lanes off-chain / boundary / on-chain; marker after each label"
+                    " = claim status</figcaption></figure>" % pid]
+        else:
+            out.append('<figure class="dd-flow" id="flow-%s"></figure>' % pid)
         out += table(("from", "to", "kind", "mechanism", "rail", "label", "claim"),
                      [[node_cell(e["from"]), node_cell(e["to"]), kind_cell(e["kind"]), html_text(e["mechanism"]),
                        html_text(e["rail"]), html_text(e["label"], 40), r.claim_cell(e["claim"])]
@@ -373,8 +379,10 @@ def _css(name):
     return css
 
 
-def render(doc, rounds=()):
-    """Render a structurally valid document; rounds = [(k, directives.txt text), ...]."""
+def render(doc, rounds=(), figures=None):
+    """Render a structurally valid document; rounds = [(k, directives.txt text), ...];
+    figures = {product id: sanitized SVG text}, embedded inline in section 6."""
+    figures = figures or {}
     r = Renderer(doc)
     name = doc["project"]["name"]["value"]
     title = "RWA Due Diligence: " + (html_text(doc["run"]["slug"]) if name is None else fmt_value(name))
@@ -386,7 +394,7 @@ def render(doc, rounds=()):
         ("s3", "3. Products", _products(r)),
         ("s4", "4. Legal structure", _legal(r)),
         ("s5", "5. Yield source", _yield(r)),
-        ("s6", "6. Fund flows", _flows(r)),
+        ("s6", "6. Fund flows", _flows(r, figures)),
         ("s7", "7. On-chain contracts and control", _onchain(r)),
         ("s8", "8. Redemption and eligibility", _redemption(r)),
         ("s9", "9. Audits", _audits(r)),

@@ -144,7 +144,7 @@ def _yield(doc):
     return out[:-1] if out and out[-1] == "" else out
 
 
-def _flows(doc):
+def _flows(doc, figures):
     nodes = {n["id"]: n for n in doc["flows"]["nodes"]}
 
     def node_cell(nid):
@@ -157,7 +157,8 @@ def _flows(doc):
                   for n in sorted(doc["flows"]["nodes"], key=id_key)])
     for p in sorted(doc["project"]["products"], key=id_key):
         out += ["", "### " + product_title(p), ""]
-        # Extension point (P3): the flow diagram for this product is inserted here, above the table.
+        if p["id"] in figures:
+            out += ["![Fund flow %s](%s.flow-%s.svg)" % (p["id"], doc["run"]["slug"], p["id"]), ""]
         out += table(("from", "to", "kind", "mechanism", "rail", "label", "claim"),
                      [[node_cell(e["from"]), node_cell(e["to"]), e["kind"], e["mechanism"], e["rail"],
                        md_text(e["label"], 40), claim_cell(e["claim"])]
@@ -276,8 +277,10 @@ LEGEND = [
 ]
 
 
-def render(doc, rounds=()):
-    """Render a structurally valid document; rounds = [(k, directives.txt text), ...]."""
+def render(doc, rounds=(), figures=None):
+    """Render a structurally valid document; rounds = [(k, directives.txt text), ...];
+    figures = {product id: SVG text}: a product with a figure gets an image link to <slug>.flow-<id>.svg."""
+    figures = figures or {}
     name = doc["project"]["name"]["value"]
     title = doc["run"]["slug"] if name is None else fmt_value(name)
     lines = ["# RWA Due Diligence: " + title, ""]
@@ -292,7 +295,7 @@ def render(doc, rounds=()):
         ("3. Products", _products(doc)),
         ("4. Legal structure", _legal(doc)),
         ("5. Yield source", _yield(doc)),
-        ("6. Fund flows", _flows(doc)),
+        ("6. Fund flows", _flows(doc, figures)),
         ("7. On-chain contracts and control", _onchain(doc)),
         ("8. Redemption and eligibility", _redemption(doc)),
         ("9. Audits", _audits(doc)),

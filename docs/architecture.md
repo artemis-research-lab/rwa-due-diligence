@@ -31,11 +31,18 @@ Read-only due diligence on an RWA project from its URL: record legal structure, 
 ### Reports
 - Responsibility: Render the DD document into reports without adding content.
 - Input: A valid DD document and the round records.
-- Output: Markdown report and a self-contained HTML report (flow diagrams in a later version).
+- Output: Markdown report and a self-contained HTML report, with one flow diagram per product.
+- Depends on: Schema, Flow diagrams.
+
+### Flow diagrams
+- Responsibility: Turn each product's fund flows into a diagram with fixed lanes and styles.
+- Input: The flows section of a valid DD document.
+- Output: One diagram per product, embedded in or linked from the reports.
 - Depends on: Schema.
 
 ## Known Limits
-- v0.2 has no research automation or flow diagrams.
+- v0.3 has no research automation.
+- Diagrams need the external d2 binary at the pinned version; without it only draft reports can be produced.
 - Public information rarely covers issuer identity, fee stacks and loss order; these remain gaps until the analyst adds private material.
 
 ## Coding Notes
