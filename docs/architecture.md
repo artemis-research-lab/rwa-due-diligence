@@ -18,9 +18,10 @@ Read-only due diligence on an RWA project from its URL: record legal structure, 
 
 ### Run directory
 - Responsibility: Own the per-project directory, the source ledger, the run state and the round lifecycle.
-- Input: Analyst commands (init, add-source, review, directives, finalize).
+- Input: Analyst commands (init, add-source, review, directives, finalize, amend).
 - Output: Working files, review packets, directive records and final outputs in the project directory.
 - Depends on: Schema, Claims and validation, Review loop, Reports.
+- Note: A final run can be reopened by an amendment; the previous outputs move to archive/<run_id>.v<m>/.
 
 ### Review loop
 - Responsibility: Summarise a round for the analyst and turn the analyst's reply into structured directives.

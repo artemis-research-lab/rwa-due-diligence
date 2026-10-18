@@ -79,7 +79,8 @@ def test_not_found_with_evidence_without_note():
 def test_analyst_cannot_verify():
     def m(doc):
         doc["redemption"][0]["settlement_time"].update({"status": "verified", "note": ""})
-    assert errors_for(m) == ["redemption[0].settlement_time: verified requires an independent source"]
+    assert errors_for(m) == ["redemption[0].settlement_time: verified must not cite an analyst source",
+                             "redemption[0].settlement_time: verified requires an independent source"]
     assert claims.evidence_role(load_fixture()["sources"][5], {"subject": None}) == "analyst"
 
 
@@ -107,3 +108,16 @@ def test_inferred_requires_value():
     def m(doc):
         doc["relationships"][0]["claim"]["value"] = None
     assert errors_for(m) == ["relationships[0].claim: inferred requires a non-null value"]
+
+def test_verified_must_not_cite_analyst():
+    def both(doc):
+        doc["redemption"][0]["settlement_time"].update({"status": "verified", "evidence": ["S4", "S6"], "note": ""})
+    assert errors_for(both) == ["redemption[0].settlement_time: verified must not cite an analyst source"]
+
+    def onchain_only(doc):
+        doc["redemption"][0]["settlement_time"].update({"status": "verified", "evidence": ["S4"], "note": ""})
+    assert errors_for(onchain_only) == []
+
+    def inferred(doc):
+        doc["redemption"][0]["settlement_time"].update({"status": "inferred", "evidence": ["S4", "S6"]})
+    assert errors_for(inferred) == []

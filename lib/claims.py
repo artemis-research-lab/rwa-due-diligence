@@ -51,6 +51,8 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
                               % path)
         elif not independent:
             errors.append("%s: verified requires an independent source" % path)
+        if "analyst" in roles:
+            errors.append("%s: verified must not cite an analyst source" % path)
     elif status == "self_reported":
         if "self" not in roles:
             errors.append("%s: self_reported requires a first-party or subject-published source" % path)

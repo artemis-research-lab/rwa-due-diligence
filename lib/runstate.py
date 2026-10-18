@@ -145,11 +145,18 @@ def check_work(project, doc=None):
 
 
 def round_records(project, upto):
+    """[(heading, text), ...] for rounds 1..upto: an amendment that reopened round k precedes round k."""
     out = []
     for k in range(1, upto + 1):
-        path = project.round_dir(k) / "directives.txt"
+        rdir = project.round_dir(k)
+        amend_txt = rdir / "amend.txt"
+        if amend_txt.is_file():
+            record = load_json_text((rdir / "amend.json").read_bytes().decode("utf-8"))
+            out.append(("Amendment %d (reopens round %d)" % (record["amendment"], k),
+                        amend_txt.read_bytes().decode("utf-8", errors="replace")))
+        path = rdir / "directives.txt"
         if path.is_file():
-            out.append((k, path.read_bytes().decode("utf-8", errors="replace")))
+            out.append(("Round %d" % k, path.read_bytes().decode("utf-8", errors="replace")))
     return out
 
 
@@ -177,8 +184,8 @@ def init(root, slug, url, clock=ledger.system_clock, new_run=False):
         state = load_state(project)
         if not new_run:
             if state.get("status") == "final":
-                raise ContractError("run %s is final; use --new-run to archive it and start again"
-                                    % state.get("run_id"))
+                raise ContractError('run %s is final; use "dd.py amend" to correct it or --new-run to archive it and'
+                                    ' start again' % state.get("run_id"))
             raise ContractError('run exists (phase %s); use "dd.py status" to inspect or --new-run to archive it'
                                 ' and start again' % state.get("phase"))
         dest = project.archive / state["run_id"]
@@ -353,3 +360,43 @@ def finalize(root, slug, clock=ledger.system_clock):
     return {"project_dir": str(project.safe(project.dir)), "outputs": [str(p) for p in outputs],
             "audit_dir": str(project.safe(project.audit)), "scratch_dir": str(project.safe(project.scratch)),
             "rounds": state["round"]}
+
+
+def amend(root, slug, file_path):
+    """Reopen a final run for one more research round (section 1 of the v0.4.1 patch)."""
+    project = open_project(root, slug)
+    state = load_state(project)
+    if state["phase"] != PHASE_FINAL:
+        raise ContractError("amend requires a final run (current phase: %s)" % state["phase"])
+    m = state.get("amendment", 0)
+    n = m + 1
+    dest = project.archive / ("%s.v%d" % (state["run_id"], m))
+    if dest.exists():
+        raise ContractError("archive %s already exists" % dest)
+    raw = Path(file_path).read_bytes()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise InvalidError(["line 0: amendment file is not UTF-8"])
+    doc = load_work(project)
+    try:
+        commands = directives.parse_amendment(text, doc)
+    except directives.DirectiveError as exc:
+        raise InvalidError(exc.errors)
+
+    k = state["round"]
+    project.mkdir(dest)
+    for path in project.outputs():
+        if path.exists():
+            project.move(path, dest / path.name)
+    rdir = project.round_dir(k + 1)
+    project.write_bytes(rdir / "amend.txt", raw)
+    project.write_json(rdir / "amend.json", {"amendment": n, "reopens_round": k + 1, "commands": commands})
+    doc["run"]["round"] = k + 1
+    doc["run"]["status"] = "draft"
+    doc["run"]["finalized_at"] = None
+    save_work(project, doc)
+    state.update({"round": k + 1, "phase": PHASE_RESEARCH, "status": "draft", "amendment": n})
+    save_state(project, state)
+    return {"amendment": n, "round": k + 1, "phase": PHASE_RESEARCH, "archived_to": str(project.safe(dest)),
+            "commands": len(commands)}

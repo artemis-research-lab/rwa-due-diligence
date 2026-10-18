@@ -28,7 +28,7 @@ Evidence role of source s for claim c: `self` if s.origin is first_party or s.pu
 c.subject; `analyst` if s.origin is analyst; otherwise `independent:<origin>`.
 Legal paths: entities, relationships, governing_law, eligibility.
 
-- verified: at least one independent evidence; on legal paths its origin must be
+- verified: at least one independent evidence and no analyst evidence; on legal paths its origin must be
   regulator, registry, auditor or onchain.
 - self_reported: at least one self evidence.
 - inferred: at least one evidence and a non-empty note.

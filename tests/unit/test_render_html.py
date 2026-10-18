@@ -84,7 +84,7 @@ def _css_classes(css):
 def test_class_allowlist():
     report_css = _css_classes((ASSETS / "report.css").read_bytes().decode("utf-8"))
     lism_css = _css_classes(LISM.read_bytes().decode("utf-8"))
-    page = render_html.render(load_fixture(), [(1, "accept N1\n")])
+    page = render_html.render(load_fixture(), [("Round 1", "accept N1\n")])
     used = {tok for attr in re.findall(r'class="([^"]*)"', _body(page)) for tok in attr.split()}
     assert used
     for tok in used:
@@ -128,7 +128,7 @@ def _html_plain(fragment):
 
 
 def test_heading_parity():
-    rounds = [(1, "accept N1\n"), (2, "finalize\n")]
+    rounds = [("Round 1", "accept N1\n"), ("Round 2", "finalize\n")]
     for doc in (load_fixture(), _hostile()):
         md = render_md.render(doc, rounds).split("\n")
         page = render_html.render(doc, rounds)
@@ -166,7 +166,7 @@ def test_none_handling_matches_markdown():
 
 
 def test_appendix_a_pre_escaped():
-    page = render_html.render(load_fixture(), [(1, "accept N1\r\n# <b>&\n\n")])
+    page = render_html.render(load_fixture(), [("Round 1", "accept N1\r\n# <b>&\n\n")])
     assert '<h3>Round 1</h3>\n<pre class="dd-pre">accept N1\n# &lt;b&gt;&amp;</pre>' in page
 
 
@@ -237,3 +237,11 @@ def test_css_c6_and_flow_rules():
     assert ".dd-meta__row dd { margin: 0; overflow-wrap: break-word; }" in css
     assert ".dd-flow svg { width: 100%; height: auto; }" in css and "max-height" not in css  # C10
     assert ".dd-flow { break-inside: avoid; }" in css
+
+def test_amendment_heading_and_metadata_row():
+    rounds = [("Round 1", "accept N1\n"), ("Amendment 1 (reopens round 2)", "note fix\n"), ("Round 2", "finalize\n")]
+    page = render_html.render(load_fixture(), rounds)
+    assert '<h3>Amendment 1 (reopens round 2)</h3>\n<pre class="dd-pre">note fix</pre>' in page
+    assert ('<dt>rounds</dt><dd>1</dd></div>\n<div class="dd-meta__row"><dt>amendments</dt><dd>1</dd></div>\n'
+            '<div class="dd-meta__row"><dt>started</dt>') in page
+    assert "<dt>amendments</dt>" not in render_html.render(load_fixture(), [("Round 1", "accept N1\n")])

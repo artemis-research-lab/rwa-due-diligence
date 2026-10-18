@@ -90,3 +90,42 @@ def test_nothing_written_on_error(tmp_path):
     assert not (project.round_dir(1) / "directives.json").exists()
     assert runstate.load_state(project) == before
     assert project.work_file.read_bytes() == work_before
+
+# v0.4.1 amendments ---------------------------------------------------------------------------------------
+
+def amend_errors(text):
+    with pytest.raises(directives.DirectiveError) as exc:
+        directives.parse_amendment(text, DOC)
+    return exc.value.errors
+
+
+def test_amend_commands_constant():
+    assert directives.AMEND_COMMANDS == ("note", "add-source", "answer", "drop")
+
+
+def test_parse_amendment_accepts_allowed_commands():
+    text = ("note sUSDai upgrades missed\nadd-source https://x.example/safe : Safe history\n"
+            "answer G1 : see Safe history | drop D1 : superseded")
+    assert directives.parse_amendment(text, DOC) == [
+        {"cmd": "note", "text": "sUSDai upgrades missed", "line": 1},
+        {"cmd": "add-source", "target": "https://x.example/safe", "why": "Safe history", "line": 2},
+        {"cmd": "answer", "id": "G1", "text": "see Safe history", "line": 3},
+        {"cmd": "drop", "id": "D1", "reason": "superseded", "line": 3},
+    ]
+
+
+@pytest.mark.parametrize("line, name", [("accept N1", "accept"), ("reject N1", "reject"),
+                                        ("priority N1", "priority"), ("limit N1 5", "limit"),
+                                        ("allow-fallback N1 archive", "allow-fallback"),
+                                        ("finalize", "finalize")])
+def test_parse_amendment_rejects_other_commands(line, name):
+    assert amend_errors("note x\n" + line) == ["line 2: %s is not allowed in an amendment" % name]
+
+
+def test_parse_amendment_requires_a_note():
+    assert amend_errors("drop D1 : superseded") == ["line 0: an amendment needs at least one note"]
+    assert amend_errors("") == ["line 0: an amendment needs at least one note"]
+
+
+def test_parse_amendment_unknown_id():
+    assert amend_errors("note x\nanswer G99 : y") == ["line 2: unknown id G99"]

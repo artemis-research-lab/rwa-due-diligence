@@ -208,7 +208,7 @@ def test_exact_cap_is_allowed(project, monkeypatch):
 
 
 @pytest.mark.parametrize("name", ["", ".hidden", "-x.pdf", "a/b.pdf", "a\\b.pdf", "..", "a b.pdf",
-                                  "x" * 81, "docé.pdf", "doc.pdf\n"])
+                                  "x" * 81, "doc\u00e9.pdf", "doc.pdf\n"])
 def test_bad_name_is_invalid_input(project, monkeypatch, name):
     seen = serve(monkeypatch, {})
     with pytest.raises(runstate.InvalidError):

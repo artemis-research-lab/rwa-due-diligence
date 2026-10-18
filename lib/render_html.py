@@ -127,7 +127,7 @@ def kind_cell(kind):
 
 # --------------------------------------------------------------------------- sections
 
-def _metadata(doc):
+def _metadata(doc, rounds=()):
     run = doc["run"]
     rows = [
         ("slug", text(run["slug"])),
@@ -140,6 +140,9 @@ def _metadata(doc):
         ("skill version", text(run["skill_version"])),
         ("schema version", text(doc["schema_version"])),
     ]
+    amendments = sum(1 for heading, _ in rounds if heading.startswith("Amendment "))
+    if amendments:
+        rows.insert(5, ("amendments", str(amendments)))
     out = ['<dl class="dd-meta">']
     out += ['<div class="dd-meta__row"><dt>%s</dt><dd>%s</dd></div>' % row for row in rows]
     return out + ["</dl>"]
@@ -331,8 +334,8 @@ def _pre_text(body):
 
 def _interventions(rounds):
     out = []
-    for round_no, body in rounds:
-        out += h3("Round %d" % round_no) + ['<pre class="dd-pre">%s</pre>' % _pre_text(body)]
+    for heading, body in rounds:
+        out += h3(html_text(heading)) + ['<pre class="dd-pre">%s</pre>' % _pre_text(body)]
     return out
 
 
@@ -380,7 +383,7 @@ def _css(name):
 
 
 def render(doc, rounds=(), figures=None):
-    """Render a structurally valid document; rounds = [(k, directives.txt text), ...];
+    """Render a structurally valid document; rounds = [(heading, text), ...];
     figures = {product id: sanitized SVG text}, embedded inline in section 6."""
     figures = figures or {}
     r = Renderer(doc)
@@ -410,7 +413,7 @@ def render(doc, rounds=(), figures=None):
 
     body = ['<main class="dd-report is--wrapper has--gutter">', '<header class="dd-header l--flow">',
             "<h1>%s</h1>" % title]
-    body += _metadata(doc)
+    body += _metadata(doc, rounds)
     if doc["run"]["status"] == "draft":
         body.append('<p class="dd-banner dd-banner--draft">DRAFT -- not finalized</p>')
     body += ["</header>", '<nav class="dd-toc">', "<ol>"]

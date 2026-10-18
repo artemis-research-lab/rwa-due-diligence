@@ -59,7 +59,7 @@ def product_title(product):
 
 # --------------------------------------------------------------------------- sections
 
-def _metadata(doc):
+def _metadata(doc, rounds=()):
     run = doc["run"]
     rows = [
         ("slug", text(run["slug"])),
@@ -72,6 +72,9 @@ def _metadata(doc):
         ("skill version", text(run["skill_version"])),
         ("schema version", text(doc["schema_version"])),
     ]
+    amendments = sum(1 for heading, _ in rounds if heading.startswith("Amendment "))
+    if amendments:
+        rows.insert(5, ("amendments", str(amendments)))
     return table(("field", "value"), [list(r) for r in rows])
 
 
@@ -247,10 +250,10 @@ def _fence(body):
 
 def _interventions(rounds):
     out = []
-    for round_no, body in rounds:
+    for heading, body in rounds:
         body = body.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
         fence = _fence(body)
-        out += ["### Round %d" % round_no, "", fence + "text"] + body.split("\n") + [fence, ""]
+        out += ["### " + heading, "", fence + "text"] + body.split("\n") + [fence, ""]
     return out[:-1]
 
 
@@ -278,13 +281,13 @@ LEGEND = [
 
 
 def render(doc, rounds=(), figures=None):
-    """Render a structurally valid document; rounds = [(k, directives.txt text), ...];
+    """Render a structurally valid document; rounds = [(heading, text), ...];
     figures = {product id: SVG text}: a product with a figure gets an image link to <slug>.flow-<id>.svg."""
     figures = figures or {}
     name = doc["project"]["name"]["value"]
     title = doc["run"]["slug"] if name is None else fmt_value(name)
     lines = ["# RWA Due Diligence: " + title, ""]
-    lines += _metadata(doc)
+    lines += _metadata(doc, rounds)
     if doc["run"]["status"] == "draft":
         lines += ["", "> DRAFT -- not finalized"]
 

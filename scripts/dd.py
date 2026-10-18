@@ -72,6 +72,8 @@ def build_parser():
     with_slug("render", "draft render into .scratch/draft/ (any phase)")
     with_slug("status", "print run state and counts as JSON")
     with_slug("finalize", "write the final outputs (after a finalize directive)")
+    p = with_slug("amend", "reopen a final run for one more research round (moves outputs to archive/)")
+    p.add_argument("--file", required=True, help="file holding the amendment verbatim (note, add-source, answer, drop)")
     p = with_slug("fetch-file", "download one public HTTPS file into .scratch/raw/NAME (does not add a source)")
     p.add_argument("--url", required=True, help="https URL of a public file")
     p.add_argument("--name", required=True, help="file name, ^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
@@ -121,6 +123,8 @@ def run(args):
         _json(runstate.status(args.root, args.slug))
     elif cmd == "finalize":
         _json(runstate.finalize(args.root, args.slug))
+    elif cmd == "amend":
+        _json(runstate.amend(args.root, args.slug, args.file))
     elif cmd == "fetch-file":
         _json(fetch.fetch_file(args.root, args.slug, args.url, args.name, overwrite=args.overwrite))
     elif cmd == "pdf-text":

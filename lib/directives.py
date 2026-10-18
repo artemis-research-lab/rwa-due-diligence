@@ -23,6 +23,9 @@ _RULES = (
 # Commands that request more work and therefore cannot share a file with finalize.
 _WORK_COMMANDS = ("accept", "add-source", "answer")
 
+# Commands allowed in an amendment file (dd.py amend); at least one note is required.
+AMEND_COMMANDS = ("note", "add-source", "answer", "drop")
+
 
 class DirectiveError(Exception):
     def __init__(self, errors):
@@ -47,8 +50,8 @@ def _parse_command(text):
     return None
 
 
-def parse(text, doc):
-    """Return the list of commands in file order; raise DirectiveError listing every error."""
+def _parse(text, doc, allowed=None):
+    """(commands, errors) in file order; allowed limits the command names (None: all)."""
     search_ids = {n["id"] for n in doc.get("next_searches", [])}
     finding_ids = {f["id"] for f in doc.get("findings", [])}
     errors = []
@@ -70,6 +73,9 @@ def parse(text, doc):
                 errors.append("line %d: not a directive: %s" % (lineno, part))
                 continue
             name = cmd["cmd"]
+            if allowed is not None and name not in allowed:
+                errors.append("line %d: %s is not allowed in an amendment" % (lineno, name))
+                continue
             ids = cmd.get("ids", [cmd["id"]] if "id" in cmd else [])
             for ident in ids:
                 known = search_ids if ident.startswith("N") else finding_ids
@@ -88,8 +94,24 @@ def parse(text, doc):
     if finalize_line is not None and work_lines:
         errors.append("line %d: finalize cannot be combined with accept/add-source/answer (line %d)"
                       % (finalize_line, work_lines[0]))
+    return commands, errors
+
+
+def parse(text, doc):
+    """Return the list of commands in file order; raise DirectiveError listing every error."""
+    commands, errors = _parse(text, doc)
     if not commands and not errors:
         errors.append("line 0: no directives found")
+    if errors:
+        raise DirectiveError(errors)
+    return commands
+
+
+def parse_amendment(text, doc):
+    """Like parse, but only AMEND_COMMANDS are allowed and at least one note is required."""
+    commands, errors = _parse(text, doc, AMEND_COMMANDS)
+    if not any(c["cmd"] == "note" for c in commands):
+        errors.append("line 0: an amendment needs at least one note")
     if errors:
         raise DirectiveError(errors)
     return commands

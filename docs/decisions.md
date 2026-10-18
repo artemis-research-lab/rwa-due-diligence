@@ -28,10 +28,16 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D24 - Fetch helper - 2026-10-18 - The only network code is dd.py fetch-file: HTTPS GET, honest User-Agent, host and redirect checks, 25 MB cap, atomic write into .scratch/raw.
 - D25 - PDF text - 2026-10-18 - pypdf, pinned, optional at import time; missing pypdf is exit code 4 with the install command.
 - D26 - Windows verification - 2026-10-18 - Code built in cloud sessions is accepted only after a fresh-clone test run on Windows (P1-P3 each failed there first: CRLF twice, temp directory once).
+- D27 - Amendments - 2026-10-18 - A final run is corrected with dd.py amend: outputs move to archive/<run_id>.v<m>/, one research round reopens with a 10-call budget, the schema is unchanged and the amendment is recorded in audit and shown in the reports.
+- D28 - Admin history first - 2026-10-18 - Once an admin Safe is known, its executed transaction history (Safe Transaction Service) is read before log scans or bisection; every event of a transaction is accounted for.
+- D29 - Call accounting - 2026-10-18 - One JSON-RPC batch of at most 50 requests counts as one call; reading cached files is free.
+- D30 - Issuer questions - 2026-10-18 - Questions only the issuer can answer go to open_questions, never to next_searches.
+- D31 - Analyst evidence - 2026-10-18 - The validator rejects a verified claim that cites an analyst source.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
 - 2026-10-18 - P1 accepted at 903f20f after independent re-run; one test failed only on a Windows checkout (CRLF in fixtures), fixed by D20.
+- 2026-10-18 - usd-ai end-to-end run finalized after 3 rounds; final acceptance found admin actions missed by the run (sUSDai upgraded twice, three direct upgrades without timelock), leading to D27-D28.
 
 ## Incidents
 

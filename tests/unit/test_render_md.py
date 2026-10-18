@@ -46,7 +46,7 @@ def test_draft_banner_only_for_draft():
 
 
 def test_appendix_a_verbatim_with_safe_fence():
-    rounds = [(1, "accept N1\r\n# keep ``` here\n"), (2, "finalize\n")]
+    rounds = [("Round 1", "accept N1\r\n# keep ``` here\n"), ("Round 2", "finalize\n")]
     text = render_md.render(load_fixture(), rounds)
     assert "### Round 1\n\n````text\naccept N1\n# keep ``` here\n````\n\n### Round 2\n\n```text\nfinalize\n```\n" \
         in text
@@ -69,3 +69,10 @@ def test_flow_image_links_only_with_figures():
     assert "### P2 Acme Treasury Vault\n\n![Fund flow P2](acme.flow-P2.svg)\n\n| from |" in with_fig
     assert "![Fund flow P1]" not in with_fig
     assert "![Fund flow" not in render_md.render(load_fixture())
+
+def test_amendment_heading_and_metadata_row():
+    rounds = [("Round 1", "accept N1\n"), ("Amendment 1 (reopens round 2)", "note fix\n"), ("Round 2", "finalize\n")]
+    out = render_md.render(load_fixture(), rounds)
+    assert "### Amendment 1 (reopens round 2)\n\n```text\nnote fix\n```" in out
+    assert "| rounds | 1 |\n| amendments | 1 |\n| started |" in out
+    assert "| amendments |" not in render_md.render(load_fixture(), [("Round 1", "accept N1\n")])

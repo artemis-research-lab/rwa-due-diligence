@@ -225,3 +225,24 @@ def test_pdf_text_exit_codes(tmp_path, monkeypatch):
     v = pdftext.PYPDF_VERSION
     assert (code, out) == (4, "")
     assert err == "dependency error: pypdf %s required: python -m pip install --user pypdf==%s\n" % (v, v)
+
+# v0.4.1 amend --------------------------------------------------------------------------------------------
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_amend_cli(tmp_path):
+    project = _ready(tmp_path)
+    assert cli(tmp_path, "finalize")[0] == 0
+    good = project.scratch / "logs" / "amend-1.txt"
+    good.write_bytes(b"note missed upgrades\n")
+    bad = project.scratch / "logs" / "amend-bad.txt"
+    bad.write_bytes(b"note x\naccept N1\n")
+    code, out, _ = cli(tmp_path, "amend", "--file", str(bad))
+    assert (code, out) == (2, "line 2: accept is not allowed in an amendment\n")
+    code, out, err = cli(tmp_path, "amend", "--file", str(good))
+    assert (code, err) == (0, "")
+    result = json.loads(out)
+    assert list(result) == ["amendment", "round", "phase", "archived_to", "commands"]
+    assert (result["amendment"], result["round"], result["phase"], result["commands"]) == (1, 2, "research", 1)
+    code, _, err = cli(tmp_path, "amend", "--file", str(good))
+    assert code == 3 and "amend requires a final run (current phase: research)" in err

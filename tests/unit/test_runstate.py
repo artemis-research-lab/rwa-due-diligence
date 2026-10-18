@@ -1,7 +1,6 @@
 """Test groups 5 (path safety) and 6 (state machine)."""
 
 import os
-import warnings
 
 import pytest
 
@@ -9,9 +8,6 @@ from test_support import GOLDEN, build_run, clock_at, walk
 from lib import flow, runstate
 
 # finalize requires d2 v0.9.0 since P3; these tests run only where it is on PATH (see test_flow.py).
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", pytest.PytestUnknownMarkWarning)
-    D2_MARK = pytest.mark.d2
 NEEDS_D2 = pytest.mark.skipif(flow.find_d2() is None, reason="d2 %s not on PATH" % flow.D2_VERSION)
 
 
@@ -134,7 +130,7 @@ def test_directives_advance_round_and_update_work_doc(tmp_path):
     assert runstate.check(tmp_path, "acme") == []
 
 
-@D2_MARK
+@pytest.mark.d2
 @NEEDS_D2
 def test_full_cycle_and_new_run_archives(tmp_path):
     project = _to_awaiting(tmp_path)
@@ -171,7 +167,7 @@ def test_init_on_draft_refused_without_new_run(tmp_path):
                               ' and start again')
 
 
-@D2_MARK
+@pytest.mark.d2
 @NEEDS_D2
 def test_finalized_document_is_schema_ordered(tmp_path):
     project = _to_awaiting(tmp_path)
@@ -237,7 +233,7 @@ def test_render_draft_without_d2_warns_and_omits_figures(tmp_path, monkeypatch):
     assert "![Fund flow" not in open(out["outputs"][0], encoding="utf-8").read()
 
 
-@D2_MARK
+@pytest.mark.d2
 @NEEDS_D2
 def test_render_draft_with_d2_writes_svgs(tmp_path):
     project = build_run(tmp_path)
@@ -249,7 +245,7 @@ def test_render_draft_with_d2_writes_svgs(tmp_path):
     assert '<figure class="dd-flow" id="flow-P1">\n<svg ' in open(out["outputs"][1], encoding="utf-8").read()
 
 
-@D2_MARK
+@pytest.mark.d2
 @NEEDS_D2
 def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
     project = _ready(tmp_path)
@@ -261,3 +257,124 @@ def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
     md = project.output("report.md").read_bytes().decode("utf-8")
     assert "![Fund flow P1](acme.flow-P1.svg)" in md and "![Fund flow P2](acme.flow-P2.svg)" in md
     assert [p.name for p in project.outputs()] == names
+
+# --------------------------------------------------------------------------- v0.4.1 amend
+
+AMEND = b"note sUSDai upgrades missed\r\nadd-source https://x.example/safe : Safe history\n"
+
+
+def _amend_file(project, data=AMEND, name="amend-1.txt"):
+    path = project.scratch / "logs" / name
+    path.write_bytes(data)
+    return path
+
+
+def _final(tmp_path):
+    project = _to_awaiting(tmp_path)
+    _directives(tmp_path, project, "finalize\n")
+    runstate.finalize(tmp_path, "acme", clock=clock_at())
+    return project
+
+
+def _snapshot(project):
+    return walk(project.dir), project.state_file.read_bytes(), project.work_file.read_bytes()
+
+
+@pytest.mark.parametrize("phase", ["research", "awaiting_directives", "ready_to_finalize"])
+def test_amend_requires_final_run(tmp_path, phase):
+    project = build_run(tmp_path)
+    if phase != "research":
+        runstate.make_review(tmp_path, "acme")
+    if phase == "ready_to_finalize":
+        _directives(tmp_path, project, "finalize\n")
+    path = _amend_file(project)
+    before = _snapshot(project)
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.amend(tmp_path, "acme", path)
+    assert str(exc.value) == "amend requires a final run (current phase: %s)" % phase
+    assert _snapshot(project) == before
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_amend_archives_outputs_and_reopens_round(tmp_path):
+    project = _final(tmp_path)
+    run_id = runstate.load_state(project)["run_id"]
+    outputs = [p.name for p in project.outputs()]
+    result = runstate.amend(tmp_path, "acme", _amend_file(project))
+    archive = project.archive / ("%s.v0" % run_id)
+    assert result == {"amendment": 1, "round": 2, "phase": "research", "archived_to": str(archive.resolve()),
+                      "commands": 2}
+    assert sorted(p.name for p in archive.iterdir()) == sorted(outputs)
+    assert not any(p.exists() for p in project.outputs())
+    assert (project.round_dir(2) / "amend.txt").read_bytes() == AMEND
+    record = runstate.load_json_text((project.round_dir(2) / "amend.json").read_bytes().decode("utf-8"))
+    assert record == {"amendment": 1, "reopens_round": 2, "commands": [
+        {"cmd": "note", "text": "sUSDai upgrades missed", "line": 1},
+        {"cmd": "add-source", "target": "https://x.example/safe", "why": "Safe history", "line": 2}]}
+    run = runstate.load_work(project)["run"]
+    assert (run["round"], run["status"], run["finalized_at"]) == (2, "draft", None)
+    state = runstate.load_state(project)
+    assert (state["round"], state["phase"], state["status"], state["amendment"]) == (2, "research", "draft", 1)
+    assert runstate.check(tmp_path, "acme") == []
+    assert runstate.status(tmp_path, "acme")["state"]["amendment"] == 1
+
+
+@pytest.mark.d2
+@NEEDS_D2
+@pytest.mark.parametrize("data, message", [
+    (b"note x\nfinalize\n", "line 2: finalize is not allowed in an amendment"),
+    (b"drop D1 : superseded\n", "line 0: an amendment needs at least one note"),
+    (b"note \xff\n", "line 0: amendment file is not UTF-8"),
+])
+def test_amend_invalid_file_changes_nothing(tmp_path, data, message):
+    project = _final(tmp_path)
+    path = _amend_file(project, data)
+    before = _snapshot(project)
+    with pytest.raises(runstate.InvalidError) as exc:
+        runstate.amend(tmp_path, "acme", path)
+    assert exc.value.errors == [message]
+    assert _snapshot(project) == before
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_amend_refuses_existing_archive(tmp_path):
+    project = _final(tmp_path)
+    (project.archive / ("%s.v0" % runstate.load_state(project)["run_id"])).mkdir(parents=True)
+    path = _amend_file(project)
+    before = _snapshot(project)
+    with pytest.raises(runstate.ContractError, match="already exists"):
+        runstate.amend(tmp_path, "acme", path)
+    assert _snapshot(project) == before
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_second_cycle_after_amend(tmp_path):
+    project = _final(tmp_path)
+    run_id = runstate.load_state(project)["run_id"]
+    runstate.amend(tmp_path, "acme", _amend_file(project))
+    runstate.make_review(tmp_path, "acme")
+    _directives(tmp_path, project, "finalize\n", name="r2.txt")
+    result = runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert result["rounds"] == 2 and all(os.path.isfile(p) for p in result["outputs"])
+    records = runstate.round_records(project, 2)
+    assert [h for h, _ in records] == ["Round 1", "Amendment 1 (reopens round 2)", "Round 2"]
+    assert records[1][1] == AMEND.decode("utf-8")
+    report = project.output("report.md").read_bytes().decode("utf-8")
+    assert "### Amendment 1 (reopens round 2)" in report and "| amendments | 1 |" in report
+
+    second = runstate.amend(tmp_path, "acme", _amend_file(project, b"note again\n", "amend-2.txt"))
+    assert (second["amendment"], second["round"]) == (2, 3)
+    assert second["archived_to"] == str((project.archive / ("%s.v1" % run_id)).resolve())
+    assert (project.archive / ("%s.v1" % run_id) / "acme.dd.json").is_file()
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_init_on_final_run_points_to_amend(tmp_path):
+    _final(tmp_path)
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at())
+    assert 'dd.py amend' in str(exc.value)

@@ -4,7 +4,7 @@ references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
 SCHEMA_VERSION = "rwa-dd/1.0"
-SKILL_VERSION = "0.4.0"
+SKILL_VERSION = "0.4.1"
 
 ENUMS = {
     "source_type": (
@@ -482,7 +482,7 @@ def schema_doc():
         "c.subject; `analyst` if s.origin is analyst; otherwise `independent:<origin>`.",
         "Legal paths: %s." % ", ".join(LEGAL_SECTIONS),
         "",
-        "- verified: at least one independent evidence; on legal paths its origin must be",
+        "- verified: at least one independent evidence and no analyst evidence; on legal paths its origin must be",
         "  regulator, registry, auditor or onchain.",
         "- self_reported: at least one self evidence.",
         "- inferred: at least one evidence and a non-empty note.",
