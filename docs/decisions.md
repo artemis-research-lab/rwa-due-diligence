@@ -33,11 +33,17 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D29 - Call accounting - 2026-10-18 - One JSON-RPC batch of at most 50 requests counts as one call; reading cached files is free.
 - D30 - Issuer questions - 2026-10-18 - Questions only the issuer can answer go to open_questions, never to next_searches.
 - D31 - Analyst evidence - 2026-10-18 - The validator rejects a verified claim that cites an analyst source.
+- D32 - Searches not run - 2026-10-18 - Final reports show remaining next searches only in Appendix D, marked rejected or not run; section 2 lists blocking gaps only. Draft renders are unchanged.
+- D33 - Analyst replies - 2026-10-18 - A reply that does not parse as directives is kept and returned to the analyst with the parse errors; the agent never rewrites it into directives.
+- D34 - Analyst downloads - 2026-10-18 - Files viewable only in the browser are requested from the analyst after the review packet as download lines and enter the run through add-source.
+- D35 - Terms per domain - 2026-10-18 - Terms of Use and robots.txt are read for every domain before any scripted fetch from it.
+- D36 - Address lint - 2026-10-18 - dd.py lint warns on EVM addresses that are all lowercase or all uppercase; it checks case shape only, not the EIP-55 checksum.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
 - 2026-10-18 - P1 accepted at 903f20f after independent re-run; one test failed only on a Windows checkout (CRLF in fixtures), fixed by D20.
 - 2026-10-18 - usd-ai end-to-end run finalized after 3 rounds; final acceptance found admin actions missed by the run (sUSDai upgraded twice, three direct upgrades without timelock), leading to D27-D28.
+- 2026-10-18 - usd-ai (amendment 1), huma and hastra finalized and accepted; all three showed rejected searches under section 2, leading to D32.
 
 ## Incidents
 

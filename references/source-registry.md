@@ -29,6 +29,11 @@
 - Arbitrum One public RPC (arb1.arbitrum.io/rpc): eth_getLogs at most 100,000 blocks per request; historical state
   served for some blocks only; batches accepted.
 - Arbitrum One: Blockscout API 403, PublicNode RPC 403, Routescan does not cover Arbitrum One (2026-10-17).
+- Solana public RPC (api.mainnet-beta.solana.com): batched getTransaction requests are rate-limited (9 of 50 answered,
+  2026-10-18); getProgramAccounts on large programs returns tens of thousands of accounts, so filter by size or memcmp.
+- Scroll public RPC (rpc.scroll.io): large JSON-RPC batches are refused with HTTP 413; send logs as single requests.
+- Provenance public REST: tx search accepts only the SDK 0.50 parameters (query, page, limit) and returned HTTP 500
+  otherwise; the node's tx index reached back only to 2026-08-27 (2026-10-18); x/group proposals are pruned after execution.
 
 ## Archives and third parties
 | source | origin | note |

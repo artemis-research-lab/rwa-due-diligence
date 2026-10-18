@@ -29,8 +29,8 @@ class InvalidError(Exception):
         self.errors = list(errors)
 
 
-# Renderers that finalize runs: (output suffix, function(doc, rounds, figures) -> text);
-# figures maps product id -> sanitized SVG text and may be empty.
+# Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=()) -> text);
+# figures maps product id -> sanitized SVG text and may be empty; rejected is a set of N ids.
 RENDERERS = [("report.md", render_md.render), ("report.html", render_html.render)]
 
 
@@ -158,6 +158,15 @@ def round_records(project, upto):
         if path.is_file():
             out.append(("Round %d" % k, path.read_bytes().decode("utf-8", errors="replace")))
     return out
+
+
+def rejected_ids(project, k):
+    """N ids rejected in round k's directives (the round holding the finalize directive)."""
+    path = project.round_dir(k) / "directives.json"
+    if not path.is_file():
+        return set()
+    commands = load_json_text(path.read_bytes().decode("utf-8"))
+    return {c["id"] for c in commands if c.get("cmd") == "reject"}
 
 
 # --------------------------------------------------------------------------- commands
@@ -347,10 +356,11 @@ def finalize(root, slug, clock=ledger.system_clock):
         raise InvalidError(errors)
     doc = schema.order_like_schema(doc)
     rounds = round_records(project, state["round"])
+    rejected = rejected_ids(project, state["round"])
     figures = render_figures(doc)  # d2 is mandatory here: fails before anything is written
     outputs = [project.write_json(project.output("dd.json"), doc)]
     for suffix, fn in RENDERERS:
-        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures)))
+        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected)))
     for pid, svg in figures.items():
         outputs.append(project.write_text(project.flow_output(pid), svg))
     save_work(project, doc)
@@ -395,6 +405,7 @@ def amend(root, slug, file_path):
     doc["run"]["round"] = k + 1
     doc["run"]["status"] = "draft"
     doc["run"]["finalized_at"] = None
+    doc["run"]["skill_version"] = schema.SKILL_VERSION
     save_work(project, doc)
     state.update({"round": k + 1, "phase": PHASE_RESEARCH, "status": "draft", "amendment": n})
     save_state(project, state)

@@ -34,6 +34,7 @@ Read-only due diligence on an RWA project from its URL: record legal structure, 
 - Input: A valid DD document and the round records.
 - Output: Markdown report and a self-contained HTML report, with one flow diagram per product.
 - Depends on: Schema, Flow diagrams.
+- Note: final reports list searches not run in Appendix D, marking the ones the analyst rejected; section 2 lists blocking gaps only.
 
 ### Flow diagrams
 - Responsibility: Turn each product's fund flows into a diagram with fixed lanes and styles.

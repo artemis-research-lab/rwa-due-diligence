@@ -89,9 +89,18 @@ def finding_line(finding):
     return line
 
 
-def search_line(search):
-    """`- **N2** what -- where -- why (resolves G1, D2; est N calls)`."""
+def search_line(search, suffix=""):
+    """`- **N2** what -- where -- why (resolves G1, D2; est N calls)` followed by the fixed suffix text."""
     resolves = ", ".join(search["resolves"]) or "none"
-    return "- **%s** %s -- %s -- %s (resolves %s; est %d calls)" % (
+    return "- **%s** %s -- %s -- %s (resolves %s; est %d calls)%s" % (
         search["id"], md_text(search["what"], 120), md_text(search["where"], 120),
-        md_text(search["why"], 120), resolves, search["est_calls"])
+        md_text(search["why"], 120), resolves, search["est_calls"], md_text(suffix))
+
+
+# Appendix D suffixes (final reports): searches the analyst rejected, and the rest.
+REJECTED_SUFFIX = " -- rejected by the analyst"
+NOT_RUN_SUFFIX = " -- not run"
+
+
+def not_run_suffix(search, rejected):
+    return REJECTED_SUFFIX if search["id"] in rejected else NOT_RUN_SUFFIX

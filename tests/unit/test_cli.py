@@ -111,7 +111,7 @@ def test_help_lists_all_commands():
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
         load_cli().main(["--help"])
-    for name in ("init", "add-source", "validate", "review", "directives", "render", "status", "finalize",
+    for name in ("init", "add-source", "validate", "lint", "review", "directives", "render", "status", "finalize",
                  "schema-doc"):
         assert name in buf.getvalue()
 

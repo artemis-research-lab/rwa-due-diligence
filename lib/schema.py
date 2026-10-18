@@ -4,7 +4,7 @@ references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
 SCHEMA_VERSION = "rwa-dd/1.0"
-SKILL_VERSION = "0.4.1"
+SKILL_VERSION = "0.4.2"
 
 ENUMS = {
     "source_type": (

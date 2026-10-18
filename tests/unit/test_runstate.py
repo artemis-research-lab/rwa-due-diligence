@@ -378,3 +378,52 @@ def test_init_on_final_run_points_to_amend(tmp_path):
     with pytest.raises(runstate.ContractError) as exc:
         runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at())
     assert 'dd.py amend' in str(exc.value)
+
+
+# --------------------------------------------------------------------------- v0.4.2
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_final_report_marks_rejected_search(tmp_path):
+    project = _to_awaiting(tmp_path)
+    _directives(tmp_path, project, "reject N1\nfinalize\n")
+    runstate.finalize(tmp_path, "acme", clock=clock_at())
+    md = project.output("report.md").read_bytes().decode("utf-8")
+    s2 = md[md.index("## 2. Blocking gaps"):md.index("## 3. Products")]
+    assert "**G1**" in s2 and "**N" not in s2
+    d = md[md.index("## Appendix D. Searches not run"):]
+    assert "- **N1** Custody agreement and issuer accounts" in d
+    assert "(resolves G1; est 6 calls) -- rejected by the analyst\n" in d
+    assert "(resolves G2, D1; est 4 calls) -- not run\n" in d
+    page = project.output("report.html").read_bytes().decode("utf-8")
+    assert "est 6 calls) -- rejected by the analyst</li>" in page
+
+
+def test_rejected_ids_reads_only_given_round(tmp_path):
+    project = _to_awaiting(tmp_path)
+    _directives(tmp_path, project, "reject N2\n")
+    assert runstate.rejected_ids(project, 1) == {"N2"}
+    assert runstate.rejected_ids(project, 2) == set()
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_amend_sets_skill_version_and_new_run_keeps_v0(tmp_path):
+    project = _final(tmp_path)
+    doc = runstate.load_work(project)
+    doc["run"]["skill_version"] = "0.4.1"
+    runstate.save_work(project, doc)
+    run_id = runstate.load_state(project)["run_id"]
+    runstate.amend(tmp_path, "acme", _amend_file(project))
+    assert runstate.load_work(project)["run"]["skill_version"] == "0.4.2"
+
+    later = clock_at(__import__("datetime").datetime(2026, 11, 1, tzinfo=__import__("datetime").timezone.utc))
+    runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=later, new_run=True)
+    assert (project.archive / run_id / "audit" / "state.json").is_file()
+    assert (project.archive / ("%s.v0" % run_id) / "acme.dd.json").is_file()
+    assert (project.archive / ("%s.v0" % run_id) / "acme.report.md").is_file()
+
+
+def test_runstate_ends_with_single_newline():
+    data = (GOLDEN.parents[1] / "lib" / "runstate.py").read_bytes()
+    assert data.endswith(b"\n") and not data.endswith(b"\n\n")

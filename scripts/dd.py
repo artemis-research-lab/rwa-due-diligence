@@ -13,7 +13,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
-from lib import fetch, flow, pdftext, runstate, schema  # noqa: E402
+from lib import fetch, flow, lint, pdftext, runstate, schema  # noqa: E402
 
 EXIT_OK = 0
 EXIT_INVALID = 2
@@ -66,6 +66,7 @@ def build_parser():
     p.add_argument("--offline", action="store_true", help="no retrieval time: retrieved_at null, fetch offline")
 
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
+    with_slug("lint", "print address warnings for audit/dd.work.json as JSON (read-only, any phase)")
     with_slug("review", "write the review packet of the current round")
     p = with_slug("directives", "record and parse the analyst directives of the current round")
     p.add_argument("--file", required=True, help="file holding the analyst reply verbatim")
@@ -113,6 +114,9 @@ def run(args):
         if errors:
             raise runstate.InvalidError(errors)
         _out("valid")
+    elif cmd == "lint":
+        doc = runstate.load_work(runstate.open_project(args.root, args.slug))
+        _json({"address_warnings": lint.address_warnings(doc)})
     elif cmd == "review":
         _json(runstate.make_review(args.root, args.slug))
     elif cmd == "directives":

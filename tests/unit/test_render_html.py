@@ -245,3 +245,54 @@ def test_amendment_heading_and_metadata_row():
     assert ('<dt>rounds</dt><dd>1</dd></div>\n<div class="dd-meta__row"><dt>amendments</dt><dd>1</dd></div>\n'
             '<div class="dd-meta__row"><dt>started</dt>') in page
     assert "<dt>amendments</dt>" not in render_html.render(load_fixture(), [("Round 1", "accept N1\n")])
+
+
+# v0.4.2: Appendix D in final reports -----------------------------------------------------------------------
+
+def _final_doc():
+    doc = copy.deepcopy(load_fixture())
+    doc["run"].update({"status": "final", "finalized_at": "2026-10-02T00:00:00Z"})
+    return doc
+
+
+def _sec(page, sid):
+    return re.search(r'<section id="%s".*?</section>' % sid, page, re.S).group(0)
+
+
+def test_final_section_2_has_no_search_items():
+    s2 = _sec(render_html.render(_final_doc()), "s2")
+    assert ">G1</strong>" in s2 and ">N1</strong>" not in s2 and ">N2</strong>" not in s2
+    assert ">N1</strong>" in _sec(render_html.render(load_fixture()), "s2")
+
+
+def test_final_appendix_d_marks_rejected_and_toc():
+    page = render_html.render(_final_doc(), (), None, {"N1"})
+    d = _sec(page, "appendix-d")
+    assert "<h2>Appendix D. Searches not run</h2>" in d
+    items_ = re.findall(r"<li>(.*?)</li>", d)
+    assert [re.search(r">(N\d)</strong>", i).group(1) for i in items_] == ["N1", "N2"]
+    assert items_[0].endswith("(resolves G1; est 6 calls) -- rejected by the analyst")
+    assert items_[1].endswith("(resolves G2, D1; est 4 calls) -- not run")
+    toc = re.search(r'<nav class="dd-toc">(.*?)</nav>', page, re.S).group(1)
+    assert re.findall(r'href="#([^"]+)"', toc)[-1] == "appendix-d"
+    assert re.findall(r'<section id="([^"]+)"', page)[-1] == "appendix-d"
+    doc = _final_doc()
+    doc["next_searches"] = []
+    assert '<p class="dd-none">none</p>' in _sec(render_html.render(doc), "appendix-d")
+    assert "appendix-d" not in render_html.render(load_fixture(), (), None, {"N1"})
+
+
+def test_heading_parity_final():
+    rounds = [("Round 1", "reject N1\nfinalize\n")]
+    for rejected in ((), {"N1"}):
+        md = render_md.render(_final_doc(), rounds, None, rejected).split("\n")
+        page = render_html.render(_final_doc(), rounds, None, rejected)
+        for level in (2, 3):
+            md_heads = [_md_plain(line[level + 1:]) for line in md if line.startswith("#" * level + " ")]
+            html_heads = [_html_plain(h) for h in re.findall(r"<h%d>(.*?)</h%d>" % (level, level), page)]
+            assert html_heads == md_heads and md_heads
+    md_items = [_md_plain(line[2:].replace("**", "")) for line in render_md.render(_final_doc(), (), None, {"N1"}).split("\n")
+                if line.startswith("- **N")]
+    page = render_html.render(_final_doc(), (), None, {"N1"})
+    html_items = [_html_plain(i) for i in re.findall(r"<li>(.*?)</li>", _sec(page, "appendix-d"))]
+    assert html_items == md_items and len(md_items) == 2

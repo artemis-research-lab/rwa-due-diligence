@@ -8,7 +8,7 @@ from pathlib import Path
 
 from lib import schema
 from lib.render_md import LEGEND, MARKERS
-from lib.textutil import html_text, html_url, id_key
+from lib.textutil import html_text, html_url, id_key, not_run_suffix
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 TEMPLATE = "report.html.tmpl"
@@ -85,11 +85,11 @@ class Renderer:
         return [line + "</li>"]
 
 
-def search_item(search):
+def search_item(search, suffix=""):
     resolves = ", ".join(html_text(r) for r in search["resolves"]) or "none"
-    return '<li><strong class="dd-id">%s</strong> %s -- %s -- %s (resolves %s; est %d calls)</li>' % (
+    return '<li><strong class="dd-id">%s</strong> %s -- %s -- %s (resolves %s; est %d calls)%s</li>' % (
         html_text(search["id"]), html_text(search["what"], 120), html_text(search["where"], 120),
-        html_text(search["why"], 120), resolves, search["est_calls"])
+        html_text(search["why"], 120), resolves, search["est_calls"], html_text(suffix))
 
 
 def table(header, rows, row_ids=None):
@@ -149,13 +149,19 @@ def _metadata(doc, rounds=()):
 
 
 def _blocking(r):
+    """Blocking gaps; a draft nests the searches that resolve each gap, a final report lists gaps only."""
     doc = r.doc
-    searches = sorted(doc["next_searches"], key=id_key)
+    searches = [] if doc["run"]["status"] == "final" else sorted(doc["next_searches"], key=id_key)
     out = []
     for f in sorted(doc["findings"], key=id_key):
         if f["type"] == "gap" and f["blocking"]:
             out += r.finding_item(f, [search_item(n) for n in searches if f["id"] in n["resolves"]])
     return ['<ul class="dd-list">'] + out + ["</ul>"] if out else []
+
+
+def _not_run(r, rejected):
+    lines = [search_item(n, not_run_suffix(n, rejected)) for n in sorted(r.doc["next_searches"], key=id_key)]
+    return ['<ul class="dd-list">'] + lines + ["</ul>"] if lines else []
 
 
 def _products(r):
@@ -382,9 +388,10 @@ def _css(name):
     return css
 
 
-def render(doc, rounds=(), figures=None):
+def render(doc, rounds=(), figures=None, rejected=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
-    figures = {product id: sanitized SVG text}, embedded inline in section 6."""
+    figures = {product id: sanitized SVG text}, embedded inline in section 6;
+    rejected = N ids the analyst rejected, marked in Appendix D (final reports only)."""
     figures = figures or {}
     r = Renderer(doc)
     name = doc["project"]["name"]["value"]
@@ -410,6 +417,8 @@ def render(doc, rounds=(), figures=None):
         ("appendix-b", "Appendix B. Unmapped facts", _unmapped(r)),
         ("appendix-c", "Appendix C. Legend", _legend()),
     )
+    if doc["run"]["status"] == "final":
+        sections += (("appendix-d", "Appendix D. Searches not run", _not_run(r, rejected)),)
 
     body = ['<main class="dd-report is--wrapper has--gutter">', '<header class="dd-header l--flow">',
             "<h1>%s</h1>" % title]

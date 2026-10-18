@@ -3,7 +3,7 @@
 import json
 
 from lib import schema
-from lib.textutil import finding_line, id_key, md_text, search_line
+from lib.textutil import finding_line, id_key, md_text, not_run_suffix, search_line
 
 MARKERS = {"verified": "V", "self_reported": "S", "inferred": "I", "not_found": "N"}
 NONE = "- none"
@@ -79,13 +79,18 @@ def _metadata(doc, rounds=()):
 
 
 def _blocking(doc):
-    searches = sorted(doc["next_searches"], key=id_key)
+    """Blocking gaps; a draft nests the searches that resolve each gap, a final report lists gaps only."""
+    searches = [] if doc["run"]["status"] == "final" else sorted(doc["next_searches"], key=id_key)
     out = []
     for f in sorted(doc["findings"], key=id_key):
         if f["type"] == "gap" and f["blocking"]:
             out.append(finding_line(f))
             out += ["  " + search_line(n) for n in searches if f["id"] in n["resolves"]]
     return out
+
+
+def _not_run(doc, rejected):
+    return [search_line(n, not_run_suffix(n, rejected)) for n in sorted(doc["next_searches"], key=id_key)]
 
 
 def _products(doc):
@@ -280,9 +285,10 @@ LEGEND = [
 ]
 
 
-def render(doc, rounds=(), figures=None):
+def render(doc, rounds=(), figures=None, rejected=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
-    figures = {product id: SVG text}: a product with a figure gets an image link to <slug>.flow-<id>.svg."""
+    figures = {product id: SVG text}: a product with a figure gets an image link to <slug>.flow-<id>.svg;
+    rejected = N ids the analyst rejected, marked in Appendix D (final reports only)."""
     figures = figures or {}
     name = doc["project"]["name"]["value"]
     title = doc["run"]["slug"] if name is None else fmt_value(name)
@@ -311,6 +317,8 @@ def render(doc, rounds=(), figures=None):
         ("Appendix B. Unmapped facts", _unmapped(doc)),
         ("Appendix C. Legend", LEGEND),
     )
+    if doc["run"]["status"] == "final":
+        sections += (("Appendix D. Searches not run", _not_run(doc, rejected)),)
     for heading, body in sections:
         lines += ["", "## " + heading, ""]
         lines += body or [NONE]
