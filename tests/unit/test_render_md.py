@@ -15,6 +15,18 @@ def test_report_matches_golden():
     assert render_md.render(load_fixture(), (), _figures()) == expected
 
 
+def test_interface_tables_have_counterparty_after_legal_class():
+    text = render_md.render(load_fixture())
+    assert "| id | strategy | from -> to | route | legal class | counterparty | instrument |" in text
+    assert "| id | strategy | from -> to | method | legal class | counterparty | security |" in text
+
+
+def test_legend_has_l3_o_line():
+    text = render_md.render(load_fixture())
+    assert ("\n- L3-O: the L3 business's paying customers or end borrowers (ultimate obligors), recorded as layer L3"
+            " with role ultimate_obligor and linked by within_L3 interfaces.\n") in text
+
+
 def test_render_twice_identical():
     assert render_md.render(load_fixture()) == render_md.render(load_fixture())
 

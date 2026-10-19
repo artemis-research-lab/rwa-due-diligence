@@ -33,7 +33,8 @@ def test_coverage_groups_and_flags():
 
 def test_chains_and_requests_lines():
     text = review.render(load_fixture(), 1)
-    assert "- T2 Acme commodity trade finance: P2 holders -\\> \\[OTHER\\] -\\> E1 Acme Yield Issuer Ltd (L1)" in text
+    assert ("- T2 Acme commodity trade finance: P2 holders -\\> \\[OTHER\\] -\\> E1 Acme Yield Issuer Ltd (L1/L2)"
+            in text)
     assert "- **Q1** (priority 1) Security agreement and lien filings for the equipment loans -- " in text
     assert "(answers C2, C5)\n" in text
 

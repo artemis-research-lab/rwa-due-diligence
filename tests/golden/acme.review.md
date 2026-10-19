@@ -4,9 +4,9 @@
 
 | group | CONFIRMED | PARTIALLY_VERIFIED | UNRESOLVED | CONFLICTING |
 |---|---|---|---|---|
-| A layers and entities | 10 | 14 | 27 | 0 |
+| A layers and entities | 10 | 14 | 32 | 0 |
 | B L1->L2 | 0 | 15 | 27 | 0 |
-| C L2->L3 and default | 0 | 20 | 43 | 1 |
+| C L2->L3 and default | 0 | 21 | 56 | 1 |
 | D holder rights | 0 | 8 | 8 | 0 |
 | E L3 business | 0 | 6 | 8 | 0 |
 | F flows | 2 | 12 | 3 | 0 |
@@ -21,10 +21,9 @@
 
 ## Three-layer chains
 
-- T1 Acme equipment credit: P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2)
-- T1 Acme equipment credit: E6 Acme Warehouse SPV Ltd (L2) -\> \[DL; secured\] -\> E7 Example Equipment Lessors Ltd (L3)
-- T1 Acme equipment credit: E6 Acme Warehouse SPV Ltd (L2) -\> \[AP; ?\] -\> E8 Example Receivables Originator (L3)
-- T2 Acme commodity trade finance: P2 holders -\> \[OTHER\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[PT; unsecured\] -\> E9 (L3)
+- T1 Acme equipment credit: P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[DL; secured\] -\> E7 Example Equipment Lessors Ltd (L3) -\> \[OTHER\] -\> E10 (L3-O)
+- T1 Acme equipment credit: P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[AP; ?\] -\> E8 Example Receivables Originator (L3)
+- T2 Acme commodity trade finance: P2 holders -\> \[OTHER\] -\> E1 Acme Yield Issuer Ltd (L1/L2) -\> \[PT; unsecured\] -\> E9 (L3)
 
 ## Blocking gaps
 

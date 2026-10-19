@@ -33,9 +33,8 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 - Business type: private\_credit [PARTIALLY_VERIFIED] (S8)
 - Sublayers: L2a credit fund; L2b warehouse SPV
 - Chains:
-  - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2)
-  - E6 Acme Warehouse SPV Ltd (L2) -\> \[DL; secured\] -\> E7 Example Equipment Lessors Ltd (L3)
-  - E6 Acme Warehouse SPV Ltd (L2) -\> \[AP; ?\] -\> E8 Example Receivables Originator (L3)
+  - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[DL; secured\] -\> E7 Example Equipment Lessors Ltd (L3) -\> \[OTHER\] -\> E10 (L3-O)
+  - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[AP; ?\] -\> E8 Example Receivables Originator (L3)
 
 ### T2 Acme commodity trade finance
 
@@ -43,7 +42,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 - Business type: trade\_finance\_pt [PARTIALLY_VERIFIED] (S7) -- Vault docs describe purchase and resale of goods.
 - Sublayers: --
 - Chains:
-  - P2 holders -\> \[OTHER\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[PT; unsecured\] -\> E9 (L3)
+  - P2 holders -\> \[OTHER\] -\> E1 Acme Yield Issuer Ltd (L1/L2) -\> \[PT; unsecured\] -\> E9 (L3)
 
 ### Functions by entity
 
@@ -61,6 +60,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 | E7 | L3 | ultimate_obligor | T1 | S8 |
 | E8 | L3 | receivables_seller | T1 | S5 |
 | E9 | L3 | ultimate_obligor | T2 | S7 |
+| E10 | L3 | ultimate_obligor | T1 | S8 |
 
 ## 4. Legal entity register
 
@@ -75,6 +75,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 | E7 | Example Equipment Lessors Ltd [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 | E8 | Example Receivables Originator [PARTIALLY_VERIFIED] (S5) -- Named as receivables seller in the review. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 | E9 | -- [UNRESOLVED] (S7) -- Vault docs do not name the commodity buyer. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
+| E10 | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 
 Licences:
 
@@ -84,20 +85,21 @@ Licences:
 
 ## 5. L1 -> L2 capital allocation
 
-| id | strategy | from -> to | route | legal class | instrument | claim holder | terms | governing law |
-|---|---|---|---|---|---|---|---|---|
-| X1 | T1 | P1 -\> E1 (holder\_L1) | -- [UNRESOLVED] | DI [PARTIALLY_VERIFIED] (S8) | Senior notes [PARTIALLY_VERIFIED] (S8) | Noteholders [PARTIALLY_VERIFIED] (S8) | Monthly redemption window [PARTIALLY_VERIFIED] (S8) | Examplestan [PARTIALLY_VERIFIED] (S8) |
-| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [PARTIALLY_VERIFIED] (S8) | FI [PARTIALLY_VERIFIED] (S8) | Limited partnership interests [PARTIALLY_VERIFIED] (S8) | E1 [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | Examplestan [PARTIALLY_VERIFIED] (S8) |
-| X6 | T2 | P2 -\> E1 (holder\_L1) | -- [UNRESOLVED] | OTHER [PARTIALLY_VERIFIED] (S7) -- Vault share is a contractual claim. | Vault shares [PARTIALLY_VERIFIED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
+| id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | terms | governing law |
+|---|---|---|---|---|---|---|---|---|---|
+| X1 | T1 | P1 -\> E1 (holder\_L1) | -- [UNRESOLVED] | DI [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | Senior notes [PARTIALLY_VERIFIED] (S8) | Noteholders [PARTIALLY_VERIFIED] (S8) | Monthly redemption window [PARTIALLY_VERIFIED] (S8) | Examplestan [PARTIALLY_VERIFIED] (S8) |
+| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [PARTIALLY_VERIFIED] (S8) | FI [PARTIALLY_VERIFIED] (S8) | E5 [PARTIALLY_VERIFIED] (S8) | Limited partnership interests [PARTIALLY_VERIFIED] (S8) | E1 [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | Examplestan [PARTIALLY_VERIFIED] (S8) |
+| X6 | T2 | P2 -\> E1 (holder\_L1) | -- [UNRESOLVED] | OTHER [PARTIALLY_VERIFIED] (S7) -- Vault share is a contractual claim. | -- [UNRESOLVED] | Vault shares [PARTIALLY_VERIFIED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 
 ## 6. L2 -> L3 underlying transactions
 
-| id | strategy | from -> to | method | legal class | security | collateral | perfection | enforcement | recourse | terms |
-|---|---|---|---|---|---|---|---|---|---|---|
-| X3 | T1 | E5 -\> E6 (within\_L2) | -- [UNRESOLVED] | DI [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
-| X4 | T1 | E6 -\> E7 (L2\_L3) | DL [PARTIALLY_VERIFIED] (S8) | DL [PARTIALLY_VERIFIED] (S8) | secured [CONFLICTING] (S8) | Leased equipment [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] (S8) -- No lien filing cited. | Security agent E3 enforces on default [PARTIALLY_VERIFIED] (S8) | Full recourse to the lessor [PARTIALLY_VERIFIED] (S8) | 36-month amortising, 12 percent [PARTIALLY_VERIFIED] (S8) |
-| X5 | T1 | E6 -\> E8 (L2\_L3) | AP [PARTIALLY_VERIFIED] (S8) | AP [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] (S8) -- No collateral beyond the receivables described. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S5) -- Recourse to the seller not stated. | -- [UNRESOLVED] |
-| X7 | T2 | E1 -\> E9 (L2\_L3) | PT [PARTIALLY_VERIFIED] (S7) | OTHER [PARTIALLY_VERIFIED] (S7) | unsecured [PARTIALLY_VERIFIED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S7) -- Trade terms not published. |
+| id | strategy | from -> to | method | legal class | counterparty | security | collateral | perfection | enforcement | recourse | terms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| X3 | T1 | E5 -\> E6 (within\_L2) | -- [UNRESOLVED] | DI [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
+| X4 | T1 | E6 -\> E7 (L2\_L3) | DL [PARTIALLY_VERIFIED] (S8) | DL [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | secured [CONFLICTING] (S8) | Leased equipment [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] (S8) -- No lien filing cited. | Security agent E3 enforces on default [PARTIALLY_VERIFIED] (S8) | Full recourse to the lessor [PARTIALLY_VERIFIED] (S8) | 36-month amortising, 12 percent [PARTIALLY_VERIFIED] (S8) |
+| X5 | T1 | E6 -\> E8 (L2\_L3) | AP [PARTIALLY_VERIFIED] (S8) | AP [PARTIALLY_VERIFIED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S8) -- No collateral beyond the receivables described. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S5) -- Recourse to the seller not stated. | -- [UNRESOLVED] |
+| X7 | T2 | E1 -\> E9 (L2\_L3) | PT [PARTIALLY_VERIFIED] (S7) | OTHER [PARTIALLY_VERIFIED] (S7) | -- [UNRESOLVED] | unsecured [PARTIALLY_VERIFIED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S7) -- Trade terms not published. |
+| X8 | T1 | E7 -\> E10 (within\_L3) | -- [UNRESOLVED] | OTHER [PARTIALLY_VERIFIED] (S8) -- Equipment leases between the lessor and its lessees. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 
 ## 7. Holder legal rights
 
@@ -381,6 +383,7 @@ Nodes:
 - UNRESOLVED: not found in the cited sources, or not searched when no source is cited.
 - CONFLICTING: named by a discrepancy finding (see section 13).
 - Layers: L1 on-chain capital vault; L2 credit financing layer; L3 underlying business layer.
+- L3-O: the L3 business's paying customers or end borrowers (ultimate obligors), recorded as layer L3 with role ultimate_obligor and linked by within_L3 interfaces.
 - Route (L1->L2): POOL supply to a shared lending pool; FUND subscription to a fund or vehicle; DIRECT financing of the credit counterparty itself; WRAPPER a position in another vault or token that holds the exposure.
 - Method (L2->L3): DL direct loan; DI debt instrument (note, bond); AP purchase of receivables or other assets; PI participation interest; REPO repurchase agreement; PT principal purchase and resale (trade finance).
 - Legal class: DL loan claim; DI debt instrument claim; AP ownership of purchased assets; PI participation interest; FI fund interest; EI equity interest; OTHER other or contractual claim.

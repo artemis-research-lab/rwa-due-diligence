@@ -4,7 +4,7 @@ references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
 SCHEMA_VERSION = "rwa-dd/2.0"
-SKILL_VERSION = "0.5.0"
+SKILL_VERSION = "0.5.1"
 
 ENUMS = {
     "source_type": (
@@ -79,7 +79,7 @@ CODED_CLAIMS = {
     ("strategies", "loss_waterfall"): (None, "strings"),
 }
 
-SUBJECT_PATTERN = r"^(E|P|T|X)[1-9][0-9]*(\.[a-z_]+){0,3}$"
+SUBJECT_PATTERN = r"^(E|P|T|X)[1-9][0-9]*(\.[a-z][a-z0-9_]*){0,3}$"
 
 
 def id_pattern(*prefixes):

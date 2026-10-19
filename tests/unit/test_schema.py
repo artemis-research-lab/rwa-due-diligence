@@ -1,3 +1,5 @@
+import re
+
 from test_support import ROOT, run_cli
 from lib import schema, validate
 
@@ -32,7 +34,15 @@ def test_skeleton_is_structurally_valid_once_run_is_filled():
 
 
 def test_version_constants():
-    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.0", "0.5.0")
+    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.0", "0.5.1")
+
+
+def test_subject_pattern_field_names():
+    pattern = re.compile(schema.SUBJECT_PATTERN)
+    for ok in ("T1.l3_business.performance", "P1.holder_rights.look_through", "X3.security", "E10"):
+        assert pattern.match(ok), ok
+    for bad in ("T1.3x", "T1.Field", "X1.a.b.c.d"):
+        assert not pattern.match(bad), bad
 
 
 def test_enums_contain_framework_values():

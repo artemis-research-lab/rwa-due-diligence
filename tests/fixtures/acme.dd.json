@@ -1041,6 +1041,55 @@
         "note": ""
       },
       "licenses": []
+    },
+    {
+      "id": "E10",
+      "legal_name": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L3",
+          "role": "ultimate_obligor",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
     }
   ],
   "interfaces": [
@@ -1834,6 +1883,114 @@
           "S7"
         ],
         "subject": "P2",
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X8",
+      "strategy": "T1",
+      "kind": "within_L3",
+      "from": "E7",
+      "to": "E10",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Equipment leases between the lessor and its lessees."
+      },
+      "instrument": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
         "note": ""
       },
       "collateral": {

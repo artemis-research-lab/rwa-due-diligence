@@ -102,7 +102,8 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
   buying loans originated by X is not a claim on X.
 - The report shows framework flags derived from claim status: verified CONFIRMED; self_reported or inferred
   PARTIALLY_VERIFIED; not_found UNRESOLVED; any claim named by a discrepancy finding's subjects CONFLICTING. Name the
-  subjects (for example `X3.security`, `T1.default_path.loss_waterfall`) on every discrepancy.
+  subjects (for example `X3.security`, `T1.default_path.loss_waterfall`, `T2.l3_business.performance`,
+  `P1.holder_rights.look_through`) on every discrepancy. Never point an interface at its own source entity.
 - Chain state outranks project docs on permissions, gating, roles and admin control; contract-level access and legal
   eligibility are separate claims.
 - Quote the shortest verbatim excerpt that supports the claim (<= 300 chars). Never paraphrase into the excerpt.

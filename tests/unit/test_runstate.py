@@ -93,7 +93,7 @@ def test_skeleton_fails_only_on_flow_and_yield(tmp_path):
     assert runstate.check(tmp_path, "acme") == ["project.products[0]: P1 has no yield entry",
                                                 "strategies[0]: T1 has no flow edge with view settlement"]
     doc = runstate.load_work(runstate.open_project(tmp_path, "acme"))
-    assert doc["run"]["seeded_from"] is None and doc["run"]["skill_version"] == "0.5.0"
+    assert doc["run"]["seeded_from"] is None and doc["run"]["skill_version"] == "0.5.1"
     assert [t["products"] for t in doc["strategies"]] == [["P1"]]
     assert [h["product"] for h in doc["holder_rights"]] == ["P1"]
 
@@ -418,7 +418,7 @@ def test_amend_sets_skill_version_and_new_run_keeps_v0(tmp_path):
     runstate.save_work(project, doc)
     run_id = runstate.load_state(project)["run_id"]
     runstate.amend(tmp_path, "acme", _amend_file(project))
-    assert runstate.load_work(project)["run"]["skill_version"] == "0.5.0"
+    assert runstate.load_work(project)["run"]["skill_version"] == "0.5.1"
 
     later = clock_at(__import__("datetime").datetime(2026, 11, 1, tzinfo=__import__("datetime").timezone.utc))
     runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=later, new_run=True)
@@ -471,7 +471,7 @@ def test_seed_from_final_v1_run(tmp_path):
     doc = runstate.load_work(project)
     assert doc["schema_version"] == "rwa-dd/2.0"
     assert (doc["run"]["seeded_from"], doc["run"]["round"], doc["run"]["status"], doc["run"]["finalized_at"],
-            doc["run"]["skill_version"]) == (old_id, 1, "draft", None, "0.5.0")
+            doc["run"]["skill_version"]) == (old_id, 1, "draft", None, "0.5.1")
     assert runstate.check(tmp_path, "acme") == []
     assert runstate.load_state(project) == {"slug": "acme", "run_id": "acme-20261101T000000Z", "round": 1,
                                             "phase": "research", "status": "draft"}

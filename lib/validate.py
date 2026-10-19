@@ -185,6 +185,8 @@ def _framework_errors(doc, ids, errors):
         _need(x["strategy"], tids, path + ".strategy", errors, "strategy")
         _need(x["from"], eids | pids, path + ".from", errors, "entity/product")
         _need(x["to"], eids, path + ".to", errors, "entity")
+        if x["from"] == x["to"]:
+            errors.append("interfaces[%d]: from and to must differ (%s)" % (i, x["from"]))
         holder = x["kind"] == "holder_L1"
         if holder and x["from"][0] != "P":
             errors.append("%s.from: kind holder_L1 requires a product id" % path)

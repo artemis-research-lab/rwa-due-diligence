@@ -22,8 +22,19 @@ def test_subject_path_examples():
     assert framework.subject_path(("entities", 1, "licenses", 0, "regulator"), doc) == "E2.licenses.regulator"
     assert framework.subject_path(("project", "products", 1, "symbol"), doc) == "P2.symbol"
     assert framework.subject_path(("project", "name"), doc) is None
-    assert framework.subject_path(("holder_rights", 0, "look_through"), doc) is None
+    assert framework.subject_path(("holder_rights", 0, "look_through"), doc) == "P1.holder_rights.look_through"
+    assert framework.subject_path(("holder_rights", 1, "look_through"), doc) == "P2.holder_rights.look_through"
     assert framework.subject_path(("flows", "edges", 0, "claim"), doc) is None
+
+
+def test_holder_rights_subject_conflicts_only_its_product():
+    doc = load_fixture()
+    doc["findings"] = [f for f in doc["findings"] if f["type"] != "discrepancy"]
+    _discrepancy(doc, ["P1.holder_rights.look_through"])
+    assert framework.conflicted(doc) == {"P1.holder_rights.look_through"}
+    flags = framework.flags(doc)
+    assert flags[("holder_rights", 0, "look_through")] == "CONFLICTING"
+    assert flags[("holder_rights", 1, "look_through")] != "CONFLICTING"
 
 
 def test_conflicted_on_fixture():
@@ -112,30 +123,76 @@ def test_completeness_counterparty_strategy_scope():
 
 # --------------------------------------------------------------------------- 3.3
 
+T1_LINES = [
+    "P1 holders -> [DI] -> E1 Acme Yield Issuer Ltd (L1) -> [FUND; FI] -> E5 Acme Credit Fund LP (L2) -> [DI] -> "
+    "E6 Acme Warehouse SPV Ltd (L2) -> [DL; secured] -> E7 Example Equipment Lessors Ltd (L3) -> [OTHER] -> "
+    "E10 (L3-O)",
+    "P1 holders -> [DI] -> E1 Acme Yield Issuer Ltd (L1) -> [FUND; FI] -> E5 Acme Credit Fund LP (L2) -> [DI] -> "
+    "E6 Acme Warehouse SPV Ltd (L2) -> [AP; ?] -> E8 Example Receivables Originator (L3)",
+]
+T2_LINES = ["P2 holders -> [OTHER] -> E1 Acme Yield Issuer Ltd (L1/L2) -> [PT; unsecured] -> E9 (L3)"]
+
+
+def _iface(doc, ident, kind, src, dst):
+    x = copy.deepcopy(doc["interfaces"][2])  # X3, within_L2, legal class DI
+    x.update({"id": ident, "kind": kind, "from": src, "to": dst})
+    return x
+
+
 def test_chain_lines_on_fixture():
     doc = load_fixture()
+    assert framework.chain_line(doc, "T1") == T1_LINES
+    assert framework.chain_line(doc, "T2") == T2_LINES
+
+
+def test_chain_line_l1_l2_entity_jumps_to_l3():
+    doc = load_fixture()
+    assert framework.chain_line(doc, "T2") == T2_LINES
+    doc["entities"][0]["functions"] = [fn for fn in doc["entities"][0]["functions"] if fn["layer"] != "L2"]
+    assert framework.chain_line(doc, "T2") == [
+        "P2 holders -> [OTHER] -> E1 Acme Yield Issuer Ltd (L1)",
+        "E1 Acme Yield Issuer Ltd (L2) -> [PT; unsecured] -> E9 (L3)"]
+
+
+def test_chain_line_branches_in_id_order():
+    doc = load_fixture()
+    # E6 has two continuations, X4 (to E7) and X5 (to E8): two lines sharing the prefix, X4 first.
+    lines = framework.chain_line(doc, "T1")
+    assert len(lines) == 2 and lines[0].endswith("E10 (L3-O)") and lines[1].endswith("(L3)")
+    assert lines[0].split(" -> [DL")[0] == lines[1].split(" -> [AP")[0]
+
+
+def test_chain_line_cycle_terminates():
+    doc = load_fixture()
+    doc["interfaces"].append(_iface(doc, "X9", "within_L2", "E6", "E5"))
+    lines = framework.chain_line(doc, "T1")
+    assert lines == T1_LINES  # X3 E5->E6 and X9 E6->E5: E5 is already on the path, so X9 is never followed
+
+
+def test_chain_line_orphan_start():
+    doc = load_fixture()
+    doc["interfaces"][2]["from"] = "E2"  # X3 no longer leaves E5, so E6 is unreachable from holders
     assert framework.chain_line(doc, "T1") == [
         "P1 holders -> [DI] -> E1 Acme Yield Issuer Ltd (L1) -> [FUND; FI] -> E5 Acme Credit Fund LP (L2)",
-        "E6 Acme Warehouse SPV Ltd (L2) -> [DL; secured] -> E7 Example Equipment Lessors Ltd (L3)",
+        "E6 Acme Warehouse SPV Ltd (L2) -> [DL; secured] -> E7 Example Equipment Lessors Ltd (L3) -> [OTHER] -> "
+        "E10 (L3-O)",
         "E6 Acme Warehouse SPV Ltd (L2) -> [AP; ?] -> E8 Example Receivables Originator (L3)",
     ]
-    assert framework.chain_line(doc, "T2") == [
-        "P2 holders -> [OTHER] -> E1 Acme Yield Issuer Ltd (L1) -> [PT; unsecured] -> E9 (L3)"]
 
 
-def test_chain_line_follows_connected_interfaces():
+def test_chain_line_within_never_starts():
     doc = load_fixture()
-    doc["interfaces"][3]["from"] = "E5"  # X4 now starts at the fund reached by X2
-    assert framework.chain_line(doc, "T1") == [
-        "P1 holders -> [DI] -> E1 Acme Yield Issuer Ltd (L1) -> [FUND; FI] -> E5 Acme Credit Fund LP (L2) -> "
-        "[DL; secured] -> E7 Example Equipment Lessors Ltd (L3)",
-        "E6 Acme Warehouse SPV Ltd (L2) -> [AP; ?] -> E8 Example Receivables Originator (L3)",
-    ]
+    doc["interfaces"] = [x for x in doc["interfaces"] if x["kind"].startswith("within_")]
+    assert [x["id"] for x in doc["interfaces"]] == ["X3", "X8"]
+    assert framework.chain_line(doc, "T1") == []
 
 
-def test_chain_line_unknown_layer_and_empty():
+def test_chain_line_unknown_entity_and_empty():
     doc = load_fixture()
     doc["entities"][4]["functions"] = []
-    assert "E5 Acme Credit Fund LP (?)" in framework.chain_line(doc, "T1")[0]
+    assert framework.chain_line(doc, "T1") == T1_LINES  # labels show the position, not the entity's functions
+    doc["interfaces"][1]["to"] = "E99"
+    assert framework.chain_line(doc, "T1")[0] == \
+        "P1 holders -> [DI] -> E1 Acme Yield Issuer Ltd (L1) -> [FUND; FI] -> E99 (?)"
     doc["interfaces"] = []
     assert framework.chain_line(doc, "T1") == []

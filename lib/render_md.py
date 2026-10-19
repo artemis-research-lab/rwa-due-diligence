@@ -146,19 +146,20 @@ def _ends(x):
 
 
 def _l1_l2(doc, cell):
-    return table(("id", "strategy", "from -> to", "route", "legal class", "instrument", "claim holder", "terms",
-                  "governing law"),
+    return table(("id", "strategy", "from -> to", "route", "legal class", "counterparty", "instrument",
+                  "claim holder", "terms", "governing law"),
                  [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["route"]), cell(x["legal_class"]),
-                   cell(x["instrument"]), cell(x["claim_holder"]), cell(x["terms"]), cell(x["governing_law"])]
+                   cell(x["counterparty"]), cell(x["instrument"]), cell(x["claim_holder"]), cell(x["terms"]),
+                   cell(x["governing_law"])]
                   for x in _interfaces(doc, ("holder_L1", "L1_L2", "within_L1"))])
 
 
 def _l2_l3(doc, cell):
-    return table(("id", "strategy", "from -> to", "method", "legal class", "security", "collateral", "perfection",
-                  "enforcement", "recourse", "terms"),
+    return table(("id", "strategy", "from -> to", "method", "legal class", "counterparty", "security", "collateral",
+                  "perfection", "enforcement", "recourse", "terms"),
                  [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["method"]), cell(x["legal_class"]),
-                   cell(x["security"]), cell(x["collateral"]), cell(x["perfection"]), cell(x["enforcement"]),
-                   cell(x["recourse"]), cell(x["terms"])]
+                   cell(x["counterparty"]), cell(x["security"]), cell(x["collateral"]), cell(x["perfection"]),
+                   cell(x["enforcement"]), cell(x["recourse"]), cell(x["terms"])]
                   for x in _interfaces(doc, ("L2_L3", "within_L2", "within_L3"))])
 
 
@@ -379,6 +380,8 @@ LEGEND = [
     "- UNRESOLVED: not found in the cited sources, or not searched when no source is cited.",
     "- CONFLICTING: named by a discrepancy finding (see section 13).",
     "- Layers: L1 on-chain capital vault; L2 credit financing layer; L3 underlying business layer.",
+    "- L3-O: the L3 business's paying customers or end borrowers (ultimate obligors), recorded as layer L3 with"
+    " role ultimate_obligor and linked by within_L3 interfaces.",
     "- Route (L1->L2): POOL supply to a shared lending pool; FUND subscription to a fund or vehicle; DIRECT financing"
     " of the credit counterparty itself; WRAPPER a position in another vault or token that holds the exposure.",
     "- Method (L2->L3): DL direct loan; DI debt instrument (note, bond); AP purchase of receivables or other"

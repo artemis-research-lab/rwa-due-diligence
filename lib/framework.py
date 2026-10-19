@@ -23,9 +23,6 @@ CHECKS = (
     ("K7", "L3 business"),
 )
 
-CHAIN_ORDER = ("holder_L1", "L1_L2", "L2_L3")
-
-
 # --------------------------------------------------------------------------- 3.1 evidence flags
 
 def _has_subject_id(value):
@@ -34,7 +31,13 @@ def _has_subject_id(value):
 
 
 def subject_path(parts, doc):
-    """Id path of the claim at parts, e.g. X3.security; None outside objects with an E/P/T/X id."""
+    """Id path of the claim at parts, e.g. X3.security; None outside objects with an E/P/T/X id.
+
+    Holder-rights claims take their product's id: P1.holder_rights.look_through.
+    """
+    if parts and parts[0] == "holder_rights":
+        fields = [p for p in parts[2:] if not isinstance(p, int)]
+        return ".".join([doc["holder_rights"][parts[1]]["product"], "holder_rights"] + fields)
     node = doc
     path = None
     for part in parts:
@@ -125,60 +128,103 @@ def _code(value):
     return str(value)
 
 
+# Position of the node an interface leads to; within_Lk keeps the position of its from node.
+TARGET = {"holder_L1": "L1", "L1_L2": "L2", "L2_L3": "L3"}
+FORWARD = {"L1": "L1_L2", "L2": "L2_L3"}
+START_POSITION = {"L1_L2": "L1", "L2_L3": "L2"}
+
+
 def _hop(x):
-    if x["kind"] == "holder_L1":
-        codes = [x["legal_class"]["value"]]
-    elif x["kind"] == "L1_L2":
+    if x["kind"] == "L1_L2":
         codes = [x["route"]["value"], x["legal_class"]["value"]]
-    else:
+    elif x["kind"] == "L2_L3":
         codes = [x["method"]["value"], x["security"]["value"]]
+    else:
+        codes = [x["legal_class"]["value"]]
     return "[%s]" % "; ".join(_code(c) for c in codes)
 
 
-def _entity_label(doc, eid, strategy_id):
-    entity = next((e for e in doc["entities"] if e["id"] == eid), None)
+def _entity(doc, eid):
+    return next((e for e in doc["entities"] if e["id"] == eid), None)
+
+
+def _has_function(entity, strategy_id, layer=None, role=None):
+    return entity is not None and any(
+        fn["strategy"] in (strategy_id, None) and layer in (None, fn["layer"]) and role in (None, fn["role"])
+        for fn in entity["functions"])
+
+
+def _entity_label(doc, eid, position):
+    entity = _entity(doc, eid)
     if entity is None:
-        return eid
+        return "%s (?)" % eid
     name = entity["legal_name"]["value"]
-    layer = next((fn["layer"] for fn in entity["functions"] if fn["strategy"] in (strategy_id, None)), "?")
     head = eid if name is None else "%s %s" % (eid, _code(name))
-    return "%s (%s)" % (head, layer)
+    return "%s (%s)" % (head, position)
 
 
-def _paths(chain_ifaces, start):
-    """Interface sequences starting with start, following the next kinds in CHAIN_ORDER."""
-    rank = CHAIN_ORDER.index(start["kind"])
-    nexts = []
-    for kind in CHAIN_ORDER[rank + 1:]:
-        nexts = [x for x in chain_ifaces if x["kind"] == kind and x["from"] == start["to"]]
-        if nexts:
-            break
+def _continuations(doc, ifaces, node, position, strategy_id):
+    """[(interface, next position)] leaving node at position, in interface-id order."""
+    out = []
+    for x in ifaces:
+        if x["from"] != node:
+            continue
+        if x["kind"] == "within_" + position:
+            out.append((x, position))
+        elif x["kind"] == FORWARD.get(position):
+            out.append((x, TARGET[x["kind"]]))
+        elif (position == "L1" and x["kind"] == "L2_L3"
+              and _has_function(_entity(doc, node), strategy_id, layer="L2")):
+            out.append((x, "L3"))
+    return out
+
+
+def _walk(doc, ifaces, steps, strategy_id):
+    """Maximal paths extending steps, a list of (interface, position reached), depth first in id order."""
+    x, position = steps[-1]
+    seen = {steps[0][0]["from"]} | {s[0]["to"] for s in steps}
+    nexts = [(y, p) for y, p in _continuations(doc, ifaces, x["to"], position, strategy_id) if y["to"] not in seen]
     if not nexts:
-        return [[start]]
-    return [[start] + rest for x in nexts for rest in _paths(chain_ifaces, x)]
+        return [steps]
+    return [path for step in nexts for path in _walk(doc, ifaces, steps + [step], strategy_id)]
+
+
+def _render(doc, path, start_position, strategy_id):
+    first = path[0][0]
+    if first["kind"] == "holder_L1":
+        parts = ["%s holders" % first["from"]]
+    else:
+        parts = [_entity_label(doc, first["from"], start_position)]
+    for j, (x, position) in enumerate(path):
+        label = position
+        if j + 1 < len(path) and position == "L1" and path[j + 1][0]["kind"] == "L2_L3":
+            label = "L1/L2"
+        elif x["kind"] == "within_L3" and _has_function(_entity(doc, x["to"]), strategy_id, role="ultimate_obligor"):
+            label = "L3-O"
+        parts += [_hop(x), _entity_label(doc, x["to"], label)]
+    return " -> ".join(parts)
 
 
 def chain_line(doc, strategy_id):
-    """One ASCII line per holder-to-L3 path of the strategy (within_* interfaces are skipped).
+    """One ASCII line per maximal path of the strategy, from token holders down to L3 and its ultimate obligors.
 
-    Paths start at holder_L1 interfaces; an L1_L2 or L2_L3 interface not reached from an earlier hop starts a
-    line of its own, so every interface of the chain kinds appears.
+    Lines start at holder_L1 interfaces; an L1_L2 or L2_L3 interface no line has used then starts a line of its
+    own. Paths follow within-layer hops, the forward kind of each layer, and L2_L3 from an L1 node whose entity
+    also holds an L2 function; a node already on the path is never entered again.
     """
-    chain_ifaces = sorted((x for x in doc["interfaces"] if x["strategy"] == strategy_id
-                           and x["kind"] in CHAIN_ORDER), key=id_key)
+    ifaces = sorted((x for x in doc["interfaces"] if x["strategy"] == strategy_id), key=id_key)
     lines = []
-    reached = set()
-    for kind in CHAIN_ORDER:
-        for start in chain_ifaces:
-            if start["kind"] != kind or start["id"] in reached:
-                continue
-            for path in _paths(chain_ifaces, start):
-                reached.update(x["id"] for x in path)
-                first = path[0]
-                head = ("%s holders" % first["from"] if first["kind"] == "holder_L1"
-                        else _entity_label(doc, first["from"], strategy_id))
-                parts = [head]
-                for x in path:
-                    parts += [_hop(x), _entity_label(doc, x["to"], strategy_id)]
-                lines.append(" -> ".join(parts))
+    used = set()
+
+    def emit(start, start_position):
+        for path in _walk(doc, ifaces, [(start, TARGET[start["kind"]])], strategy_id):
+            used.update(x["id"] for x, _ in path)
+            lines.append(_render(doc, path, start_position, strategy_id))
+
+    for x in ifaces:
+        if x["kind"] == "holder_L1":
+            emit(x, None)
+    for x in ifaces:
+        if x["kind"] in START_POSITION and x["id"] not in used:
+            emit(x, START_POSITION[x["kind"]])
     return lines

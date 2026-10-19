@@ -42,7 +42,7 @@ def test_wrong_finding_prefix():
 
 
 def test_non_dense_ids():
-    doc = json.loads(json.dumps(load_fixture()).replace('"E9"', '"E10"'))
+    doc = json.loads(json.dumps(load_fixture()).replace('"E10"', '"E11"'))
     assert validate.validate_document(doc) == ["entities: E ids must be dense from E1"]
 
 
@@ -198,12 +198,18 @@ def test_product_from_only_for_holder_l1():
     assert errors_for(m2) == ["interfaces[0].from: kind holder_L1 requires a product id"]
 
 
+def test_interface_from_and_to_must_differ():
+    def m(doc):
+        doc["interfaces"][2]["to"] = "E5"
+    assert errors_for(m) == ["interfaces[2]: from and to must differ (E5)"]
+
+
 def test_edge_strategy_and_interface_references():
     def m(doc):
         doc["flows"]["edges"][0]["strategies"] = ["T1", "T5"]
-        doc["flows"]["edges"][1]["interface"] = "X8"
+        doc["flows"]["edges"][1]["interface"] = "X9"
     assert errors_for(m) == ["flows.edges[0].strategies[1]: unknown strategy T5",
-                             "flows.edges[1].interface: unknown interface X8"]
+                             "flows.edges[1].interface: unknown interface X9"]
 
 
 def test_edge_needs_strategy_and_view():
@@ -216,8 +222,12 @@ def test_edge_needs_strategy_and_view():
 
 def test_finding_subjects_leading_id_must_exist():
     def m(doc):
-        doc["findings"][4]["subjects"] = ["X4.security", "X9.security", "T1.not_a_field", "E10"]
-    assert errors_for(m) == ["findings[4].subjects[1]: unknown id X9", "findings[4].subjects[3]: unknown id E10"]
+        doc["findings"][4]["subjects"] = ["X4.security", "X9.security", "T1.not_a_field", "E11"]
+    assert errors_for(m) == ["findings[4].subjects[1]: unknown id X9", "findings[4].subjects[3]: unknown id E11"]
+
+    def digits(doc):
+        doc["findings"][4]["subjects"] = ["T2.l3_business.performance", "P1.holder_rights.look_through"]
+    assert errors_for(digits) == []
 
     def bad(doc):
         doc["findings"][4]["subjects"] = ["X4.Security"]

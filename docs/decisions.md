@@ -48,6 +48,11 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D44 - HTML suspended - 2026-10-19 - The HTML renderer is removed until the curator has reviewed the data model; Markdown is the only report.
 - D45 - Diagrams per strategy and view - 2026-10-19 - One diagram per strategy and view (settlement, claim, repayment); layout engine unchanged pending the layout decision.
 - D46 - No risk methodology - 2026-10-19 - The skill records classification and evidence only; no ratings, scores, thresholds, limits or loss estimates.
+- D47 - Chain lines - 2026-10-20 - Chain lines follow within-layer hops and continue to L3 ultimate obligors (L3-O); node labels show the position on the path.
+- D48 - L3-O - 2026-10-20 - Ultimate obligors stay layer L3 with role ultimate_obligor and are linked by within_L3 interfaces; a separate schema layer waits for curator feedback.
+- D49 - Holder-rights subjects - 2026-10-20 - Holder-rights claims have the subject path P<n>.holder_rights.<field>, so discrepancies can flag them CONFLICTING.
+- D50 - Subject field names - 2026-10-20 - Subject field names may contain digits after the first letter.
+- D51 - No self-loops - 2026-10-20 - An interface's from and to must differ.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -55,6 +60,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-18 - usd-ai end-to-end run finalized after 3 rounds; final acceptance found admin actions missed by the run (sUSDai upgraded twice, three direct upgrades without timelock), leading to D27-D28.
 - 2026-10-18 - usd-ai (amendment 1), huma and hastra finalized and accepted; all three showed rejected searches under section 2, leading to D32.
 - 2026-10-19 - Curator feedback on the usd-ai, huma and hastra reports: reports must follow the three-layer framework; HTML hard to read (deferred).
+- 2026-10-20 - Seeded re-maps of usd-ai, huma and hastra (rwa-dd/2.0): layer convention L1 vault and legal entity, L2 credit provider, L3 borrower running the business, L3-O its paying customers; renderer and validator gaps fixed in v0.5.1.
 
 ## Incidents
 
