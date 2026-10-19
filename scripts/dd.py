@@ -13,7 +13,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
-from lib import fetch, flow, lint, pdftext, runstate, schema  # noqa: E402
+from lib import fetch, flow, lint, pdftext, runstate, schema, validate  # noqa: E402
 
 EXIT_OK = 0
 EXIT_INVALID = 2
@@ -32,7 +32,7 @@ def _json(value):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="dd.py",
-        description="Read-only RWA due diligence (three-layer model, schema rwa-dd/2.0): run directory, source "
+        description="Read-only RWA due diligence (three-layer model, schema rwa-dd/2.1): run directory, source "
                     "ledger, validation, review loop, Markdown report and flow diagrams.",
         epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state), "
                "4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.")
@@ -49,8 +49,8 @@ def build_parser():
     group = p.add_mutually_exclusive_group()
     group.add_argument("--new-run", action="store_true", help="archive the previous run and start a new one")
     group.add_argument("--seed-from", action="store_true",
-                       help="archive the previous run and start a new one from its record (converted from "
-                            "rwa-dd/1.0 if needed) and its source ledger")
+                       help="archive the previous run and start a new one from its record and its source ledger; "
+                            "accepts records of schema rwa-dd/1.0, 2.0 and 2.1 (earlier ones are migrated)")
 
     p = with_slug("add-source", "append a source to the ledger and the working document")
     p.add_argument("--url", required=True, help="source URL or local path (<=500)")
@@ -71,7 +71,8 @@ def build_parser():
     p.add_argument("--offline", action="store_true", help="no retrieval time: retrieved_at null, fetch offline")
 
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
-    with_slug("lint", "print address warnings for audit/dd.work.json as JSON (read-only, any phase)")
+    with_slug("lint", "print address, layer, claim and path warnings for audit/dd.work.json as JSON "
+                      "(read-only, any phase; needs a structurally valid document)")
     with_slug("review", "write the review packet of the current round")
     p = with_slug("directives", "record and parse the analyst directives of the current round")
     p.add_argument("--file", required=True, help="file holding the analyst reply verbatim")
@@ -124,7 +125,10 @@ def run(args):
         _out("valid")
     elif cmd == "lint":
         doc = runstate.load_work(runstate.open_project(args.root, args.slug))
-        _json({"address_warnings": lint.address_warnings(doc)})
+        errors = validate.structural_errors(doc)
+        if errors:
+            raise runstate.InvalidError(sorted(set(errors)))
+        _json(lint.lint(doc))
     elif cmd == "review":
         _json(runstate.make_review(args.root, args.slug))
     elif cmd == "directives":

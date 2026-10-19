@@ -1,8 +1,9 @@
-"""v0.4.2: address lint (lib/lint.py, dd.py lint)."""
+"""v0.4.2 address lint and v0.6.0 layer, claim and path lint (lib/lint.py, dd.py lint)."""
 
+import copy
 import json
 
-from test_support import build_run, run_cli
+from test_support import build_run, load_fixture, run_cli
 from lib import lint
 
 LOWER = "0x" + "ab" * 20
@@ -58,7 +59,8 @@ def test_cli_lint(tmp_path):
     doc = json.loads(before.decode("utf-8"))
     code, out, err = run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])
     assert (code, err) == (0, "")
-    assert out == json.dumps({"address_warnings": lint.address_warnings(doc)}, indent=2) + "\n"
+    assert out == json.dumps(lint.lint(doc), indent=2) + "\n"
+    assert list(json.loads(out)) == ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings"]
     assert {"path": "flows.nodes[1].ref", "address": "0x" + "0" * 38 + "a1"} in json.loads(out)["address_warnings"]
     assert project.work_file.read_bytes() == before
     doc["onchain"]["contracts"][0]["address"] = MIXED
@@ -74,3 +76,111 @@ def test_cli_lint_exit_codes(tmp_path):
     project = build_run(tmp_path)
     project.work_file.write_bytes(b"{not json")
     assert run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])[0] == 2
+    doc = load_fixture()
+    del doc["supports"]
+    project.work_file.write_bytes(json.dumps(doc).encode("utf-8"))
+    code, out, _ = run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])
+    assert (code, out) == (2, '(root): missing key "supports"\n')
+
+
+# --------------------------------------------------------------------------- v0.6.0 section 2.3
+
+def _x(doc, xid):
+    return next(x for x in doc["interfaces"] if x["id"] == xid)
+
+
+def test_fixture_has_no_layer_claim_or_path_warnings():
+    result = lint.lint(load_fixture())
+    assert (result["layer_warnings"], result["claim_warnings"], result["path_warnings"]) == ([], [], [])
+
+
+def test_layer_warning_within_l2():
+    doc = load_fixture()
+    x7 = _x(doc, "X7")
+    x7.update({"kind": "within_L2", "method": {"value": None, "status": "not_found", "evidence": [],
+                                                "subject": None, "note": ""}})
+    x7["to"] = "E4"
+    assert lint.layer_warnings(doc) == [
+        {"path": "interfaces[6]", "message": "X7: within_L2 but E4 has no L2 function for T2"}]
+    x7["from"] = "E5"  # E5 has an L2 function only for T1
+    assert lint.layer_warnings(doc) == [
+        {"path": "interfaces[6]", "message": "X7: within_L2 but E5 has no L2 function for T2"},
+        {"path": "interfaces[6]", "message": "X7: within_L2 but E4 has no L2 function for T2"}]
+
+
+def test_layer_warning_each_layered_kind():
+    doc = load_fixture()
+    for e in doc["entities"]:
+        e["functions"] = []
+    messages = sorted(w["message"] for w in lint.layer_warnings(doc))
+    assert "X1: holder_L1 but E1 has no L1 function for T1" in messages
+    assert "X2: L1_L2 but E1 has no L1 function for T1" in messages and "X2: L1_L2 but E5 has no L2 function for T1" \
+        in messages
+    assert "X4: L2_L3 but E6 has no L2 function for T1" in messages
+    assert "X8: L3_L3O but E10 has no L3-O function for T1" in messages
+    assert "X9: sleeve_holding but E1 has no L1 function for T3" in messages
+    assert not any(m.startswith(("X10:", "X13:")) for m in messages)  # look-through and asset sale unchecked
+    assert not any(m.startswith("X1: holder_L1 but P1") for m in messages)
+
+
+def test_layer_l2_l3_from_l1_with_l2_function_is_fine():
+    doc = load_fixture()
+    assert _x(doc, "X7")["from"] == "E1"
+    assert not [w for w in lint.layer_warnings(doc) if w["message"].startswith("X7")]
+    doc["entities"][0]["functions"] = [fn for fn in doc["entities"][0]["functions"] if fn["layer"] != "L2"]
+    assert [w["message"] for w in lint.layer_warnings(doc)] == [
+        "X7: L2_L3 but E1 has no L2 function for T2", "X11: L2_L3 but E1 has no L2 function for T2",
+        "X12: L2_L3 but E1 has no L2 function for T2"]
+
+
+def _pool(doc, legal_class, evidence):
+    x2 = _x(doc, "X2")
+    x2["route"]["value"] = "POOL"
+    x2["legal_class"].update({"value": legal_class, "evidence": evidence})
+    return doc
+
+
+def test_claim_warning_pool_with_loan_class_needs_legal_doc():
+    doc = _pool(load_fixture(), "AP", ["S1"])
+    assert lint.claim_warnings(doc) == [{
+        "path": "interfaces[1].legal_class",
+        "message": "X2: POOL with legal class AP needs a contract (legal_doc) source; use PROTOCOL_ENTITLEMENT or "
+                   "leave it not_found"}]
+    assert lint.claim_warnings(_pool(load_fixture(), "AP", ["S1", "S8"])) == []  # S8 is a legal_doc
+    assert lint.claim_warnings(_pool(load_fixture(), "PROTOCOL_ENTITLEMENT", ["S1"])) == []
+    assert lint.claim_warnings(_pool(load_fixture(), None, [])) == []
+    for code in ("DL", "DI", "PI"):
+        assert len(lint.claim_warnings(_pool(load_fixture(), code, ["S4"]))) == 1
+
+
+def test_path_warnings():
+    doc = load_fixture()
+    doc["interfaces"] = [x for x in doc["interfaces"] if x["kind"] not in ("holder_L1", "sleeve_holding")]
+    assert lint.path_warnings(doc) == [
+        {"path": "strategies[0]", "message": "T1: no holder_L1 interface"},
+        {"path": "strategies[1]", "message": "T2: no holder_L1 interface"},
+        {"path": "strategies[2]", "message": "T3: no sleeve_holding interface"}]
+    doc = load_fixture()
+    doc["interfaces"] = [x for x in doc["interfaces"] if x["kind"] == "holder_L1"]
+    doc["strategies"][1]["component"] = "DEFI_LENDING"
+    assert [w["message"] for w in lint.path_warnings(doc)] == [
+        "T1: no L1_L2 interface", "T1: no L2_L3 interface", "T2: no L1_L2 interface", "T2: no L2_L3 interface",
+        "T3: no sleeve_holding interface"]
+
+
+def test_path_l1_to_l2_l3_counts_as_l1_l2():
+    doc = load_fixture()
+    assert not any(x["kind"] == "L1_L2" and x["strategy"] == "T2" for x in doc["interfaces"])
+    assert lint.path_warnings(doc) == []
+    doc["entities"][0]["functions"] = [fn for fn in doc["entities"][0]["functions"] if fn["layer"] != "L1"]
+    assert lint.path_warnings(doc) == [{"path": "strategies[1]", "message": "T2: no L1_L2 interface"}]
+
+
+def test_lint_is_sorted_and_deterministic():
+    doc = load_fixture()
+    for e in doc["entities"]:
+        e["functions"] = []
+    first = lint.lint(copy.deepcopy(doc))
+    assert first == lint.lint(doc)
+    for key in ("layer_warnings", "claim_warnings", "path_warnings"):
+        assert first[key] == sorted(first[key], key=lambda w: (w["path"], w["message"]))

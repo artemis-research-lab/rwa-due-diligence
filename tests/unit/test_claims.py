@@ -131,3 +131,31 @@ def test_verified_must_not_cite_analyst():
     def inferred(doc):
         doc["redemption"][0]["settlement_time"].update({"status": "inferred", "evidence": ["S4", "S6"]})
     assert errors_for(inferred) == []
+
+
+# --------------------------------------------------------------------------- v0.6.0 third_party_reported
+
+def _third_party(evidence):
+    def m(doc):
+        doc["entities"][2]["jurisdiction"] = {"value": "Examplestan", "status": "third_party_reported",
+                                              "evidence": evidence, "subject": "E3", "note": ""}
+    return m
+
+
+def test_third_party_reported_passes_with_s5_on_a_legal_path():
+    assert errors_for(_third_party(["S5"])) == []
+    assert load_fixture()["strategies"][0]["l3_business"]["concentration"]["status"] == "third_party_reported"
+
+
+def test_third_party_reported_fails_with_first_party_or_analyst_only():
+    message = "entities[2].jurisdiction: third_party_reported requires an independent source"
+    assert errors_for(_third_party(["S8"])) == [message]
+    assert errors_for(_third_party(["S6"])) == [message]
+    assert errors_for(_third_party(["S1", "S6"])) == [message]
+
+
+def test_third_party_reported_requires_value():
+    def m(doc):
+        _third_party(["S5"])(doc)
+        doc["entities"][2]["jurisdiction"]["value"] = None
+    assert errors_for(m) == ["entities[2].jurisdiction: third_party_reported requires a non-null value"]

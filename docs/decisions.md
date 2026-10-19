@@ -53,6 +53,18 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D49 - Holder-rights subjects - 2026-10-20 - Holder-rights claims have the subject path P<n>.holder_rights.<field>, so discrepancies can flag them CONFLICTING.
 - D50 - Subject field names - 2026-10-20 - Subject field names may contain digits after the first letter.
 - D51 - No self-loops - 2026-10-20 - An interface's from and to must differ.
+- D52 - Schema 2.1 - 2026-10-20 - rwa-dd/2.1 implements the curator's data-model revisions; 2.0 records are migrated by init --seed-from, never patched.
+- D53 - Components - 2026-10-20 - Strategies carry a component (CORE_CREDIT, LIQUIDITY_SLEEVE, DEFI_LENDING); completeness and the five questions apply to core credit only; sleeves never get an invented L3.
+- D54 - Protocol entitlement - 2026-10-20 - PROTOCOL_ENTITLEMENT is a legal claim class for pool receipts; a POOL route with DL, DI, AP or PI needs a contract source (lint).
+- D55 - Alternatives - 2026-10-20 - Competing legal paths share an alternative group and are excluded from counting.
+- D56 - Amounts - 2026-10-20 - Funding edges record amount and amount basis; only gross funded amounts outside alternatives are summed.
+- D57 - Supports - 2026-10-20 - Credit enhancement and yield support are supports (Z), not interfaces or waterfall steps.
+- D58 - Asset sales - 2026-10-20 - Loan sales after origination are asset_sale interfaces; a transferee is not an L3.
+- D59 - L3-O - 2026-10-20 - L3-O is a layer value with roles contractual_obligor, cash_flow_source and offtaker_customer, linked by L3_L3O interfaces; migration maps ultimate_obligor to cash_flow_source.
+- D60 - Six statuses - 2026-10-20 - Claim status adds third_party_reported; flags are CONFIRMED, SELF_REPORTED, THIRD_PARTY_REPORTED, INFERRED, UNRESOLVED, CONFLICTING.
+- D61 - Scope checks - 2026-10-20 - A discrepancy needs a same-scope note; scope_unresolved findings never flag claims; finalize refuses migrated placeholders.
+- D62 - Material findings - 2026-10-20 - Findings carry a material flag; material findings open the report.
+- D63 - Reader report - 2026-10-20 - The Markdown report has six reader sections (curator Q7) with detail in appendices A-M.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -61,6 +73,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-18 - usd-ai (amendment 1), huma and hastra finalized and accepted; all three showed rejected searches under section 2, leading to D32.
 - 2026-10-19 - Curator feedback on the usd-ai, huma and hastra reports: reports must follow the three-layer framework; HTML hard to read (deferred).
 - 2026-10-20 - Seeded re-maps of usd-ai, huma and hastra (rwa-dd/2.0): layer convention L1 vault and legal entity, L2 credit provider, L3 borrower running the business, L3-O its paying customers; renderer and validator gaps fixed in v0.5.1.
+- 2026-10-20 - Curator review of v2 samples: architecture accepted conditionally; revisions implemented in v0.6.0.
 
 ## Incidents
 

@@ -16,19 +16,40 @@ thresholds, limits or loss estimates.
   auditor, AUP and attestation reports, on-chain state, project docs, third-party research, news.
 
 ## 1. The model
-- L1 On-chain Capital Vault: aggregates investor deposits, represents investor interests, controls allocation, NAV
-  and redemption. Record the vault contract, the protocol operator, the token issuer and the holders' legal
-  counterparty separately; never assume they are the same legal person.
-- L2 Credit Financing Layer: structures, allocates and administers the financing (lending pool, credit fund, note
-  issuer, conduit, trust, lender of record, warehouse SPV, receivables vehicle, servicer, security agent). It is a
-  function, not necessarily one entity; record sublayers (L2a, L2b) in the strategy.
-- L3 Underlying Business Layer: the financing recipient or counterparty that runs the economic business. Record the
-  ultimate obligor or offtaker separately when it differs from the financing recipient.
-- A strategy (T) is one financing path from a product to an L3 business. A product may feed several strategies; a
-  strategy may serve several products. One entity may have functions in several layers; record each function with
-  its own evidence.
-- Pure principal commodity purchase and resale (PT) is trade finance, not private credit: set business_type
-  trade_finance_pt or mixed.
+- Layers are functions inside one strategy, assigned by position in that strategy's financing chain, never by an
+  entity's industry (curator decision Q1, 2026-10-20). Legal entity, contract or pool, and economic role are separate
+  objects; establish each role on its own transaction evidence.
+  - L1 On-chain Capital Vault: the vault and the legal person that owns its assets and faces the holders. Record the
+    vault contract, protocol operator, token issuer and holders' legal counterparty separately; never assume they are
+    the same legal person, and never equate a wallet, program or pool contract with a legal person.
+  - L2 Credit Financing Layer: the credit provider to the operating business (pool, fund, lender of record, warehouse
+    SPV, trust, servicer, security agent). A lender that lends on to operating businesses is L2.
+  - L3 Underlying Business Layer: the borrower that receives the financing and runs the business. A lending company
+    that borrows from an L2 arrangement is L3.
+  - L3-O (optional): parties downstream of L3 whose payments repay it. Role contractual_obligor only when a document
+    shows they legally owe L3; cash_flow_source for business cash flows (for example merchants' settlement fees);
+    offtaker_customer for buyers of goods, services or compute. Link them with L3_L3O interfaces.
+- entity_class: legal_person, contract_or_pool, program, obligor_group or unknown. A pool or program is never treated
+  as a liable legal person.
+- Each strategy (T) has a component: CORE_CREDIT (an underlying real-world financing business), LIQUIDITY_SLEEVE
+  (undeployed cash or stablecoin) or DEFI_LENDING (lending-market supply with protocol-enforced entitlements). Never
+  invent an L3 for a sleeve: link the held instrument's issuer with sleeve_holding and its backing assets with
+  reserve_lookthrough (amount basis LOOKTHROUGH or RESERVE).
+- Credit enhancement and yield support are supports (Z), not interfaces: provider, beneficiary, covered exposure,
+  trigger, coverage, exclusions, priority, enforceability, governing law, holder recourse. Never assume a holder has
+  recourse against a warrantor or reinsurer, and never place a support in a loss waterfall before its claim path is
+  shown.
+- Loan sales after origination (season and sell) are asset_sale interfaces from the selling lender to the transferee
+  (role loan_purchaser), with title transfer, servicing, recourse, proceeds (amount basis SALE_PROCEEDS) and residual
+  exposure. A transferee is not a new L3. Do not assume every sale belongs to the live portfolio.
+- Competing legal paths for one position (for example historical repo terms and current live-rate terms) are
+  alternatives: the same alternative group, different option letters. They are never parallel exposures.
+- Amounts: every funding edge records amount, currency and amount_basis (GROSS_FUNDED, COMMITMENT, LOOKTHROUGH,
+  RESERVE, SALE_PROCEEDS). Only GROSS_FUNDED amounts on L1_L2 and sleeve_holding edges outside alternative groups are
+  counted; everything else is linked, not summed. Pool supply concentration is recorded on the L1_L2 edge with chain,
+  block or time observed; it never changes the route from POOL to DIRECT.
+- A product may feed several strategies; a strategy may serve several products. Pure principal commodity purchase and
+  resale (PT) is trade finance: business_type trade_finance_pt or mixed.
 
 ## 2. Research questions (codes used in issuer_requests and notes)
 A Layers and roles
@@ -91,19 +112,27 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
   GLEIF), auditor, onchain (chain state, a block explorer or an indexer reading it), third_party, analyst.
 - Set publisher to the entity id when a source is published by an entity in the document; set subject on a claim when
   it is about one entity or product. A source never verifies claims about its own publisher.
-- Legal facts (entities, interfaces, holder_rights, eligibility) are verified only by regulator, registry, auditor or
-  onchain sources. Third-party agreement keeps them inferred. An analyst source never appears in the evidence of a
-  verified claim.
+- Six statuses, kept distinct in the data (curator decision Q6): verified (CONFIRMED: direct, sufficient evidence for
+  the precise claim within its stated scope); self_reported (issuer, protocol, borrower or another interested party);
+  third_party_reported (a third party reports it; its scope and authority still need assessing); inferred (your
+  conclusion from cited facts; the note states the reasoning); not_found (UNRESOLVED); CONFLICTING is derived from
+  discrepancy subjects.
+- Legal facts (entities, interfaces, holder_rights, supports, eligibility) are verified only by regulator, registry,
+  auditor or onchain sources, and only within the scope those sources cover. On-chain confirmation of pool receipts
+  confirms the receipt balances, not the off-chain lender of record or the holder's rights against a borrower; never
+  upgrade a claim because an adjacent token transfer is confirmed. An analyst source never appears in the evidence of
+  a verified claim.
 - Never assign an entity to a layer, or an interface to a route, method or legal class, without a source: leave the
-  claim not_found with the sources checked, and add an issuer request. Incomplete public disclosure is never turned
-  into a definitive legal-entity assignment.
-- The route (POOL, FUND, DIRECT, WRAPPER) and the legal class are separate questions: a pool supply is not a loan to
-  the pool operator; a fund subscription is not a loan to the fund; a vault share is not a claim on the final borrower;
-  buying loans originated by X is not a claim on X.
-- The report shows framework flags derived from claim status: verified CONFIRMED; self_reported or inferred
-  PARTIALLY_VERIFIED; not_found UNRESOLVED; any claim named by a discrepancy finding's subjects CONFLICTING. Name the
-  subjects (for example `X3.security`, `T1.default_path.loss_waterfall`, `T2.l3_business.performance`,
-  `P1.holder_rights.look_through`) on every discrepancy. Never point an interface at its own source entity.
+  claim not_found with the sources checked, and add an issuer request.
+- Route and legal claim are separate questions (curator Constraint 1): a pool supply is not a loan to the pool
+  operator; a pool receipt is PROTOCOL_ENTITLEMENT unless a contract shows more; a fund subscription is not a loan to
+  the fund; a vault share or position NFT is not a participation in the borrower debt without the participation
+  agreement; AP or PI at a lower layer never gives an upstream holder the same title. Traverse each legal edge and keep
+  unverified steps visible instead of collapsing them into one direct claim.
+- Name the subjects of every discrepancy (for example `X3.security`, `T1.default_path.loss_waterfall`,
+  `T2.l3_business.performance`, `P1.holder_rights.look_through`, `Z1.coverage`) and write its scope note: why both
+  statements concern the same fact, timeframe and contractual scope. When the documents may simply cover different
+  scopes or dates, record a scope_unresolved finding instead. Never point an interface at its own source entity.
 - Chain state outranks project docs on permissions, gating, roles and admin control; contract-level access and legal
   eligibility are separate claims.
 - Quote the shortest verbatim excerpt that supports the claim (<= 300 chars). Never paraphrase into the excerpt.
@@ -150,8 +179,16 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
 - gap: a field that matters and is not_found. Blocking when it concerns the holders' legal counterparty (A2), the
   L1->L2 legal claim (B2), the L2->L3 security (C2), the loss waterfall (C6), holder look-through (D2) or the reality
   of the L3 business (E1), or who controls the assets or contracts.
-- discrepancy: two sources disagree; cite both and name the subjects. structural_change: the structure changed over
-  time; record it also in history.
+- material: set material true for a finding the curator must see first (for example an outstanding position with a
+  stale payment history). State only what the evidence shows: no event observed does not mean a loan is current, and
+  a stale payment does not prove legal default or loss. Do not attribute a position to a product unless provenance and
+  portfolio membership are shown. Pair it with an issuer request for reconciliation.
+- discrepancy: two sources disagree about the same fact, timeframe and scope; cite both, name the subjects, write the
+  scope note. scope_unresolved: two documents appear to differ but may cover different scopes, dates or products;
+  cite both; it never makes a claim CONFLICTING. structural_change: the structure changed over time; record it also in
+  history.
+- A partnership announcement is not a deployed holding: keep it as a finding or issuer request until instruments and
+  amounts are shown.
 - No risk scores, no recommendations, no adjectives about quality.
 
 ## 9. Budget and the review packet

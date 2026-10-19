@@ -1,10 +1,10 @@
-"""Markdown report renderer (section 3.8, v0.5 section 6); deterministic, adds only fixed headings, labels and
-the legend."""
+"""Markdown report renderer (section 3.8, v0.6.0 section 6: six reader sections, detail in appendices A-M);
+deterministic, adds only fixed headings, labels and the legend."""
 
 import json
 
-from lib import flow, framework, schema
-from lib.textutil import finding_line, id_key, md_text, not_run_suffix, request_line, search_line
+from lib import flow, framework, review, schema
+from lib.textutil import finding_line, id_key, md_text, not_run_suffix, request_line, search_line, totals_text
 
 NONE = "- none"
 
@@ -77,7 +77,12 @@ class _Cells:
         return claim_cell(claim, self.flag(claim))
 
 
-# --------------------------------------------------------------------------- sections
+def _alt(x):
+    tag = framework.alt_tag(x)
+    return "--" if tag is None else tag
+
+
+# --------------------------------------------------------------------------- metadata
 
 def _metadata(doc, rounds=()):
     run = doc["run"]
@@ -100,6 +105,35 @@ def _metadata(doc, rounds=()):
     return table(("field", "value"), [list(r) for r in rows])
 
 
+# --------------------------------------------------------------------------- 1. executive summary
+
+def _critical(doc):
+    """Material findings, then blocking gaps not already listed; each with its markers."""
+    findings = sorted(doc["findings"], key=id_key)
+    out = []
+    for f in findings:
+        if f["material"]:
+            blocking = "[BLOCKING] " if f["type"] == "gap" and f["blocking"] else ""
+            out.append(finding_line(f, marker="[MATERIAL] " + blocking))
+    out += [finding_line(f, marker="[BLOCKING] ") for f in findings
+            if f["type"] == "gap" and f["blocking"] and not f["material"]]
+    return out
+
+
+def _executive(doc):
+    out = []
+    if doc["narrative"]["executive_summary"]:
+        out += [md_text(doc["narrative"]["executive_summary"], 800), ""]
+    for t in framework.core_strategies(doc):
+        out += ["### " + strategy_title(t), ""]
+        out += table(("question", "answer"), [[q, md_text(a)] for q, a in framework.five_questions(doc, t["id"])])
+        out.append("")
+    out += ["### Critical findings", ""]
+    return out + (_critical(doc) or [NONE])
+
+
+# --------------------------------------------------------------------------- 2. completeness and portfolio
+
 def _completeness(doc):
     names = {t["id"]: t for t in doc["strategies"]}
     return table(["strategy"] + ["%s %s" % (code, label) for code, label in framework.CHECKS],
@@ -107,10 +141,25 @@ def _completeness(doc):
                   for sid, checks in framework.completeness(doc)])
 
 
+def _portfolio(doc, cell):
+    totals = framework.allocation_totals(doc)["strategies"]
+    out = ["### Completeness", ""] + _completeness(doc)
+    out += ["", "### Portfolio components", ""]
+    out += table(("strategy", "component", "products", "business type", "counted total"),
+                 [[strategy_title(t), t["component"], ", ".join(sorted(t["products"], key=id_key)),
+                   cell(t["business_type"]), totals_text(totals.get(t["id"], {}))]
+                  for t in sorted(doc["strategies"], key=id_key)])
+    out += ["", "### Allocation", ""]
+    return out + (review.allocation_table(doc) or [NONE])
+
+
+# --------------------------------------------------------------------------- 3. three-layer business model
+
 def _functional_map(doc, cell):
     out = []
     for t in sorted(doc["strategies"], key=id_key):
         out += ["### " + strategy_title(t), "",
+                "- Component: " + t["component"],
                 "- Products: " + ", ".join(sorted(t["products"], key=id_key)),
                 "- Business type: " + cell(t["business_type"]),
                 "- Sublayers: " + (md_text(t["sublayers"], 200) if t["sublayers"] else "--"),
@@ -118,24 +167,14 @@ def _functional_map(doc, cell):
         lines = framework.chain_line(doc, t["id"])
         out += ["  - " + md_text(line) for line in lines] or ["  - none"]
         out.append("")
-    rows = [[e["id"], fn["layer"], fn["role"], text(fn["strategy"]), ", ".join(fn["evidence"])]
+    rows = [[e["id"], e["entity_class"], text(fn["layer"]), fn["role"], text(fn["strategy"]),
+             ", ".join(fn["evidence"])]
             for e in sorted(doc["entities"], key=id_key) for fn in e["functions"]]
     out += ["### Functions by entity", ""]
-    return out + table(("entity", "layer", "role", "strategy", "evidence"), rows)
+    return out + table(("entity", "class", "layer", "role", "strategy", "evidence"), rows)
 
 
-def _register(doc, cell):
-    entities = sorted(doc["entities"], key=id_key)
-    out = table(("entity", "legal name", "jurisdiction", "type", "registration", "licence status"),
-                [[e["id"], cell(e["legal_name"]), cell(e["jurisdiction"]), cell(e["entity_type"]),
-                  cell(e["registration_id"]), cell(e["license_status"])] for e in entities])
-    licenses = [[e["id"], cell(lic["regulator"]), cell(lic["license_type"]), cell(lic["license_id"]),
-                 cell(lic["status"])] for e in entities for lic in e["licenses"]]
-    if licenses:
-        out += ["", "Licences:", ""]
-        out += table(("entity", "regulator", "licence type", "licence id", "licence status"), licenses)
-    return out
-
+# --------------------------------------------------------------------------- 4. allocation and deployment
 
 def _interfaces(doc, kinds):
     return [x for x in sorted(doc["interfaces"], key=id_key) if x["kind"] in kinds]
@@ -145,23 +184,38 @@ def _ends(x):
     return "%s -> %s (%s)" % (x["from"], x["to"], x["kind"])
 
 
-def _l1_l2(doc, cell):
-    return table(("id", "strategy", "from -> to", "route", "legal class", "counterparty", "instrument",
-                  "claim holder", "terms", "governing law"),
+def _deployment(doc, cell):
+    out = ["### L1 -> L2", ""]
+    out += table(("id", "strategy", "from -> to", "route", "legal class", "counterparty", "instrument",
+                  "claim holder", "amount", "basis", "supply concentration", "alternative", "terms",
+                  "governing law"),
                  [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["route"]), cell(x["legal_class"]),
-                   cell(x["counterparty"]), cell(x["instrument"]), cell(x["claim_holder"]), cell(x["terms"]),
+                   cell(x["counterparty"]), cell(x["instrument"]), cell(x["claim_holder"]), cell(x["amount"]),
+                   x["amount_basis"] or "--", cell(x["supply_concentration"]), _alt(x), cell(x["terms"]),
                    cell(x["governing_law"])]
                   for x in _interfaces(doc, ("holder_L1", "L1_L2", "within_L1"))])
-
-
-def _l2_l3(doc, cell):
-    return table(("id", "strategy", "from -> to", "method", "legal class", "counterparty", "security", "collateral",
-                  "perfection", "enforcement", "recourse", "terms"),
+    out += ["", "### L2 -> L3", ""]
+    out += table(("id", "strategy", "from -> to", "method", "legal class", "counterparty", "security",
+                  "collateral", "perfection", "enforcement", "recourse", "amount", "alternative", "terms"),
                  [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["method"]), cell(x["legal_class"]),
                    cell(x["counterparty"]), cell(x["security"]), cell(x["collateral"]), cell(x["perfection"]),
-                   cell(x["enforcement"]), cell(x["recourse"]), cell(x["terms"])]
-                  for x in _interfaces(doc, ("L2_L3", "within_L2", "within_L3"))])
+                   cell(x["enforcement"]), cell(x["recourse"]), cell(x["amount"]), _alt(x), cell(x["terms"])]
+                  for x in _interfaces(doc, ("L2_L3", "within_L2", "within_L3", "L3_L3O"))])
+    out += ["", "### Liquidity sleeves", ""]
+    out += table(("id", "strategy", "from -> to", "legal class", "instrument", "amount", "basis", "terms"),
+                 [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["legal_class"]), cell(x["instrument"]),
+                   cell(x["amount"]), x["amount_basis"] or "--", cell(x["terms"])]
+                  for x in _interfaces(doc, ("sleeve_holding", "reserve_lookthrough"))])
+    out += ["", "### Asset sales", ""]
+    out += table(("id", "strategy", "from -> to", "title transfer", "servicing", "recourse", "amount", "basis",
+                  "residual exposure"),
+                 [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["title_transfer"]), cell(x["servicing"]),
+                   cell(x["recourse"]), cell(x["amount"]), x["amount_basis"] or "--", cell(x["residual_exposure"])]
+                  for x in _interfaces(doc, ("asset_sale",))])
+    return out
 
+
+# --------------------------------------------------------------------------- 5. holder rights, default, supports
 
 HOLDER_FIELDS = (("instrument_nature", "Instrument nature"), ("claim_against", "Claim against"),
                  ("look_through", "Look-through"), ("recourse", "Recourse"), ("governing_law", "Governing law"),
@@ -172,16 +226,18 @@ L3_FIELDS = (("description", "Description"), ("revenue_model", "Revenue model"),
              ("cash_generation", "Cash generation"), ("collections_control", "Collections control"),
              ("concentration", "Concentration"), ("performance", "Performance"),
              ("operating_history", "Operating history"))
+SUPPORT_FIELDS = ("covered_exposure", "trigger", "coverage", "exclusions", "priority", "enforceability",
+                  "governing_law", "holder_recourse")
 
 
 def _holder_rights(doc, cell):
     out = []
     for p in sorted(doc["project"]["products"], key=id_key):
-        out += ["### " + product_title(p), ""]
+        out += ["### Holder rights: " + product_title(p), ""]
         entries = [h for h in doc["holder_rights"] if h["product"] == p["id"]]
         out += ["- %s: %s" % (label, cell(h[field])) for h in entries for field, label in HOLDER_FIELDS] or [NONE]
         out.append("")
-    return out[:-1]
+    return out
 
 
 def _waterfall(claim, cell):
@@ -195,22 +251,68 @@ def _waterfall(claim, cell):
 
 def _default_path(doc, cell):
     out = []
-    for t in sorted(doc["strategies"], key=id_key):
+    for t in framework.core_strategies(doc):
         path = t["default_path"]
-        out += ["### " + strategy_title(t), ""]
+        out += ["### Default and recovery: " + strategy_title(t), ""]
         out += ["- %s: %s" % (label, cell(path[field])) for field, label in DEFAULT_FIELDS]
         out += _waterfall(path["loss_waterfall"], cell)
         out += ["- Recovery history: " + cell(path["recovery_history"]), ""]
-    return out[:-1]
+    return out
+
+
+def _supports(doc, cell):
+    out = ["### Supports", ""]
+    return out + table(("id", "type", "strategies", "provider", "beneficiary", "covered exposure", "trigger",
+                        "coverage", "exclusions", "priority", "enforceability", "governing law", "holder recourse"),
+                       [[z["id"], z["type"], ", ".join(z["strategies"]), z["provider"], text(z["beneficiary"])]
+                        + [cell(z[field]) for field in SUPPORT_FIELDS]
+                        for z in sorted(doc["supports"], key=id_key)])
+
+
+def _rights_default(doc, cell):
+    return _holder_rights(doc, cell) + _default_path(doc, cell) + _supports(doc, cell)
+
+
+# --------------------------------------------------------------------------- 6. material gaps and requests
+
+def _gaps_requests(doc):
+    findings = sorted(doc["findings"], key=id_key)
+    gaps = []
+    for f in findings:
+        if f["type"] == "gap" and (f["material"] or f["blocking"]):
+            marker = ("[MATERIAL] " if f["material"] else "") + ("[BLOCKING] " if f["blocking"] else "")
+            gaps.append(finding_line(f, marker=marker))
+    out = ["### Material and blocking gaps", ""] + (gaps or [NONE])
+    out += ["", "### Scope unresolved", ""]
+    out += [finding_line(f, subjects=True) for f in findings if f["type"] == "scope_unresolved"] or [NONE]
+    out += ["", "### Discrepancies", ""]
+    out += [finding_line(f, subjects=True, scope=True) for f in findings if f["type"] == "discrepancy"] or [NONE]
+    out += ["", "### Issuer requests", ""]
+    return out + ([request_line(q) for q in sorted(doc["issuer_requests"], key=id_key)] or [NONE])
+
+
+# --------------------------------------------------------------------------- appendices
+
+def _register(doc, cell):
+    entities = sorted(doc["entities"], key=id_key)
+    out = table(("entity", "class", "legal name", "jurisdiction", "type", "registration", "licence status"),
+                [[e["id"], e["entity_class"], cell(e["legal_name"]), cell(e["jurisdiction"]),
+                  cell(e["entity_type"]), cell(e["registration_id"]), cell(e["license_status"])] for e in entities])
+    licenses = [[e["id"], cell(lic["regulator"]), cell(lic["license_type"]), cell(lic["license_id"]),
+                 cell(lic["status"])] for e in entities for lic in e["licenses"]]
+    if licenses:
+        out += ["", "Licences:", ""]
+        out += table(("entity", "regulator", "licence type", "licence id", "licence status"), licenses)
+    return out
 
 
 def _l3_business(doc, cell):
     out = []
-    for t in sorted(doc["strategies"], key=id_key):
+    for t in framework.core_strategies(doc):
         out += ["### " + strategy_title(t), ""]
         out += ["- %s: %s" % (label, cell(t["l3_business"][field])) for field, label in L3_FIELDS]
         out.append("")
-    return out[:-1]
+    return out
 
 
 def _yield(doc, cell):
@@ -288,29 +390,28 @@ def _onchain(doc, cell):
 
 
 def _findings(doc):
-    """Gaps (blocking ones marked; a draft nests the searches that resolve them), discrepancies with subjects,
-    structural changes and open questions."""
+    """Gaps (markers; a draft nests the searches that resolve blocking gaps), discrepancies with subjects and
+    scope notes, scope unresolved, structural changes and open questions."""
     findings = sorted(doc["findings"], key=id_key)
     searches = [] if doc["run"]["status"] == "final" else sorted(doc["next_searches"], key=id_key)
     gaps = []
     for f in findings:
         if f["type"] != "gap":
             continue
-        gaps.append(finding_line(f, marker="[BLOCKING] " if f["blocking"] else ""))
+        marker = ("[MATERIAL] " if f["material"] else "") + ("[BLOCKING] " if f["blocking"] else "")
+        gaps.append(finding_line(f, marker=marker))
         if f["blocking"]:
             gaps += ["  " + search_line(n) for n in searches if f["id"] in n["resolves"]]
     out = ["### Gaps", ""] + (gaps or [NONE])
     out += ["", "### Discrepancies", ""]
-    out += [finding_line(f, subjects=True) for f in findings if f["type"] == "discrepancy"] or [NONE]
+    out += [finding_line(f, subjects=True, scope=True) for f in findings if f["type"] == "discrepancy"] or [NONE]
+    out += ["", "### Scope unresolved", ""]
+    out += [finding_line(f, subjects=True) for f in findings if f["type"] == "scope_unresolved"] or [NONE]
     out += ["", "### Structural changes", ""]
     out += [finding_line(f) for f in findings if f["type"] == "structural_change"] or [NONE]
     out += ["", "### Open questions", ""]
     out += ["- [%s] %s" % (q["topic"], md_text(q["question"], 200)) for q in doc["open_questions"]] or [NONE]
     return out
-
-
-def _requests(doc):
-    return [request_line(q) for q in sorted(doc["issuer_requests"], key=id_key)]
 
 
 def _not_run(doc, rejected):
@@ -360,7 +461,7 @@ def _interventions(rounds):
         body = body.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
         fence = _fence(body)
         out += ["### " + heading, "", fence + "text"] + body.split("\n") + [fence, ""]
-    return out[:-1]
+    return out
 
 
 def _unmapped(doc):
@@ -375,34 +476,51 @@ def _unmapped(doc):
 
 LEGEND = [
     "- Claim cell: `value [FLAG] (evidence) -- note`; `--` means no value.",
-    "- CONFIRMED: verified by an independent source (legal facts: regulator, registry, auditor or on-chain).",
-    "- PARTIALLY_VERIFIED: self-reported by the project or the subject, or inferred from the cited evidence.",
+    "- CONFIRMED: direct, sufficient evidence for the precise claim within its stated scope (legal facts:"
+    " regulator, registry, auditor or on-chain sources only).",
+    "- SELF_REPORTED: stated by the issuer, protocol, borrower or another interested party.",
+    "- THIRD_PARTY_REPORTED: reported by a third party; its scope and authority still need assessing.",
+    "- INFERRED: the analyst's conclusion from cited facts; the note states the reasoning.",
     "- UNRESOLVED: not found in the cited sources, or not searched when no source is cited.",
-    "- CONFLICTING: named by a discrepancy finding (see section 13).",
-    "- Layers: L1 on-chain capital vault; L2 credit financing layer; L3 underlying business layer.",
-    "- L3-O: the L3 business's paying customers or end borrowers (ultimate obligors), recorded as layer L3 with"
-    " role ultimate_obligor and linked by within_L3 interfaces.",
+    "- CONFLICTING: named by a discrepancy finding about the same fact, timeframe and scope (see Appendix F);"
+    " scope-unresolved findings never make a claim CONFLICTING.",
+    "- Layers are functions inside one strategy, by position in its financing chain: L1 on-chain capital vault;"
+    " L2 credit financing layer; L3 underlying business layer.",
+    "- L3-O: optional sub-layer of parties downstream of L3 whose payments repay it; roles contractual_obligor"
+    " (a document shows they legally owe L3), cash_flow_source (business cash flows) and offtaker_customer"
+    " (buyers of goods, services or compute); linked by L3_L3O interfaces.",
     "- Route (L1->L2): POOL supply to a shared lending pool; FUND subscription to a fund or vehicle; DIRECT financing"
     " of the credit counterparty itself; WRAPPER a position in another vault or token that holds the exposure.",
     "- Method (L2->L3): DL direct loan; DI debt instrument (note, bond); AP purchase of receivables or other"
     " assets; PI participation interest; REPO repurchase agreement; PT principal purchase and resale (trade"
-    " finance).",
+    " finance); OTHER other method.",
     "- Legal class: DL loan claim; DI debt instrument claim; AP ownership of purchased assets; PI participation"
-    " interest; FI fund interest; EI equity interest; OTHER other or contractual claim.",
+    " interest; FI fund interest; EI equity interest; PROTOCOL_ENTITLEMENT a pool receipt or other"
+    " protocol-enforced entitlement; OTHER other or contractual claim.",
+    "- Components: CORE_CREDIT an underlying real-world financing business; LIQUIDITY_SLEEVE undeployed cash or"
+    " stablecoin (issuer and reserves, no L3); DEFI_LENDING lending-market supply with protocol-enforced"
+    " entitlements.",
+    "- Amount bases: GROSS_FUNDED funded principal; COMMITMENT committed, not necessarily funded; LOOKTHROUGH"
+    " exposure seen through a held instrument; RESERVE reserve assets of an issuer; SALE_PROCEEDS proceeds of"
+    " an asset sale.",
+    "- Counting rule: only GROSS_FUNDED amounts on L1_L2 and sleeve_holding interfaces outside alternative groups"
+    " are counted; everything else is linked, not summed.",
+    "- Alternative tag: `alt A1a` marks option a of alternative group A1, competing legal paths for one position;"
+    " they are never parallel exposures and are not counted.",
     "- Flow views: settlement (capital and asset movement); claim (legal rights and collateral);"
     " repayment (cash back to L2 and L1, fees, enforcement path).",
     "- Lanes: offchain, boundary (conversion, bridge and custody hand-off points), onchain.",
-    "- Diagram suffixes: [C] CONFIRMED, [P] PARTIALLY_VERIFIED, [U] UNRESOLVED ([U?] not searched),"
-    " [X] CONFLICTING.",
-    "- Findings: G gap, D discrepancy, C structural change; issuer requests Q cite the research question codes"
-    " they answer. No risk scores are given.",
+    "- Diagram suffixes: [C] CONFIRMED, [S] SELF_REPORTED, [T] THIRD_PARTY_REPORTED, [I] INFERRED,"
+    " [U] UNRESOLVED ([U?] not searched), [X] CONFLICTING.",
+    "- Findings: G gap, D discrepancy, U scope unresolved, C structural change; issuer requests Q cite the research"
+    " question codes they answer. No risk scores are given.",
 ]
 
 
 def render(doc, rounds=(), figures=None, rejected=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
     figures = {"T<n>-<view>": SVG text}: a figure gets an image link to <slug>.flow-T<n>-<view>.svg;
-    rejected = N ids the analyst rejected, marked in Appendix D (final reports only)."""
+    rejected = N ids the analyst rejected, marked in Appendix M (final reports only)."""
     figures = figures or {}
     cell = _Cells(doc)
     name = doc["project"]["name"]["value"]
@@ -413,31 +531,30 @@ def render(doc, rounds=(), figures=None, rejected=()):
         lines += ["", "> DRAFT -- not finalized"]
 
     sections = (
-        ("1. Executive summary", [md_text(doc["narrative"]["executive_summary"], 800)]
-         if doc["narrative"]["executive_summary"] else []),
-        ("2. Framework completeness", _completeness(doc)),
-        ("3. Three-layer functional map", _functional_map(doc, cell)),
-        ("4. Legal entity register", _register(doc, cell)),
-        ("5. L1 -> L2 capital allocation", _l1_l2(doc, cell)),
-        ("6. L2 -> L3 underlying transactions", _l2_l3(doc, cell)),
-        ("7. Holder legal rights", _holder_rights(doc, cell)),
-        ("8. Default and recovery path", _default_path(doc, cell)),
-        ("9. L3 business", _l3_business(doc, cell)),
-        ("10. Yield, fees and redemption", _yield(doc, cell)),
-        ("11. Fund flows", _flows(doc, figures, cell)),
-        ("12. On-chain contracts and control", _onchain(doc, cell)),
-        ("13. Findings", _findings(doc)),
-        ("14. Issuer requests", _requests(doc)),
-        ("15. Audits and size", _audits_size(doc, cell)),
-        ("16. History", _history(doc)),
-        ("17. Sources", _sources(doc)),
-        ("Appendix A. Analyst interventions", _interventions(rounds)),
-        ("Appendix B. Unmapped facts", _unmapped(doc)),
-        ("Appendix C. Legend", LEGEND),
+        ("1. Executive summary and critical findings", _executive(doc)),
+        ("2. Framework completeness and portfolio", _portfolio(doc, cell)),
+        ("3. Three-layer business model", _functional_map(doc, cell)),
+        ("4. Capital allocation and credit deployment", _deployment(doc, cell)),
+        ("5. Holder rights, default and recovery", _rights_default(doc, cell)),
+        ("6. Material gaps and issuer requests", _gaps_requests(doc)),
+        ("Appendix A. Legal entity register", _register(doc, cell)),
+        ("Appendix B. L3 business", _l3_business(doc, cell)),
+        ("Appendix C. Fund flows", _flows(doc, figures, cell)),
+        ("Appendix D. Yield, fees and redemption", _yield(doc, cell)),
+        ("Appendix E. On-chain contracts and control", _onchain(doc, cell)),
+        ("Appendix F. All findings", _findings(doc)),
+        ("Appendix G. History", _history(doc)),
+        ("Appendix H. Audits and size", _audits_size(doc, cell)),
+        ("Appendix I. Sources", _sources(doc)),
+        ("Appendix J. Analyst interventions", _interventions(rounds)),
+        ("Appendix K. Unmapped facts", _unmapped(doc)),
+        ("Appendix L. Legend", LEGEND),
     )
     if doc["run"]["status"] == "final":
-        sections += (("Appendix D. Searches not run", _not_run(doc, rejected)),)
+        sections += (("Appendix M. Searches not run", _not_run(doc, rejected)),)
     for heading, body in sections:
+        while body and body[-1] == "":
+            body = body[:-1]
         lines += ["", "## " + heading, ""]
         lines += body or [NONE]
     return "\n".join(lines).rstrip("\n") + "\n"

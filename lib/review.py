@@ -1,12 +1,11 @@
-"""Review packet renderer (section 3.7, v0.5 section 5); deterministic."""
+"""Review packet renderer (section 3.7, v0.5 section 5, v0.6.0 section 5); deterministic."""
 
-from lib import framework
-from lib.textutil import finding_line, id_key, md_text, request_line, search_line
+from lib import framework, schema
+from lib.textutil import finding_line, id_key, md_text, number_text, request_line, search_line, totals_text
 
 FLAGS = framework.FLAGS
 
-KINDS_B = ("holder_L1", "L1_L2", "within_L1")
-KINDS_C = ("L2_L3", "within_L2", "within_L3")
+KINDS_B = ("holder_L1", "L1_L2", "within_L1", "sleeve_holding", "reserve_lookthrough")
 OTHER = ("project", "yield", "redemption", "eligibility", "audits", "size", "onchain")
 
 
@@ -28,11 +27,13 @@ def _group(parts, doc):
         return "F flows"
     if head in OTHER:
         return "O other"
+    if head == "supports":
+        return "S supports"
     return None
 
 
 GROUPS = ("A layers and entities", "B L1->L2", "C L2->L3 and default", "D holder rights", "E L3 business",
-          "F flows", "O other")
+          "F flows", "O other", "S supports")
 
 TEMPLATE_COMMENTS = (
     "# reject N<k>",
@@ -56,11 +57,16 @@ def coverage(doc):
     return counts
 
 
+def _title(t):
+    return "%s %s" % (t["id"], md_text(t["name"], 80)) if t["name"] else t["id"]
+
+
 def completeness_table(doc):
     header = ["strategy"] + ["%s %s" % (code, label) for code, label in framework.CHECKS]
-    names = {t["id"]: t["name"] for t in doc["strategies"]}
-    rows = [["%s %s" % (sid, md_text(names[sid], 80)) if names[sid] else sid] + [fl for _, _, fl in checks]
-            for sid, checks in framework.completeness(doc)]
+    names = {t["id"]: t for t in doc["strategies"]}
+    rows = [[_title(names[sid])] + [fl for _, _, fl in checks] for sid, checks in framework.completeness(doc)]
+    if not rows:
+        return []
     out = ["| %s |" % " | ".join(header), "|" + "---|" * len(header)]
     return out + ["| %s |" % " | ".join(row) for row in rows]
 
@@ -68,8 +74,52 @@ def completeness_table(doc):
 def chain_lines(doc):
     out = []
     for t in sorted(doc["strategies"], key=id_key):
-        prefix = "%s %s" % (t["id"], md_text(t["name"], 80)) if t["name"] else t["id"]
-        out += ["- %s: %s" % (prefix, md_text(line)) for line in framework.chain_line(doc, t["id"])]
+        out += ["- %s: %s" % (_title(t), md_text(line)) for line in framework.chain_line(doc, t["id"])]
+    return out
+
+
+def _table(header, rows):
+    if not rows:
+        return []
+    out = ["| %s |" % " | ".join(header), "|" + "---|" * len(header)]
+    return out + ["| %s |" % " | ".join(row) for row in rows]
+
+
+def amount_text(amount, currency):
+    """`25000000 USD`, `25000000` without a currency, `--` without an amount."""
+    if amount is None:
+        return "--"
+    text = number_text(amount)
+    return text if currency is None else "%s %s" % (text, md_text(framework.currency_key(currency)))
+
+
+def components_table(doc):
+    totals = framework.allocation_totals(doc)["strategies"]
+    return _table(("strategy", "component", "products", "counted total"),
+                  [[_title(t), t["component"], ", ".join(sorted(t["products"], key=id_key)),
+                    totals_text(totals.get(t["id"], {}))] for t in sorted(doc["strategies"], key=id_key)])
+
+
+def allocation_table(doc):
+    return _table(("strategy", "interface", "kind", "amount", "basis", "counted", "reason"),
+                  [[sid, xid, kind, amount_text(amount, currency), basis or "--", "yes" if counted else "no",
+                    reason] for sid, _, xid, kind, amount, currency, basis, counted, reason
+                   in framework.allocation(doc)])
+
+
+def alternative_lines(doc):
+    """`- A1 (T2): a X11; b X12` per alternative group, in group then option order."""
+    groups = {}
+    for x in sorted(doc["interfaces"], key=id_key):
+        alt = x["alternative"]
+        if alt["group"] is not None:
+            groups.setdefault(alt["group"], {}).setdefault(alt["option"], []).append(x)
+    out = []
+    for group in sorted(groups, key=id_key):
+        options = groups[group]
+        strategies = sorted({x["strategy"] for xs in options.values() for x in xs}, key=id_key)
+        out.append("- %s (%s): %s" % (group, ", ".join(strategies), "; ".join(
+            "%s %s" % (option, ", ".join(x["id"] for x in options[option])) for option in sorted(options))))
     return out
 
 
@@ -88,13 +138,23 @@ def render(doc, round_no):
     for name, row in coverage(doc).items():
         table.append("| %s | %s |" % (name, " | ".join(str(row[f]) for f in FLAGS)))
     _section(lines, "Coverage", table)
+    _section(lines, "Portfolio components", components_table(doc))
     _section(lines, "Framework completeness", completeness_table(doc))
     _section(lines, "Three-layer chains", chain_lines(doc))
+    _section(lines, "Allocation", allocation_table(doc))
+    _section(lines, "Alternative paths", alternative_lines(doc))
+    _section(lines, "Material findings", [finding_line(f) for f in findings if f["material"]])
+    _section(lines, "Scope checks pending",
+             [finding_line(f) for f in findings
+              if f["type"] == "discrepancy" and f["scope_note"] == schema.MIGRATED_SCOPE_NOTE])
     _section(lines, "Blocking gaps",
              [finding_line(f) for f in findings if f["type"] == "gap" and f["blocking"]])
     _section(lines, "Other gaps",
              [finding_line(f) for f in findings if f["type"] == "gap" and not f["blocking"]])
-    _section(lines, "Discrepancies", [finding_line(f) for f in findings if f["type"] == "discrepancy"])
+    _section(lines, "Discrepancies",
+             [finding_line(f, subjects=True, scope=True) for f in findings if f["type"] == "discrepancy"])
+    _section(lines, "Scope unresolved",
+             [finding_line(f, subjects=True) for f in findings if f["type"] == "scope_unresolved"])
     _section(lines, "Structural changes",
              [finding_line(f) for f in findings if f["type"] == "structural_change"])
     _section(lines, "Issuer requests", [request_line(q) for q in sorted(doc["issuer_requests"], key=id_key)])

@@ -57,7 +57,7 @@ def test_figure_keys_order():
 def test_build_d2_selects_strategy_and_view():
     doc = load_fixture()
     claim = flow.build_d2(doc, "T1", "claim")
-    assert claim.count(" -> ") == 2 and '"equipment pledged [P]"' in claim and "Investor wallet" not in claim
+    assert claim.count(" -> ") == 2 and '"equipment pledged [S]"' in claim and "Investor wallet" not in claim
     assert flow.build_d2(doc, "T2", "settlement").count(" -> ") == 5
     assert flow.build_d2(doc, "T2", "repayment") == flow.HEADER + "\n"
 
@@ -86,7 +86,7 @@ def test_hostile_labels_reduced_to_alphabet():
     labels = [q for q in _quoted(source) if not q.startswith("#")]
     assert labels
     for label in labels:
-        text = re.sub(r" \[(C|P|U|U\?|X)\]$", "", label)
+        text = re.sub(r" \[(C|S|T|I|U|U\?|X)\]$", "", label)
         assert allowed.match(text) and "  " not in text and text == text.strip(), label
     assert flow.clean_label(HOSTILE) == "a b c d e f g h i j k x 'ok' (1/2) & 50% @x_y=z-1;:,."[:40]
     for ch in '"\\{}#$|<>\n\u00e9':
@@ -142,7 +142,7 @@ def test_nodes_sorted_and_edge_styles():
     assert ids == ["n6", "n13", "n5", "n1", "n3", "n4"]
     assert ('onchain.n3 -> onchain.n4: "reserve pledge [U]" {style.stroke: "#b91c1c"; style.font-size: 12; '
             'style.stroke-dash: 4; style.opacity: 0.5}') in source
-    assert '"vault deposit [P]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}' in source
+    assert '"vault deposit [S]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}' in source
     assert "style.double-border: true" in source
 
 
@@ -151,6 +151,29 @@ def test_flag_suffixes():
     assert '"USDC in, aSN minted [C]" {style.stroke: "#2563eb"; style.font-size: 12}' in source
     assert '"goods purchased [U?]"' in flow.build_d2(load_fixture(), "T2", "settlement")
     assert flow.FLAG_SUFFIX["CONFLICTING"] == " [X]"
+
+
+def test_suffix_letters_s_t_i():
+    assert flow.FLAG_SUFFIX == {"CONFIRMED": " [C]", "SELF_REPORTED": " [S]", "THIRD_PARTY_REPORTED": " [T]",
+                                "INFERRED": " [I]", "UNRESOLVED": " [U]", "CONFLICTING": " [X]"}
+    assert flow.FLAG_OPACITY == {"SELF_REPORTED": 0.7, "THIRD_PARTY_REPORTED": 0.7, "INFERRED": 0.7,
+                                 "UNRESOLVED": 0.5}
+    doc = copy.deepcopy(load_fixture())
+    assert '"receivables held [I]" {style.stroke: "#9333ea"; style.font-size: 12; style.opacity: 0.7}' in \
+        flow.build_d2(doc, "T1", "claim")
+    edge = [e for e in doc["flows"]["edges"] if e["label"] == "equipment pledged"][0]
+    edge["claim"].update({"status": "third_party_reported", "evidence": ["S5"]})
+    assert '"equipment pledged [T]" {style.stroke: "#b91c1c"; style.font-size: 12; style.stroke-dash: 4; ' \
+        'style.opacity: 0.7}' in flow.build_d2(doc, "T1", "claim")
+
+
+def test_node_layer_accepts_l3_o():
+    from lib import validate
+    doc = copy.deepcopy(load_fixture())
+    doc["flows"]["nodes"][7]["layer"] = "L3-O"
+    assert validate.validate_document(doc) == []
+    doc["flows"]["nodes"][7]["layer"] = "L4"
+    assert validate.validate_document(doc) == ["flows.nodes[7].layer: must be L1|L2|L3|L3-O"]
 
 
 def test_not_found_without_evidence_marker():

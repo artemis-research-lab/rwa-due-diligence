@@ -268,3 +268,30 @@ def test_amend_cli(tmp_path):
     assert (result["amendment"], result["round"], result["phase"], result["commands"]) == (1, 2, "research", 1)
     code, _, err = cli(tmp_path, "amend", "--file", str(good))
     assert code == 3 and "amend requires a final run (current phase: research)" in err
+
+
+# v0.6.0 ----------------------------------------------------------------------------------------------------
+
+def _help(*argv):
+    import contextlib
+    import io
+    from test_support import load_cli
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
+        load_cli().main(list(argv) + ["--help"])
+    return " ".join(buf.getvalue().split())
+
+
+def test_init_help_names_seedable_schemas():
+    assert "accepts records of schema rwa-dd/1.0, 2.0 and 2.1" in _help("init")
+    assert "schema rwa-dd/2.1" in _help()
+    assert "address, layer, claim and path warnings" in _help()
+
+
+def test_lint_prints_four_keys(tmp_path):
+    build_run(tmp_path)
+    code, out, err = cli(tmp_path, "lint")
+    assert (code, err) == (0, "")
+    result = json.loads(out)
+    assert list(result) == ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings"]
+    assert (result["layer_warnings"], result["claim_warnings"], result["path_warnings"]) == ([], [], [])

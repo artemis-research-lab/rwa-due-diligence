@@ -81,17 +81,32 @@ def id_key(item):
     return (ident[0], int(ident[1:]))
 
 
-def finding_line(finding, subjects=False, marker=""):
+def finding_line(finding, subjects=False, marker="", scope=False):
     """`- **G3** [topic] statement (S4, S9)`; the parenthesis is omitted without evidence.
 
-    subjects=True appends ` -- subjects: X3.security, ...` when the finding names subjects; marker (for example
-    `[BLOCKING] `) is placed before the statement."""
+    subjects=True appends ` -- subjects: X3.security, ...` when the finding names subjects; scope=True appends
+    ` -- scope: <scope note>` when the note is not empty; marker (for example `[BLOCKING] `) is placed before the
+    statement."""
     line = "- **%s** [%s] %s%s" % (finding["id"], finding["topic"], marker, md_text(finding["statement"], 280))
     if finding["evidence"]:
         line += " (%s)" % ", ".join(finding["evidence"])
     if subjects and finding.get("subjects"):
         line += " -- subjects: " + ", ".join(md_text(s) for s in finding["subjects"])
+    if scope and finding.get("scope_note"):
+        line += " -- scope: " + md_text(finding["scope_note"], 200)
     return line
+
+
+def number_text(value):
+    """A JSON number as text (`25000000`, `0.5`)."""
+    return json.dumps(value)
+
+
+def totals_text(bucket):
+    """`<sum> <currency>` per currency, sorted by currency and joined by `; `; `--` when empty."""
+    if not bucket:
+        return "--"
+    return "; ".join("%s %s" % (number_text(bucket[key]), md_text(key)) for key in sorted(bucket))
 
 
 def request_line(request):

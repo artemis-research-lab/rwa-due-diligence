@@ -34,7 +34,8 @@ Never write anywhere else. Run the scripts from the skill directory: `python <sk
    One JSON-RPC batch counts as one call; reading files already in .scratch costs nothing. Register every fetch
    attempt, failed ones included, with `dd.py add-source`; never type a timestamp. Use `dd.py fetch-file` and
    `dd.py pdf-text` for PDFs. Edit `audit/dd.work.json` only; run `dd.py validate` until it exits 0, then
-   `dd.py lint` and fix every warning.
+   `dd.py lint` and fix every warning (address, layer, claim and path warnings). In a run seeded from an earlier
+   schema, check the scope note of every carried-over discrepancy: finalize refuses the migration placeholder.
 3. Fill `next_searches` (with est_calls), `issuer_requests` and `open_questions`, then `dd.py review`. Show the review
    packet to the user verbatim. If a needed file can only be viewed in the browser, list it after the packet, one per
    line: `download <url> -> .scratch/raw/<name>`, so the user can save it and add it with an add-source directive. STOP.

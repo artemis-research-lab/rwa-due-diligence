@@ -1,5 +1,5 @@
 {
-  "schema_version": "rwa-dd/2.0",
+  "schema_version": "rwa-dd/2.1",
   "run": {
     "run_id": "acme-20261001T080000Z",
     "slug": "acme",
@@ -8,7 +8,7 @@
     "status": "draft",
     "started_at": "2026-10-01T08:00:00Z",
     "finalized_at": null,
-    "skill_version": "0.5.0",
+    "skill_version": "0.6.0",
     "seeded_from": null
   },
   "project": {
@@ -146,6 +146,7 @@
         "P1"
       ],
       "name": "Acme equipment credit",
+      "component": "CORE_CREDIT",
       "business_type": {
         "value": "private_credit",
         "status": "self_reported",
@@ -194,13 +195,13 @@
           "note": "Review mentions a third-party custodian over the receivables."
         },
         "concentration": {
-          "value": null,
-          "status": "not_found",
+          "value": "Top ten lessees about 40 percent of the book",
+          "status": "third_party_reported",
           "evidence": [
-            "S8"
+            "S5"
           ],
           "subject": null,
-          "note": "Memorandum gives no obligor concentration."
+          "note": ""
         },
         "performance": {
           "value": null,
@@ -270,6 +271,7 @@
         "P2"
       ],
       "name": "Acme commodity trade finance",
+      "component": "CORE_CREDIT",
       "business_type": {
         "value": "trade_finance_pt",
         "status": "inferred",
@@ -360,6 +362,103 @@
           ],
           "subject": null,
           "note": "Vault docs do not describe loss order."
+        },
+        "recovery_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "T3",
+      "products": [
+        "P2"
+      ],
+      "name": "Acme treasury sleeve",
+      "component": "LIQUIDITY_SLEEVE",
+      "business_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "sublayers": "",
+      "l3_business": {
+        "description": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "revenue_model": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "cash_generation": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "collections_control": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "concentration": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "performance": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "operating_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      },
+      "default_path": {
+        "events_of_default": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "enforcement": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "loss_waterfall": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
         },
         "recovery_history": {
           "value": null,
@@ -496,6 +595,7 @@
   "entities": [
     {
       "id": "E1",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Acme Yield Issuer Ltd",
         "status": "verified",
@@ -572,6 +672,7 @@
     },
     {
       "id": "E2",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Acme Asset Management LLC",
         "status": "verified",
@@ -669,6 +770,7 @@
     },
     {
       "id": "E3",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Example Custody Trust Co",
         "status": "self_reported",
@@ -724,6 +826,7 @@
     },
     {
       "id": "E4",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Acme Labs Inc",
         "status": "self_reported",
@@ -775,6 +878,7 @@
     },
     {
       "id": "E5",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Acme Credit Fund LP",
         "status": "self_reported",
@@ -830,6 +934,7 @@
     },
     {
       "id": "E6",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Acme Warehouse SPV Ltd",
         "status": "self_reported",
@@ -883,6 +988,7 @@
     },
     {
       "id": "E7",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Example Equipment Lessors Ltd",
         "status": "self_reported",
@@ -921,14 +1027,6 @@
           "evidence": [
             "S8"
           ]
-        },
-        {
-          "layer": "L3",
-          "role": "ultimate_obligor",
-          "strategy": "T1",
-          "evidence": [
-            "S8"
-          ]
         }
       ],
       "license_status": {
@@ -942,6 +1040,7 @@
     },
     {
       "id": "E8",
+      "entity_class": "legal_person",
       "legal_name": {
         "value": "Example Receivables Originator",
         "status": "inferred",
@@ -993,6 +1092,7 @@
     },
     {
       "id": "E9",
+      "entity_class": "unknown",
       "legal_name": {
         "value": null,
         "status": "not_found",
@@ -1026,7 +1126,7 @@
       "functions": [
         {
           "layer": "L3",
-          "role": "ultimate_obligor",
+          "role": "financing_recipient",
           "strategy": "T2",
           "evidence": [
             "S7"
@@ -1044,6 +1144,7 @@
     },
     {
       "id": "E10",
+      "entity_class": "obligor_group",
       "legal_name": {
         "value": null,
         "status": "not_found",
@@ -1074,8 +1175,214 @@
       },
       "functions": [
         {
-          "layer": "L3",
-          "role": "ultimate_obligor",
+          "layer": "L3-O",
+          "role": "contractual_obligor",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E11",
+      "entity_class": "legal_person",
+      "legal_name": {
+        "value": "Example Stablecoin Issuer Ltd",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": null,
+          "role": "issuer",
+          "strategy": "T3",
+          "evidence": [
+            "S7"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E12",
+      "entity_class": "unknown",
+      "legal_name": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": null,
+          "role": "reserve_assets",
+          "strategy": "T3",
+          "evidence": [
+            "S7"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E13",
+      "entity_class": "legal_person",
+      "legal_name": {
+        "value": "Example Loan Buyer Fund",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": null,
+          "role": "loan_purchaser",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E14",
+      "entity_class": "legal_person",
+      "legal_name": {
+        "value": "Example Credit Insurer plc",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": null,
+          "role": "protection_provider",
           "strategy": "T1",
           "evidence": [
             "S8"
@@ -1211,6 +1518,46 @@
         "subject": "P1",
         "note": ""
       },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
       "as_of": "2026-10-01"
     },
     {
@@ -1329,6 +1676,48 @@
         "subject": null,
         "note": ""
       },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": 25000000,
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "amount_basis": "GROSS_FUNDED",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
       "as_of": null
     },
     {
@@ -1435,6 +1824,46 @@
         "note": ""
       },
       "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
@@ -1569,6 +1998,48 @@
         "subject": "E7",
         "note": ""
       },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": 10000000,
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "amount_basis": "COMMITMENT",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
       "as_of": null
     },
     {
@@ -1687,6 +2158,46 @@
         "subject": null,
         "note": "Recourse to the seller not stated."
       },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
       "as_of": null
     },
     {
@@ -1791,6 +2302,46 @@
         "note": ""
       },
       "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
@@ -1913,12 +2464,52 @@
         "subject": null,
         "note": ""
       },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
       "as_of": null
     },
     {
       "id": "X8",
       "strategy": "T1",
-      "kind": "within_L3",
+      "kind": "L3_L3O",
       "from": "E7",
       "to": "E10",
       "route": {
@@ -2020,6 +2611,824 @@
         "evidence": [],
         "subject": null,
         "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X9",
+      "strategy": "T3",
+      "kind": "sleeve_holding",
+      "from": "E1",
+      "to": "E11",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "instrument": {
+        "value": "Stablecoin balances",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": "USD",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": 5000000,
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": "GROSS_FUNDED",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X10",
+      "strategy": "T3",
+      "kind": "reserve_lookthrough",
+      "from": "E11",
+      "to": "E12",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "instrument": {
+        "value": "Short-dated government bills",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": "USD",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": 5000000,
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": "LOOKTHROUGH",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X11",
+      "strategy": "T2",
+      "kind": "L2_L3",
+      "from": "E1",
+      "to": "E9",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": [
+          "REPO"
+        ],
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "instrument": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": "Historical repo terms",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "security": {
+        "value": "secured",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": "A1",
+        "option": "a"
+      },
+      "amount": {
+        "value": 2000000,
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "amount_basis": "GROSS_FUNDED",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X12",
+      "strategy": "T2",
+      "kind": "L2_L3",
+      "from": "E1",
+      "to": "E9",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": [
+          "PT"
+        ],
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "instrument": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": "Current live-rate terms",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "security": {
+        "value": "unsecured",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": "A1",
+        "option": "b"
+      },
+      "amount": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": null,
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X13",
+      "strategy": "T1",
+      "kind": "asset_sale",
+      "from": "E6",
+      "to": "E13",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "AP",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "instrument": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": "USD",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "alternative": {
+        "group": null,
+        "option": null
+      },
+      "amount": {
+        "value": 3000000,
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "amount_basis": "SALE_PROCEEDS",
+      "supply_concentration": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "title_transfer": {
+        "value": "true sale",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "servicing": {
+        "value": "Retained by E2",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "residual_exposure": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Not disclosed in the memorandum."
       },
       "as_of": null
     }
@@ -2163,6 +3572,85 @@
         "evidence": [],
         "subject": null,
         "note": ""
+      }
+    }
+  ],
+  "supports": [
+    {
+      "id": "Z1",
+      "type": "CREDIT_ENHANCEMENT",
+      "strategies": [
+        "T1"
+      ],
+      "provider": "E14",
+      "beneficiary": "E5",
+      "covered_exposure": {
+        "value": "Equipment loan principal",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "trigger": {
+        "value": "Payment default continuing for 90 days",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "coverage": {
+        "value": "Up to 20 percent of principal",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "exclusions": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Not disclosed in the memorandum."
+      },
+      "priority": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforceability": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "holder_recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Noteholders are not named as insured."
       }
     }
   ],
@@ -3207,7 +4695,9 @@
       "type": "gap",
       "topic": "legal",
       "blocking": true,
+      "material": true,
       "statement": "Issuer financial statements and the custody agreement are not public.",
+      "scope_note": "",
       "evidence": [
         "S8"
       ],
@@ -3220,7 +4710,9 @@
       "type": "gap",
       "topic": "yield",
       "blocking": false,
+      "material": false,
       "statement": "Gross yield of the Treasury Vault is not disclosed.",
+      "scope_note": "",
       "evidence": [
         "S1",
         "S7"
@@ -3232,7 +4724,9 @@
       "type": "gap",
       "topic": "credit",
       "blocking": true,
+      "material": false,
       "statement": "Perfection of the security interest over the leased equipment is not evidenced.",
+      "scope_note": "",
       "evidence": [
         "S8"
       ],
@@ -3245,7 +4739,9 @@
       "type": "discrepancy",
       "topic": "yield",
       "blocking": false,
+      "material": false,
       "statement": "Archived docs state a 0.30 percent vault fee; the current site states no fee.",
+      "scope_note": "Both state the vault fee charged to P2 holders; S7 is the March 2026 version.",
       "evidence": [
         "S1",
         "S7"
@@ -3257,7 +4753,9 @@
       "type": "discrepancy",
       "topic": "credit",
       "blocking": false,
+      "material": false,
       "statement": "The memorandum describes the equipment loans as secured; the independent review describes them as unsecured.",
+      "scope_note": "Both describe the security of the X4 equipment loans as currently documented.",
       "evidence": [
         "S5",
         "S8"
@@ -3271,11 +4769,29 @@
       "type": "structural_change",
       "topic": "onchain",
       "blocking": false,
+      "material": false,
       "statement": "Upgrade admin changed from a single key to a 2-of-3 multisig.",
+      "scope_note": "",
       "evidence": [
         "S4"
       ],
       "subjects": []
+    },
+    {
+      "id": "U1",
+      "type": "scope_unresolved",
+      "topic": "credit",
+      "blocking": false,
+      "material": false,
+      "statement": "The memorandum and the independent review may describe different coverage periods of the credit insurance.",
+      "scope_note": "",
+      "evidence": [
+        "S5",
+        "S8"
+      ],
+      "subjects": [
+        "Z1.coverage"
+      ]
     }
   ],
   "open_questions": [

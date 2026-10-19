@@ -1,4 +1,4 @@
-"""Claim rules (section 3.3) and per-claim independence derivation (D3, D14).
+"""Claim rules (section 3.3, v0.6.0 third_party_reported) and per-claim independence derivation (D3, D14).
 
 Legal paths are the sections in schema.LEGAL_SECTIONS; coded-claim value checks (D39) live in validate.py.
 """
@@ -59,6 +59,9 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
     elif status == "self_reported":
         if "self" not in roles:
             errors.append("%s: self_reported requires a first-party or subject-published source" % path)
+    elif status == "third_party_reported":
+        if not independent:
+            errors.append("%s: third_party_reported requires an independent source" % path)
     elif status == "inferred":
         if not evidence:
             errors.append("%s: inferred requires at least one evidence" % path)

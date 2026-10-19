@@ -4,8 +4,10 @@ import os
 
 import pytest
 
-from test_support import GOLDEN, build_run, clock_at, load_v1, walk
-from lib import flow, migrate, runstate
+import json
+
+from test_support import FIXTURES, GOLDEN, build_run, clock_at, load_v1, walk
+from lib import flow, migrate, runstate, schema
 from lib.textutil import dump_json
 
 # finalize requires d2 v0.9.0 since P3; these tests run only where it is on PATH (see test_flow.py).
@@ -93,7 +95,8 @@ def test_skeleton_fails_only_on_flow_and_yield(tmp_path):
     assert runstate.check(tmp_path, "acme") == ["project.products[0]: P1 has no yield entry",
                                                 "strategies[0]: T1 has no flow edge with view settlement"]
     doc = runstate.load_work(runstate.open_project(tmp_path, "acme"))
-    assert doc["run"]["seeded_from"] is None and doc["run"]["skill_version"] == "0.5.1"
+    assert doc["run"]["seeded_from"] is None and doc["run"]["skill_version"] == schema.SKILL_VERSION
+    assert [t["component"] for t in doc["strategies"]] == ["CORE_CREDIT"]
     assert [t["products"] for t in doc["strategies"]] == [["P1"]]
     assert [h["product"] for h in doc["holder_rights"]] == ["P1"]
 
@@ -181,7 +184,7 @@ def test_finalized_document_is_schema_ordered(tmp_path):
     runstate.finalize(tmp_path, "acme", clock=clock_at())
     text = project.output("dd.json").read_bytes().decode("utf-8")
     assert text.endswith("}\n") and not text.endswith("\n\n")
-    assert text.startswith('{\n  "schema_version": "rwa-dd/2.0",\n  "run": {\n    "run_id"')
+    assert text.startswith('{\n  "schema_version": "rwa-dd/2.1",\n  "run": {\n    "run_id"')
     assert '"finalized_at": "2026-10-01T08:00:00Z"' in text
 
 
@@ -394,9 +397,9 @@ def test_final_report_marks_rejected_search(tmp_path):
     _directives(tmp_path, project, "reject N1\nfinalize\n")
     runstate.finalize(tmp_path, "acme", clock=clock_at())
     md = project.output("report.md").read_bytes().decode("utf-8")
-    s13 = md[md.index("## 13. Findings"):md.index("## 14. Issuer requests")]
-    assert "**G1** [legal] [BLOCKING]" in s13 and "**N" not in s13
-    d = md[md.index("## Appendix D. Searches not run"):]
+    s13 = md[md.index("## Appendix F. All findings"):md.index("## Appendix G. History")]
+    assert "**G1** [legal] [MATERIAL] [BLOCKING]" in s13 and "**N" not in s13
+    d = md[md.index("## Appendix M. Searches not run"):]
     assert "- **N1** Custody agreement and issuer accounts" in d
     assert "(resolves G1; est 6 calls) -- rejected by the analyst\n" in d
     assert "(resolves G2, D1; est 4 calls) -- not run\n" in d
@@ -418,7 +421,7 @@ def test_amend_sets_skill_version_and_new_run_keeps_v0(tmp_path):
     runstate.save_work(project, doc)
     run_id = runstate.load_state(project)["run_id"]
     runstate.amend(tmp_path, "acme", _amend_file(project))
-    assert runstate.load_work(project)["run"]["skill_version"] == "0.5.1"
+    assert runstate.load_work(project)["run"]["skill_version"] == schema.SKILL_VERSION
 
     later = clock_at(__import__("datetime").datetime(2026, 11, 1, tzinfo=__import__("datetime").timezone.utc))
     runstate.init(tmp_path, "acme", "https://acme-yield.example/", clock=later, new_run=True)
@@ -469,16 +472,16 @@ def test_seed_from_final_v1_run(tmp_path):
     assert project.ledger_file.read_bytes() == ledger_before == (archive / "audit" / "sources.jsonl").read_bytes()
     assert not any(p.exists() for p in project.outputs()) and project.legacy_outputs() == []
     doc = runstate.load_work(project)
-    assert doc["schema_version"] == "rwa-dd/2.0"
+    assert doc["schema_version"] == "rwa-dd/2.1"
     assert (doc["run"]["seeded_from"], doc["run"]["round"], doc["run"]["status"], doc["run"]["finalized_at"],
-            doc["run"]["skill_version"]) == (old_id, 1, "draft", None, "0.5.1")
+            doc["run"]["skill_version"]) == (old_id, 1, "draft", None, schema.SKILL_VERSION)
     assert runstate.check(tmp_path, "acme") == []
     assert runstate.load_state(project) == {"slug": "acme", "run_id": "acme-20261101T000000Z", "round": 1,
                                             "phase": "research", "status": "draft"}
     assert (project.scratch / "raw").is_dir()
 
 
-def test_seed_from_2_0_run_empties_next_searches(tmp_path):
+def test_seed_from_2_1_run_empties_next_searches(tmp_path):
     project = build_run(tmp_path)
     old_id = runstate.load_state(project)["run_id"]
     before = runstate.load_work(project)
@@ -517,9 +520,112 @@ def test_seed_invalid_result_restores_archive(tmp_path, monkeypatch):
     project.work_file.write_bytes(dump_json(old).encode("utf-8"))
     (project.dir / "acme.report.html").write_bytes(b"legacy\n")
     before = _snapshot(project)
-    monkeypatch.setattr(migrate, "convert", lambda old, run: dict(old, run=run, schema_version="rwa-dd/2.0"))
+    monkeypatch.setattr(migrate, "migrate_to_current",
+                        lambda old, run: dict(old, run=run, schema_version=schema.SCHEMA_VERSION))
     with pytest.raises(runstate.InvalidError) as exc:
         runstate.seed(tmp_path, "acme", "https://a.example/", clock=clock_at(LATER))
     assert any("unknown key" in e or "missing key" in e for e in exc.value.errors)
     assert _snapshot(project) == before
     assert not project.archive.exists() or list(project.archive.iterdir()) == []
+
+
+# --------------------------------------------------------------------------- v0.6.0 seeding 2.0, finalize checks
+
+def _final_v2(tmp_path):
+    """A final run whose record is the rwa-dd/2.0 fixture (same ledger), with v0.5.x outputs in place."""
+    project = _final(tmp_path)
+    state = runstate.load_state(project)
+    work = runstate.load_work(project)
+    old = json.loads((FIXTURES / "acme_v2.dd.json").read_bytes().decode("utf-8"))
+    old["run"] = dict(work["run"], skill_version="0.5.0")
+    project.work_file.write_bytes(dump_json(old).encode("utf-8"))
+    project.output("dd.json").write_bytes(dump_json(old).encode("utf-8"))
+    return project, state["run_id"], old
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_seed_from_final_v2_run(tmp_path):
+    project, old_id, old = _final_v2(tmp_path)
+    ledger_before = project.ledger_file.read_bytes()
+    outputs_before = sorted(p.name for p in project.outputs())
+    out = runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
+    assert out == {"project_dir": str(project.dir), "run_id": "acme-20261101T000000Z",
+                   "work_file": str(project.work_file), "seeded_from": old_id, "sources": 8}
+    archive = project.archive / old_id
+    assert sorted(p.name for p in archive.iterdir()) == sorted(outputs_before + ["audit"])
+    assert project.ledger_file.read_bytes() == ledger_before == (archive / "audit" / "sources.jsonl").read_bytes()
+    doc = runstate.load_work(project)
+    assert doc == migrate.convert_20(old, doc["run"])
+    assert (doc["schema_version"], doc["run"]["seeded_from"], doc["run"]["skill_version"]) == \
+        ("rwa-dd/2.1", old_id, schema.SKILL_VERSION)
+    assert [f["scope_note"] for f in doc["findings"] if f["type"] == "discrepancy"] == \
+        [schema.MIGRATED_SCOPE_NOTE] * 2
+    assert runstate.check(tmp_path, "acme") == []
+
+
+def _seeded_v2_ready(tmp_path):
+    project, _, _ = _final_v2(tmp_path)
+    runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
+    runstate.make_review(tmp_path, "acme")
+    review = (project.round_dir(1) / "review.md").read_bytes().decode("utf-8")
+    pending = review[review.index("## Scope checks pending"):review.index("## Blocking gaps")]
+    assert "**D1**" in pending and "**D2**" in pending
+    _directives(tmp_path, project, "finalize\n", name="seeded.txt")
+    return project
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_finalize_refuses_migration_placeholder_then_succeeds(tmp_path):
+    project = _seeded_v2_ready(tmp_path)
+    before = _snapshot(project)
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
+    assert str(exc.value) == "D1: scope not checked (scope_note is the migration placeholder)"
+    assert _snapshot(project) == before
+    doc = runstate.load_work(project)
+    doc["findings"][3]["scope_note"] = "Both state the P2 vault fee."
+    runstate.save_work(project, doc)
+    with pytest.raises(runstate.ContractError, match="^D2: scope not checked"):
+        runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
+    doc["findings"][4]["scope_note"] = "Both describe the X4 security."
+    runstate.save_work(project, doc)
+    result = runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
+    assert all(os.path.isfile(p) for p in result["outputs"])
+    final = runstate.load_work(project)
+    assert final["run"]["status"] == "final" and final["run"]["skill_version"] == schema.SKILL_VERSION
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_finalize_sets_skill_version(tmp_path):
+    project = _to_awaiting(tmp_path)
+    doc = runstate.load_work(project)
+    doc["run"]["skill_version"] = "0.5.0"
+    runstate.save_work(project, doc)
+    _directives(tmp_path, project, "finalize\n")
+    runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert runstate.load_work(project)["run"]["skill_version"] == schema.SKILL_VERSION
+    final = json.loads(project.output("dd.json").read_bytes().decode("utf-8"))
+    assert final["run"]["skill_version"] == schema.SKILL_VERSION
+
+
+def test_finalize_refusal_needs_no_d2(tmp_path, monkeypatch):
+    project = _to_awaiting(tmp_path)
+    doc = runstate.load_work(project)
+    doc["findings"][4]["scope_note"] = schema.MIGRATED_SCOPE_NOTE
+    runstate.save_work(project, doc)
+    _directives(tmp_path, project, "finalize\n")
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    with pytest.raises(runstate.ContractError, match="^D2: scope not checked"):
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert runstate.load_state(project)["phase"] == "ready_to_finalize"
+
+
+def test_seed_version_accepts_three_versions():
+    for version in ("rwa-dd/1.0", "rwa-dd/2.0", "rwa-dd/2.1"):
+        assert runstate._seed_version({"schema_version": version}) == version
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate._seed_version({"schema_version": "rwa-dd/0.9"})
+    assert "supported: rwa-dd/1.0, rwa-dd/2.0, rwa-dd/2.1" in str(exc.value)

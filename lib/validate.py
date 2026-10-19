@@ -161,13 +161,49 @@ def _coded_errors(path, value, enum, shape):
         if (not isinstance(value, list) or not value or len(set(map(repr, value))) != len(value)
                 or any(not isinstance(v, str) or v not in schema.ENUMS[enum] for v in value)):
             return ["%s: value must be a non-empty list of %s" % (path, enum)]
+    elif shape == "number":
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+            return ["%s: value must be a number >= 0" % path]
     elif not isinstance(value, list) or not value or any(not isinstance(v, str) for v in value):
         return ["%s: value must be a non-empty list of strings" % path]
     return []
 
 
+# Kind constraints (v0.6.0 2.2): claim field -> kinds where it may hold a value or evidence.
+KIND_FIELDS = (
+    ("route", ("L1_L2",)),
+    ("method", ("L2_L3", "L3_L3O")),
+    ("supply_concentration", ("L1_L2",)),
+    ("title_transfer", ("asset_sale",)),
+    ("servicing", ("asset_sale",)),
+    ("residual_exposure", ("asset_sale",)),
+)
+
+# Roles whose function may have a null layer.
+LAYERLESS_ROLES = ("issuer", "loan_purchaser", "protection_provider", "reserve_assets", "auditor", "other")
+
+# Components that need a settlement flow edge.
+SETTLED_COMPONENTS = ("CORE_CREDIT", "DEFI_LENDING")
+
+
+def _alternative_errors(interfaces, errors):
+    groups = {}
+    for i, x in enumerate(interfaces):
+        alt = x["alternative"]
+        if (alt["group"] is None) != (alt["option"] is None):
+            errors.append("interfaces[%d].alternative: group and option must both be set or both null" % i)
+        elif alt["group"] is not None:
+            groups.setdefault(alt["group"], []).append(x)
+    for group, members in groups.items():
+        if len({x["alternative"]["option"] for x in members}) < 2:
+            errors.append("alternative group %s needs at least two options" % group)
+        if len({x["strategy"] for x in members}) > 1:
+            errors.append("alternative group %s spans strategies" % group)
+
+
 def _framework_errors(doc, ids, errors):
-    """Rules of schema rwa-dd/2.0: strategies, functions, interfaces, holder rights, flow edges, subjects."""
+    """Rules of schema rwa-dd/2.1: strategies, functions, interfaces, supports, holder rights, flow edges,
+    subjects, findings."""
     sids, eids, pids, tids, xids = ids["S"], ids["E"], ids["P"], ids["T"], ids["X"]
     strategies = doc["strategies"]
     interfaces = doc["interfaces"]
@@ -180,6 +216,8 @@ def _framework_errors(doc, ids, errors):
             _need(fn["strategy"], tids, "entities[%d].functions[%d].strategy" % (i, j), errors, "strategy")
             for k, sid in enumerate(fn["evidence"]):
                 _need(sid, sids, "entities[%d].functions[%d].evidence[%d]" % (i, j, k), errors, "source")
+            if fn["layer"] is None and fn["role"] not in LAYERLESS_ROLES:
+                errors.append("entities[%d].functions[%d].layer: required for role %s" % (i, j, fn["role"]))
     for i, x in enumerate(interfaces):
         path = "interfaces[%d]" % i
         _need(x["strategy"], tids, path + ".strategy", errors, "strategy")
@@ -192,18 +230,30 @@ def _framework_errors(doc, ids, errors):
             errors.append("%s.from: kind holder_L1 requires a product id" % path)
         if not holder and x["from"][0] == "P":
             errors.append("%s.from: a product id is allowed only for kind holder_L1" % path)
-        for field, kind in (("route", "L1_L2"), ("method", "L2_L3")):
+        for field, kinds in KIND_FIELDS:
             claim = x[field]
-            if x["kind"] != kind and (claim["status"] != "not_found" or claim["evidence"]):
-                errors.append("%s.%s: must be not_found without evidence unless kind is %s" % (path, field, kind))
+            if x["kind"] not in kinds and (claim["status"] != "not_found" or claim["evidence"]):
+                errors.append("%s.%s: must be not_found without evidence unless kind is %s"
+                              % (path, field, " or ".join(kinds)))
+        if x["amount"]["value"] is not None and x["amount_basis"] is None:
+            errors.append("%s.amount_basis: required when amount has a value" % path)
+    _alternative_errors(interfaces, errors)
+    for i, z in enumerate(doc["supports"]):
+        path = "supports[%d]" % i
+        for j, t in enumerate(z["strategies"]):
+            _need(t, tids, "%s.strategies[%d]" % (path, j), errors, "strategy")
+        _need(z["provider"], eids, path + ".provider", errors, "entity")
+        _need(z["beneficiary"], eids | pids, path + ".beneficiary", errors, "entity/product")
     for i, h in enumerate(doc["holder_rights"]):
         _need(h["product"], pids, "holder_rights[%d].product" % i, errors, "product")
     for i, e in enumerate(doc["flows"]["edges"]):
         for j, t in enumerate(e["strategies"]):
             _need(t, tids, "flows.edges[%d].strategies[%d]" % (i, j), errors, "strategy")
         _need(e["interface"], xids, "flows.edges[%d].interface" % i, errors, "interface")
-    known = {"E": eids, "P": pids, "T": tids, "X": xids}
+    known = {"E": eids, "P": pids, "T": tids, "X": xids, "Z": ids["Z"]}
     for i, f in enumerate(doc["findings"]):
+        if f["type"] == "discrepancy" and not f["scope_note"].strip():
+            errors.append("findings[%d].scope_note: required for a discrepancy" % i)
         for j, subject in enumerate(f["subjects"]):
             lead = subject.split(".", 1)[0]
             _need(lead, known[lead[0]], "findings[%d].subjects[%d]" % (i, j), errors, "id")
@@ -227,7 +277,7 @@ def _framework_errors(doc, ids, errors):
             errors.append("project.products[%d]: %s has no yield entry" % (i, pid))
     settled = {t for e in doc["flows"]["edges"] if e["view"] == "settlement" for t in e["strategies"]}
     for i, t in enumerate(strategies):
-        if t["id"] not in settled:
+        if t["component"] in SETTLED_COMPONENTS and t["id"] not in settled:
             errors.append("strategies[%d]: %s has no flow edge with view settlement" % (i, t["id"]))
 
 
@@ -245,10 +295,11 @@ def semantic_errors(doc):
     _check_ids(products, "P", "project.products", errors)
     _check_ids(doc["strategies"], "T", "strategies", errors)
     _check_ids(doc["interfaces"], "X", "interfaces", errors)
+    _check_ids(doc["supports"], "Z", "supports", errors)
     _check_ids(nodes, "n", "flows.nodes", errors)
     _check_ids(searches, "N", "next_searches", errors)
     _check_ids(doc["issuer_requests"], "Q", "issuer_requests", errors)
-    for prefix in ("G", "D", "C"):
+    for prefix in ("G", "D", "C", "U"):
         _check_ids([f for f in findings if f["id"][0] == prefix], prefix, "findings", errors)
 
     sids = {s["id"] for s in sources}
@@ -257,7 +308,7 @@ def semantic_errors(doc):
     nids = {n["id"] for n in nodes}
     fids = {f["id"] for f in findings}
     ids = {"S": sids, "E": eids, "P": pids, "T": {t["id"] for t in doc["strategies"]},
-           "X": {x["id"] for x in doc["interfaces"]}}
+           "X": {x["id"] for x in doc["interfaces"]}, "Z": {z["id"] for z in doc["supports"]}}
 
     for i, s in enumerate(sources):
         _need(s["publisher"], eids, "sources[%d].publisher" % i, errors, "entity")

@@ -1,10 +1,10 @@
-"""Schema rwa-dd/2.0: the single definition of the DD document, its enums and field limits.
+"""Schema rwa-dd/2.1: the single definition of the DD document, its enums and field limits.
 
 references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
-SCHEMA_VERSION = "rwa-dd/2.0"
-SKILL_VERSION = "0.5.1"
+SCHEMA_VERSION = "rwa-dd/2.1"
+SKILL_VERSION = "0.6.0"
 
 ENUMS = {
     "source_type": (
@@ -23,19 +23,25 @@ ENUMS = {
         "administrator", "auditor", "transfer_agent", "registered_agent", "lender", "borrower",
         "insurer", "licensor", "governance_owner", "treasury", "repo_seller", "developer",
         "vault", "token_issuer", "protocol_operator", "holder_counterparty", "credit_manager",
-        "lender_of_record", "security_agent", "financing_recipient", "ultimate_obligor", "receivables_seller",
-        "asset_holding_spv", "guarantor", "other",
+        "lender_of_record", "security_agent", "financing_recipient", "receivables_seller",
+        "asset_holding_spv", "guarantor", "contractual_obligor", "cash_flow_source", "offtaker_customer",
+        "loan_purchaser", "protection_provider", "reserve_assets", "other",
     ),
-    "layer": ("L1", "L2", "L3"),
-    "interface_kind": ("holder_L1", "L1_L2", "L2_L3", "within_L1", "within_L2", "within_L3"),
+    "layer": ("L1", "L2", "L3", "L3-O"),
+    "interface_kind": ("holder_L1", "L1_L2", "L2_L3", "within_L1", "within_L2", "within_L3", "L3_L3O",
+                       "sleeve_holding", "reserve_lookthrough", "asset_sale"),
     "route_code": ("POOL", "FUND", "DIRECT", "WRAPPER"),
-    "method_code": ("DL", "DI", "AP", "PI", "REPO", "PT"),
-    "legal_class": ("DL", "DI", "AP", "PI", "FI", "EI", "OTHER"),
+    "method_code": ("DL", "DI", "AP", "PI", "REPO", "PT", "OTHER"),
+    "legal_class": ("DL", "DI", "AP", "PI", "FI", "EI", "PROTOCOL_ENTITLEMENT", "OTHER"),
+    "component": ("CORE_CREDIT", "LIQUIDITY_SLEEVE", "DEFI_LENDING"),
+    "amount_basis": ("GROSS_FUNDED", "COMMITMENT", "LOOKTHROUGH", "RESERVE", "SALE_PROCEEDS"),
+    "entity_class": ("legal_person", "contract_or_pool", "program", "obligor_group", "unknown"),
+    "support_type": ("CREDIT_ENHANCEMENT", "YIELD_SUPPORT"),
     "security": ("secured", "unsecured", "partially_secured"),
     "look_through": ("none", "via_security_trust", "via_spv", "direct_claim", "unresolved"),
     "business_type": ("private_credit", "trade_finance_pt", "mixed", "other"),
     "flow_view": ("settlement", "claim", "repayment"),
-    "evidence_flag": ("CONFIRMED", "PARTIALLY_VERIFIED", "UNRESOLVED", "CONFLICTING"),
+    "evidence_flag": ("CONFIRMED", "SELF_REPORTED", "THIRD_PARTY_REPORTED", "INFERRED", "UNRESOLVED", "CONFLICTING"),
     "question_code": (
         "A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "C5", "C6", "C7",
         "D1", "D2", "D3", "D4", "D5", "E1", "E2", "E3", "E4", "F1", "F2", "F3",
@@ -49,15 +55,15 @@ ENUMS = {
         "title_transfer", "other",
     ),
     "rail": ("fiat_wire", "stablecoin", "mint", "burn", "bridge", "internal", "unknown"),
-    "finding_type": ("gap", "discrepancy", "structural_change"),
+    "finding_type": ("gap", "discrepancy", "structural_change", "scope_unresolved"),
     "topic": ("legal", "yield", "flows", "onchain", "redemption", "credit", "holder_rights", "business", "other"),
     "size_metric": ("tvl", "supply", "nav", "holders", "reserves", "originated", "outstanding", "defaulted"),
     "run_status": ("draft", "final"),
-    "claim_status": ("verified", "self_reported", "inferred", "not_found"),
+    "claim_status": ("verified", "self_reported", "third_party_reported", "inferred", "not_found"),
 }
 
 # Finding id prefix per finding type.
-FINDING_PREFIX = {"gap": "G", "discrepancy": "D", "structural_change": "C"}
+FINDING_PREFIX = {"gap": "G", "discrepancy": "D", "structural_change": "C", "scope_unresolved": "U"}
 
 # Limits that are not part of a single field.
 CLAIM_NOTE_MAX = 200
@@ -65,10 +71,14 @@ CLAIM_VALUE_STR_MAX = 300
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{1,40}$"
 
 # Top-level sections whose claims are legal facts (claim rules, section 3.3).
-LEGAL_SECTIONS = ("entities", "interfaces", "holder_rights", "eligibility")
+LEGAL_SECTIONS = ("entities", "interfaces", "holder_rights", "supports", "eligibility")
+
+# Scope note of a discrepancy carried over from rwa-dd/2.0 (migration, review packet, finalize).
+MIGRATED_SCOPE_NOTE = "unchecked (migrated from rwa-dd/2.0)"
 
 # Coded claims (D39): (section, field) -> (enum, shape); shape "one" = one enum string, "list" = non-empty list
-# of enum strings without duplicates, "strings" = non-empty ordered list of strings.
+# of enum strings without duplicates, "strings" = non-empty ordered list of strings, "number" = an int or float
+# >= 0 that is not a boolean.
 CODED_CLAIMS = {
     ("strategies", "business_type"): ("business_type", "one"),
     ("interfaces", "route"): ("route_code", "one"),
@@ -77,9 +87,10 @@ CODED_CLAIMS = {
     ("interfaces", "security"): ("security", "one"),
     ("holder_rights", "look_through"): ("look_through", "one"),
     ("strategies", "loss_waterfall"): (None, "strings"),
+    ("interfaces", "amount"): (None, "number"),
 }
 
-SUBJECT_PATTERN = r"^(E|P|T|X)[1-9][0-9]*(\.[a-z][a-z0-9_]*){0,3}$"
+SUBJECT_PATTERN = r"^(E|P|T|X|Z)[1-9][0-9]*(\.[a-z][a-z0-9_]*){0,3}$"
 
 
 def id_pattern(*prefixes):
@@ -127,11 +138,12 @@ class Const(Node):
 
 
 class Enum(Node):
-    def __init__(self, name):
+    def __init__(self, name, nullable=False):
         self.name = name
+        self.nullable = nullable
 
     def describe(self):
-        return "enum %s" % self.name
+        return "enum %s%s" % (self.name, " | null" if self.nullable else "")
 
 
 class Int(Node):
@@ -224,6 +236,7 @@ STRATEGY = Obj(
     ("id", Ref("T")),
     ("products", Arr(Ref("P"), min_items=1)),
     ("name", Str(80)),
+    ("component", Enum("component")),
     ("business_type", C),
     ("sublayers", Str(200)),
     ("l3_business", Obj(
@@ -263,7 +276,33 @@ INTERFACE = Obj(
     ("perfection", C),
     ("enforcement", C),
     ("recourse", C),
+    ("alternative", Obj(
+        ("group", Pattern(r"^A[1-9][0-9]*$", "A<n>", nullable=True)),
+        ("option", Pattern(r"^[a-z]$", "letter a-z", nullable=True)),
+    )),
+    ("amount", C),
+    ("amount_basis", Enum("amount_basis", nullable=True)),
+    ("supply_concentration", C),
+    ("title_transfer", C),
+    ("servicing", C),
+    ("residual_exposure", C),
     ("as_of", Date()),
+)
+
+SUPPORT = Obj(
+    ("id", Ref("Z")),
+    ("type", Enum("support_type")),
+    ("strategies", Arr(Ref("T"), min_items=1)),
+    ("provider", Ref("E")),
+    ("beneficiary", Ref("E", "P", nullable=True)),
+    ("covered_exposure", C),
+    ("trigger", C),
+    ("coverage", C),
+    ("exclusions", C),
+    ("priority", C),
+    ("enforceability", C),
+    ("governing_law", C),
+    ("holder_recourse", C),
 )
 
 HOLDER_RIGHTS = Obj(
@@ -300,12 +339,13 @@ DOCUMENT = Obj(
     ("sources", Arr(SOURCE)),
     ("entities", Arr(Obj(
         ("id", Ref("E")),
+        ("entity_class", Enum("entity_class")),
         ("legal_name", C),
         ("jurisdiction", C),
         ("entity_type", C),
         ("registration_id", C),
         ("functions", Arr(Obj(
-            ("layer", Enum("layer")),
+            ("layer", Enum("layer", nullable=True)),
             ("role", Enum("role")),
             ("strategy", Ref("T", nullable=True)),
             ("evidence", Arr(Ref("S"), min_items=1)),
@@ -320,6 +360,7 @@ DOCUMENT = Obj(
     ))),
     ("interfaces", Arr(INTERFACE)),
     ("holder_rights", Arr(HOLDER_RIGHTS)),
+    ("supports", Arr(SUPPORT)),
     ("yield", Arr(Obj(
         ("product", Ref("P")),
         ("underlying", Arr(Obj(
@@ -374,7 +415,7 @@ DOCUMENT = Obj(
             ("chain", Str(24, nullable=True)),
             ("ref", Pattern(r"^((E|P)[1-9][0-9]*|[A-Za-z0-9]{1,64})$",
                             "E<n>|P<n>|chain address <alphanumeric, 1..64>", nullable=True)),
-            ("layer", Pattern(r"^L[123]$", "L1|L2|L3", nullable=True)),
+            ("layer", Pattern(r"^(L1|L2|L3|L3-O)$", "L1|L2|L3|L3-O", nullable=True)),
         ))),
         ("edges", Arr(Obj(
             ("from", Ref("n")),
@@ -414,13 +455,15 @@ DOCUMENT = Obj(
         ("evidence", Arr(Ref("S"), min_items=1)),
     ))),
     ("findings", Arr(Obj(
-        ("id", Ref("G", "D", "C")),
+        ("id", Ref("G", "D", "C", "U")),
         ("type", Enum("finding_type")),
         ("topic", Enum("topic")),
         ("blocking", Bool()),
+        ("material", Bool()),
         ("statement", Str(280)),
+        ("scope_note", Str(200)),
         ("evidence", Arr(Ref("S"))),
-        ("subjects", Arr(Pattern(SUBJECT_PATTERN, "subject path (E|P|T|X)<n>[.field]{0,3}"))),
+        ("subjects", Arr(Pattern(SUBJECT_PATTERN, "subject path (E|P|T|X|Z)<n>[.field]{0,3}"))),
     ))),
     ("open_questions", Arr(Obj(
         ("topic", Enum("topic")),
@@ -558,12 +601,23 @@ def schema_doc():
         "- No string anywhere (including inside claim values) may contain a control character.",
         "- `string <=n` is a string of at most n characters. `| null` means null is also allowed.",
         "- Ids are dense from 1 and unique per kind: S (sources), E (entities), P (products), T (strategies),",
-        "  X (interfaces), n (flow nodes), G/D/C (findings, each prefix counted separately), N (next searches),",
-        "  Q (issuer requests).",
-        "- Finding id prefix follows the type: gap=G, discrepancy=D, structural_change=C.",
+        "  X (interfaces), Z (supports), n (flow nodes), G/D/C/U (findings, each prefix counted separately),",
+        "  N (next searches), Q (issuer requests).",
+        "- Finding id prefix follows the type: gap=G, discrepancy=D, structural_change=C, scope_unresolved=U.",
+        "- A discrepancy needs a non-empty `scope_note` (why both statements concern the same fact, timeframe and",
+        "  scope). A record migrated from rwa-dd/2.0 carries the placeholder `%s`;" % MIGRATED_SCOPE_NOTE,
+        "  finalize refuses it.",
         "- Every product is in at least one strategy, has exactly one holder_rights entry and at least one yield",
-        "  entry. Every strategy has at least one flow edge with view settlement.",
-        "- Interface `from` is a product id (its token holders) exactly when kind is holder_L1; otherwise an entity.",
+        "  entry. Every strategy with component CORE_CREDIT or DEFI_LENDING has at least one flow edge with view",
+        "  settlement (LIQUIDITY_SLEEVE is exempt).",
+        "- Interface `from` is a product id (its token holders) exactly when kind is holder_L1; otherwise an entity;",
+        "  `from` and `to` differ.",
+        "- `entities[].functions[].layer` may be null only for the roles issuer, loan_purchaser,",
+        "  protection_provider, reserve_assets, auditor and other.",
+        "- `interfaces[].alternative`: `group` and `option` are both null or both set; a group has at least two",
+        "  distinct options and all its interfaces belong to one strategy.",
+        "- `interfaces[].amount_basis` is required when `interfaces[].amount` has a value.",
+        "- `supports[]`: `strategies` are T ids, `provider` an E id, `beneficiary` an E or P id or null.",
         "- `findings[].subjects` name claims by subject path (see Evidence flags); the leading id must exist.",
         "- `history` is sorted by date, nulls last.",
         "- `sources` must equal the source ledger `audit/sources.jsonl`; add sources only with `dd.py add-source`.",
@@ -585,8 +639,10 @@ def schema_doc():
         "- verified: at least one independent evidence and no analyst evidence; on legal paths its origin must be",
         "  regulator, registry, auditor or onchain.",
         "- self_reported: at least one self evidence.",
+        "- third_party_reported: at least one independent evidence of any origin (allowed on legal paths; it is",
+        "  not verification).",
         "- inferred: at least one evidence and a non-empty note.",
-        "- verified, self_reported and inferred: value is not null.",
+        "- verified, self_reported, third_party_reported and inferred: value is not null.",
         "- not_found: value is null; if evidence is non-empty the note must be non-empty.",
         "- subject references an existing entity or product, or is null.",
         "",
@@ -600,18 +656,31 @@ def schema_doc():
         "- `interfaces[].method`: a non-empty list of method_code strings without duplicates.",
         "- `strategies[].default_path.loss_waterfall`: a non-empty ordered list of strings (the first absorbs",
         "  losses first).",
-        "- `interfaces[].route` must be not_found with empty evidence unless kind is L1_L2; `interfaces[].method`",
-        "  likewise unless kind is L2_L3.",
+        "- `interfaces[].amount`: a number >= 0 (an integer or a float, not a boolean).",
+        "",
+        "Kind constraints: these interface claims must be not_found with empty evidence unless the kind matches:",
+        "`route` and `supply_concentration` (L1_L2); `method` (L2_L3 or L3_L3O); `title_transfer`, `servicing` and",
+        "`residual_exposure` (asset_sale).",
         "",
         "### Evidence flags (derived, never stored)",
         "",
-        "- Subject path of a claim: the id of the nearest enclosing object that has an `id` in E, P, T or X,",
+        "- Subject path of a claim: the id of the nearest enclosing object that has an `id` in E, P, T, X or Z,",
         "  followed by the field names below it, indexes dropped (for example `X3.security`,",
-        "  `T1.default_path.loss_waterfall`, `E2.legal_name`). Claims outside such objects have none.",
+        "  `T1.default_path.loss_waterfall`, `E2.legal_name`, `Z1.coverage`). Holder-rights claims take their",
+        "  product's id: `P<n>.holder_rights.<field>`. Claims outside such objects have none.",
         "- A claim is conflicted when a discrepancy finding's `subjects` contains its subject path or a prefix of it",
-        "  that ends at a field boundary.",
-        "- CONFLICTING if conflicted; otherwise verified gives CONFIRMED, self_reported or inferred gives",
-        "  PARTIALLY_VERIFIED, not_found gives UNRESOLVED.",
+        "  that ends at a field boundary. scope_unresolved findings never make a claim conflicted.",
+        "- Six flags: CONFLICTING if conflicted; otherwise verified gives CONFIRMED, self_reported SELF_REPORTED,",
+        "  third_party_reported THIRD_PARTY_REPORTED, inferred INFERRED, not_found UNRESOLVED.",
+        "- Severity (worst first): CONFLICTING, UNRESOLVED, INFERRED, THIRD_PARTY_REPORTED, SELF_REPORTED,",
+        "  CONFIRMED.",
+        "",
+        "### Counting rule (derived, never stored)",
+        "",
+        "- Allocation rows cover interfaces of kind L1_L2, sleeve_holding, reserve_lookthrough and asset_sale.",
+        "- An amount is counted only when the kind is L1_L2 or sleeve_holding, amount_basis is GROSS_FUNDED, the",
+        "  amount has a value and alternative.group is null. Totals are summed per strategy and per component,",
+        "  grouped by currency value (`n/d` when the currency is null); everything else is linked, not summed.",
         "",
         "## Enums",
         "",

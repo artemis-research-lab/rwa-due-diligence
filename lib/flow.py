@@ -45,8 +45,9 @@ EDGE_STYLES = {
     "collateral": ("#b91c1c", 4),
 }
 
-FLAG_SUFFIX = {"CONFIRMED": " [C]", "PARTIALLY_VERIFIED": " [P]", "UNRESOLVED": " [U]", "CONFLICTING": " [X]"}
-FLAG_OPACITY = {"PARTIALLY_VERIFIED": 0.7, "UNRESOLVED": 0.5}
+FLAG_SUFFIX = {"CONFIRMED": " [C]", "SELF_REPORTED": " [S]", "THIRD_PARTY_REPORTED": " [T]", "INFERRED": " [I]",
+               "UNRESOLVED": " [U]", "CONFLICTING": " [X]"}
+FLAG_OPACITY = {"SELF_REPORTED": 0.7, "THIRD_PARTY_REPORTED": 0.7, "INFERRED": 0.7, "UNRESOLVED": 0.5}
 VIEWS = schema.ENUMS["flow_view"]
 
 LABEL_ALLOWED = re.compile(r"[^A-Za-z0-9 .,:;()/&+%@'_=-]")

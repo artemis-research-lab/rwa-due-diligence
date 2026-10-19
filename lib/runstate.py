@@ -195,7 +195,7 @@ def _skeleton(slug, url, clock):
     product["id"] = "P1"
     doc["project"]["products"] = [product]
     strategy = schema.skeleton(schema.STRATEGY)
-    strategy.update({"id": "T1", "products": ["P1"]})
+    strategy.update({"id": "T1", "products": ["P1"], "component": "CORE_CREDIT"})
     doc["strategies"] = [strategy]
     rights = schema.skeleton(schema.HOLDER_RIGHTS)
     rights["product"] = "P1"
@@ -239,19 +239,29 @@ def _start_layout(project):
 
 
 def _seed_version(old):
-    """Schema version of the record to seed from; ContractError unless it is 1.0 or 2.0."""
+    """Schema version of the record to seed from; ContractError unless it is 1.0, 2.0 or 2.1."""
     version = old.get("schema_version") if isinstance(old, dict) else None
-    if version not in (migrate.FROM_VERSION, schema.SCHEMA_VERSION):
-        raise ContractError("cannot seed from schema version %r (supported: %s, %s)"
-                            % (version, migrate.FROM_VERSION, schema.SCHEMA_VERSION))
+    if version not in migrate.SEEDABLE:
+        raise ContractError("cannot seed from schema version %r (supported: %s)"
+                            % (version, ", ".join(migrate.SEEDABLE)))
     return version
 
 
 def _seeded_doc(old, run):
-    """Working document of a seeded run (4.2 step 3)."""
-    if _seed_version(old) == migrate.FROM_VERSION:
-        return migrate.convert(old, run)
-    return schema.order_like_schema(dict(old, run=run, next_searches=[]))
+    """Working document of a seeded run (4.2 step 3), migrated to the current schema."""
+    _seed_version(old)
+    return migrate.migrate_to_current(old, run)
+
+
+def _unchecked_scope(doc):
+    """Id of the first discrepancy (id order) whose scope note is still the migration placeholder, or None."""
+    findings = doc.get("findings") if isinstance(doc, dict) else None
+    if not isinstance(findings, list):
+        return None
+    pending = sorted((f for f in findings if isinstance(f, dict) and f.get("type") == "discrepancy"
+                      and f.get("scope_note") == schema.MIGRATED_SCOPE_NOTE and isinstance(f.get("id"), str)),
+                     key=id_key)
+    return pending[0]["id"] if pending else None
 
 
 def seed(root, slug, url, clock=ledger.system_clock):
@@ -269,7 +279,7 @@ def seed(root, slug, url, clock=ledger.system_clock):
         ledger_bytes = (project.archive / state["run_id"] / "audit" / "sources.jsonl").read_bytes()
         try:
             doc = _seeded_doc(old, run)
-        except (KeyError, TypeError, AttributeError, IndexError) as exc:
+        except (KeyError, TypeError, AttributeError, IndexError, ValueError) as exc:
             raise InvalidError(["seed: %s record cannot be converted (%s: %s)"
                                 % (old.get("schema_version"), type(exc).__name__, exc)])
         errors = validate.structural_errors(doc)
@@ -445,9 +455,13 @@ def finalize(root, slug, clock=ledger.system_clock):
     if state["phase"] != PHASE_READY:
         raise ContractError("finalize requires a finalize directive (current phase: %s)" % state["phase"])
     doc = load_work(project)
+    pending = _unchecked_scope(doc)
+    if pending is not None:
+        raise ContractError("%s: scope not checked (scope_note is the migration placeholder)" % pending)
     if isinstance(doc.get("run"), dict):
         doc["run"]["status"] = "final"
         doc["run"]["finalized_at"] = ledger.format_ts(clock())
+        doc["run"]["skill_version"] = schema.SKILL_VERSION
     errors = check_work(project, doc)
     if errors:
         raise InvalidError(errors)
