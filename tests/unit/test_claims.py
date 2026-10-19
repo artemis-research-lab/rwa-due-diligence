@@ -33,8 +33,17 @@ def test_legal_verified_by_third_party():
 
 def test_self_reported_without_self():
     def m(doc):
-        doc["governing_law"]["evidence"] = ["S5"]
-    assert errors_for(m) == ["governing_law: self_reported requires a first-party or subject-published source"]
+        doc["holder_rights"][0]["governing_law"]["evidence"] = ["S5"]
+    assert errors_for(m) == ["holder_rights[0].governing_law: self_reported requires a first-party or "
+                             "subject-published source"]
+
+
+def test_interface_and_holder_rights_are_legal_paths():
+    def m(doc):
+        doc["interfaces"][3]["collateral"].update({"status": "verified", "evidence": ["S5"]})
+        doc["holder_rights"][0]["recourse"].update({"status": "verified", "evidence": ["S4"]})
+    assert errors_for(m) == ["interfaces[3].collateral: verified requires a regulator/registry/auditor/onchain "
+                             "source for legal fields"]
 
 
 def test_publisher_equal_to_subject_makes_it_self():
@@ -86,8 +95,9 @@ def test_analyst_cannot_verify():
 
 def test_unknown_subject_and_evidence():
     def m(doc):
-        doc["governing_law"].update({"subject": "E9", "evidence": ["S8", "S99"]})
-    assert errors_for(m) == ["governing_law.evidence: unknown source S99", "governing_law.subject: unknown id E9"]
+        doc["holder_rights"][0]["governing_law"].update({"subject": "E19", "evidence": ["S8", "S99"]})
+    assert errors_for(m) == ["holder_rights[0].governing_law.evidence: unknown source S99",
+                             "holder_rights[0].governing_law.subject: unknown id E19"]
 
 
 # --------------------------------------------------------------------------- C2: non-not_found claims need a value
@@ -106,8 +116,8 @@ def test_self_reported_requires_value():
 
 def test_inferred_requires_value():
     def m(doc):
-        doc["relationships"][0]["claim"]["value"] = None
-    assert errors_for(m) == ["relationships[0].claim: inferred requires a non-null value"]
+        doc["strategies"][0]["l3_business"]["collections_control"]["value"] = None
+    assert errors_for(m) == ["strategies[0].l3_business.collections_control: inferred requires a non-null value"]
 
 def test_verified_must_not_cite_analyst():
     def both(doc):

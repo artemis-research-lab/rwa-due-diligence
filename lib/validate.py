@@ -152,21 +152,100 @@ def _need(ident, known, path, errors, what):
         errors.append("%s: unknown %s %s" % (path, what, ident))
 
 
+def _coded_errors(path, value, enum, shape):
+    """Errors for one coded claim value (D39); value is not None."""
+    if shape == "one":
+        if not isinstance(value, str) or value not in schema.ENUMS[enum]:
+            return ["%s: value must be one of %s" % (path, enum)]
+    elif shape == "list":
+        if (not isinstance(value, list) or not value or len(set(map(repr, value))) != len(value)
+                or any(not isinstance(v, str) or v not in schema.ENUMS[enum] for v in value)):
+            return ["%s: value must be a non-empty list of %s" % (path, enum)]
+    elif not isinstance(value, list) or not value or any(not isinstance(v, str) for v in value):
+        return ["%s: value must be a non-empty list of strings" % path]
+    return []
+
+
+def _framework_errors(doc, ids, errors):
+    """Rules of schema rwa-dd/2.0: strategies, functions, interfaces, holder rights, flow edges, subjects."""
+    sids, eids, pids, tids, xids = ids["S"], ids["E"], ids["P"], ids["T"], ids["X"]
+    strategies = doc["strategies"]
+    interfaces = doc["interfaces"]
+
+    for i, t in enumerate(strategies):
+        for j, p in enumerate(t["products"]):
+            _need(p, pids, "strategies[%d].products[%d]" % (i, j), errors, "product")
+    for i, e in enumerate(doc["entities"]):
+        for j, fn in enumerate(e["functions"]):
+            _need(fn["strategy"], tids, "entities[%d].functions[%d].strategy" % (i, j), errors, "strategy")
+            for k, sid in enumerate(fn["evidence"]):
+                _need(sid, sids, "entities[%d].functions[%d].evidence[%d]" % (i, j, k), errors, "source")
+    for i, x in enumerate(interfaces):
+        path = "interfaces[%d]" % i
+        _need(x["strategy"], tids, path + ".strategy", errors, "strategy")
+        _need(x["from"], eids | pids, path + ".from", errors, "entity/product")
+        _need(x["to"], eids, path + ".to", errors, "entity")
+        holder = x["kind"] == "holder_L1"
+        if holder and x["from"][0] != "P":
+            errors.append("%s.from: kind holder_L1 requires a product id" % path)
+        if not holder and x["from"][0] == "P":
+            errors.append("%s.from: a product id is allowed only for kind holder_L1" % path)
+        for field, kind in (("route", "L1_L2"), ("method", "L2_L3")):
+            claim = x[field]
+            if x["kind"] != kind and (claim["status"] != "not_found" or claim["evidence"]):
+                errors.append("%s.%s: must be not_found without evidence unless kind is %s" % (path, field, kind))
+    for i, h in enumerate(doc["holder_rights"]):
+        _need(h["product"], pids, "holder_rights[%d].product" % i, errors, "product")
+    for i, e in enumerate(doc["flows"]["edges"]):
+        for j, t in enumerate(e["strategies"]):
+            _need(t, tids, "flows.edges[%d].strategies[%d]" % (i, j), errors, "strategy")
+        _need(e["interface"], xids, "flows.edges[%d].interface" % i, errors, "interface")
+    known = {"E": eids, "P": pids, "T": tids, "X": xids}
+    for i, f in enumerate(doc["findings"]):
+        for j, subject in enumerate(f["subjects"]):
+            lead = subject.split(".", 1)[0]
+            _need(lead, known[lead[0]], "findings[%d].subjects[%d]" % (i, j), errors, "id")
+
+    for parts, claim in schema.iter_claims(doc):
+        coded = schema.CODED_CLAIMS.get((parts[0], parts[-1]))
+        if coded is not None and claim["value"] is not None:
+            errors.extend(_coded_errors(schema.format_path(parts), claim["value"], *coded))
+
+    in_strategy = {p for t in strategies for p in t["products"]}
+    yield_products = {y["product"] for y in doc["yield"]}
+    for i, p in enumerate(doc["project"]["products"]):
+        pid = p["id"]
+        if pid not in in_strategy:
+            errors.append("project.products[%d]: %s is in no strategy" % (i, pid))
+        rights = sum(1 for h in doc["holder_rights"] if h["product"] == pid)
+        if rights != 1:
+            errors.append("project.products[%d]: %s needs exactly one holder_rights entry (found %d)"
+                          % (i, pid, rights))
+        if pid not in yield_products:
+            errors.append("project.products[%d]: %s has no yield entry" % (i, pid))
+    settled = {t for e in doc["flows"]["edges"] if e["view"] == "settlement" for t in e["strategies"]}
+    for i, t in enumerate(strategies):
+        if t["id"] not in settled:
+            errors.append("strategies[%d]: %s has no flow edge with view settlement" % (i, t["id"]))
+
+
 def semantic_errors(doc):
     errors = []
     products = doc["project"]["products"]
     entities = doc["entities"]
     sources = doc["sources"]
     nodes = doc["flows"]["nodes"]
-    edges = doc["flows"]["edges"]
     findings = doc["findings"]
     searches = doc["next_searches"]
 
     _check_ids(sources, "S", "sources", errors)
     _check_ids(entities, "E", "entities", errors)
     _check_ids(products, "P", "project.products", errors)
+    _check_ids(doc["strategies"], "T", "strategies", errors)
+    _check_ids(doc["interfaces"], "X", "interfaces", errors)
     _check_ids(nodes, "n", "flows.nodes", errors)
     _check_ids(searches, "N", "next_searches", errors)
+    _check_ids(doc["issuer_requests"], "Q", "issuer_requests", errors)
     for prefix in ("G", "D", "C"):
         _check_ids([f for f in findings if f["id"][0] == prefix], prefix, "findings", errors)
 
@@ -175,12 +254,11 @@ def semantic_errors(doc):
     pids = {p["id"] for p in products}
     nids = {n["id"] for n in nodes}
     fids = {f["id"] for f in findings}
+    ids = {"S": sids, "E": eids, "P": pids, "T": {t["id"] for t in doc["strategies"]},
+           "X": {x["id"] for x in doc["interfaces"]}}
 
     for i, s in enumerate(sources):
         _need(s["publisher"], eids, "sources[%d].publisher" % i, errors, "entity")
-    for i, r in enumerate(doc["relationships"]):
-        _need(r["from"], eids, "relationships[%d].from" % i, errors, "entity")
-        _need(r["to"], eids | pids, "relationships[%d].to" % i, errors, "entity/product")
     for section in ("yield", "redemption", "eligibility", "size"):
         for i, item in enumerate(doc[section]):
             _need(item["product"], pids, "%s[%d].product" % (section, i), errors, "product")
@@ -190,11 +268,9 @@ def semantic_errors(doc):
         ref = n["ref"]
         if ref is not None and re.match(r"^(E|P)[0-9]+$", ref):
             _need(ref, eids | pids, "flows.nodes[%d].ref" % i, errors, "entity/product")
-    for i, e in enumerate(edges):
+    for i, e in enumerate(doc["flows"]["edges"]):
         _need(e["from"], nids, "flows.edges[%d].from" % i, errors, "node")
         _need(e["to"], nids, "flows.edges[%d].to" % i, errors, "node")
-        for j, p in enumerate(e["products"]):
-            _need(p, pids, "flows.edges[%d].products[%d]" % (i, j), errors, "product")
     for section in ("history", "findings", "x_unmapped"):
         for i, item in enumerate(doc[section]):
             for j, sid in enumerate(item["evidence"]):
@@ -206,13 +282,7 @@ def semantic_errors(doc):
         for j, fid in enumerate(n["resolves"]):
             _need(fid, fids, "next_searches[%d].resolves[%d]" % (i, j), errors, "finding")
 
-    edge_products = {p for e in edges for p in e["products"]}
-    yield_products = {y["product"] for y in doc["yield"]}
-    for i, p in enumerate(products):
-        if p["id"] not in edge_products:
-            errors.append("project.products[%d]: %s has no flow edge" % (i, p["id"]))
-        if p["id"] not in yield_products:
-            errors.append("project.products[%d]: %s has no yield entry" % (i, p["id"]))
+    _framework_errors(doc, ids, errors)
 
     keys = [(h["date"] is None, h["date"] or "") for h in doc["history"]]
     if keys != sorted(keys):

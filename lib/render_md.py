@@ -1,11 +1,11 @@
-"""Markdown report renderer (section 3.8); deterministic, adds only fixed headings, labels and the legend."""
+"""Markdown report renderer (section 3.8, v0.5 section 6); deterministic, adds only fixed headings, labels and
+the legend."""
 
 import json
 
-from lib import schema
-from lib.textutil import finding_line, id_key, md_text, not_run_suffix, search_line
+from lib import flow, framework, schema
+from lib.textutil import finding_line, id_key, md_text, not_run_suffix, request_line, search_line
 
-MARKERS = {"verified": "V", "self_reported": "S", "inferred": "I", "not_found": "N"}
 NONE = "- none"
 
 
@@ -27,17 +27,19 @@ def fmt_value(value):
     return md_text(str(value))
 
 
-def claim_cell(claim):
-    """`<value> [V|S|I|N] (S1, S4) -- note`; `[N?]` marks not_found without evidence (not searched)."""
-    marker = MARKERS[claim["status"]]
-    if claim["status"] == "not_found" and not claim["evidence"]:
-        marker = "N?"
-    cell = "%s [%s]" % (fmt_value(claim["value"]), marker)
+def _tail(claim, flag):
+    cell = "[%s]" % flag
     if claim["evidence"]:
         cell += " (%s)" % ", ".join(claim["evidence"])
     if claim["note"]:
         cell += " -- " + md_text(claim["note"], schema.CLAIM_NOTE_MAX)
     return cell
+
+
+def claim_cell(claim, flag=None):
+    """`<value> [FLAG] (S1, S4) -- note`; flag defaults to the one derived from the status alone."""
+    flag = framework.flag(claim, False) if flag is None else flag
+    return "%s %s" % (fmt_value(claim["value"]), _tail(claim, flag))
 
 
 def text(value, limit=None):
@@ -55,6 +57,24 @@ def table(header, rows):
 def product_title(product):
     name = product["name"]["value"]
     return product["id"] if name is None else "%s %s" % (product["id"], fmt_value(name))
+
+
+def strategy_title(strategy):
+    return "%s %s" % (strategy["id"], md_text(strategy["name"], 80)) if strategy["name"] else strategy["id"]
+
+
+class _Cells:
+    """claim_cell with the document's derived flags (conflicts included)."""
+
+    def __init__(self, doc):
+        by_parts = framework.flags(doc)
+        self.by_id = {id(claim): by_parts[parts] for parts, claim in schema.iter_claims(doc)}
+
+    def flag(self, claim):
+        return self.by_id.get(id(claim))
+
+    def __call__(self, claim):
+        return claim_cell(claim, self.flag(claim))
 
 
 # --------------------------------------------------------------------------- sections
@@ -75,84 +95,161 @@ def _metadata(doc, rounds=()):
     amendments = sum(1 for heading, _ in rounds if heading.startswith("Amendment "))
     if amendments:
         rows.insert(5, ("amendments", str(amendments)))
+    if run.get("seeded_from") is not None:
+        rows.insert(3, ("seeded from", text(run["seeded_from"], 64)))
     return table(("field", "value"), [list(r) for r in rows])
 
 
-def _blocking(doc):
-    """Blocking gaps; a draft nests the searches that resolve each gap, a final report lists gaps only."""
-    searches = [] if doc["run"]["status"] == "final" else sorted(doc["next_searches"], key=id_key)
+def _completeness(doc):
+    names = {t["id"]: t for t in doc["strategies"]}
+    return table(["strategy"] + ["%s %s" % (code, label) for code, label in framework.CHECKS],
+                 [[strategy_title(names[sid])] + [fl for _, _, fl in checks]
+                  for sid, checks in framework.completeness(doc)])
+
+
+def _functional_map(doc, cell):
     out = []
-    for f in sorted(doc["findings"], key=id_key):
-        if f["type"] == "gap" and f["blocking"]:
-            out.append(finding_line(f))
-            out += ["  " + search_line(n) for n in searches if f["id"] in n["resolves"]]
-    return out
+    for t in sorted(doc["strategies"], key=id_key):
+        out += ["### " + strategy_title(t), "",
+                "- Products: " + ", ".join(sorted(t["products"], key=id_key)),
+                "- Business type: " + cell(t["business_type"]),
+                "- Sublayers: " + (md_text(t["sublayers"], 200) if t["sublayers"] else "--"),
+                "- Chains:"]
+        lines = framework.chain_line(doc, t["id"])
+        out += ["  - " + md_text(line) for line in lines] or ["  - none"]
+        out.append("")
+    rows = [[e["id"], fn["layer"], fn["role"], text(fn["strategy"]), ", ".join(fn["evidence"])]
+            for e in sorted(doc["entities"], key=id_key) for fn in e["functions"]]
+    out += ["### Functions by entity", ""]
+    return out + table(("entity", "layer", "role", "strategy", "evidence"), rows)
 
 
-def _not_run(doc, rejected):
-    return [search_line(n, not_run_suffix(n, rejected)) for n in sorted(doc["next_searches"], key=id_key)]
-
-
-def _products(doc):
-    project = doc["project"]
-    out = ["- Project name: " + claim_cell(project["name"]),
-           "- Asset class: " + claim_cell(project["asset_class"]), ""]
-    rows = [[p["id"], claim_cell(p["name"]), claim_cell(p["symbol"]), claim_cell(p["chains"]),
-             claim_cell(p["token_addresses"]), claim_cell(p["asset_class"])]
-            for p in sorted(project["products"], key=id_key)]
-    return out + table(("id", "name", "symbol", "chains", "token addresses", "asset class"), rows)
-
-
-def _legal(doc):
+def _register(doc, cell):
     entities = sorted(doc["entities"], key=id_key)
-    out = ["### Entities", ""]
-    out += table(("id", "legal name", "jurisdiction", "entity type", "registration id", "roles", "license status"),
-                 [[e["id"], claim_cell(e["legal_name"]), claim_cell(e["jurisdiction"]),
-                   claim_cell(e["entity_type"]), claim_cell(e["registration_id"]), "; ".join(e["roles"]),
-                   claim_cell(e["license_status"])] for e in entities])
-    licenses = [[e["id"], claim_cell(lic["regulator"]), claim_cell(lic["license_type"]),
-                 claim_cell(lic["license_id"]), claim_cell(lic["status"])]
-                for e in entities for lic in e["licenses"]]
+    out = table(("entity", "legal name", "jurisdiction", "type", "registration", "licence status"),
+                [[e["id"], cell(e["legal_name"]), cell(e["jurisdiction"]), cell(e["entity_type"]),
+                  cell(e["registration_id"]), cell(e["license_status"])] for e in entities])
+    licenses = [[e["id"], cell(lic["regulator"]), cell(lic["license_type"]), cell(lic["license_id"]),
+                 cell(lic["status"])] for e in entities for lic in e["licenses"]]
     if licenses:
-        out += [""] + table(("entity", "regulator", "license type", "license id", "license status"), licenses)
-    out += ["", "### Relationships", ""]
-    out += table(("from", "to", "type", "claim"),
-                 [[r["from"], r["to"], r["type"], claim_cell(r["claim"])] for r in doc["relationships"]])
-    out += ["", "### Governing law", "", claim_cell(doc["governing_law"])]
+        out += ["", "Licences:", ""]
+        out += table(("entity", "regulator", "licence type", "licence id", "licence status"), licenses)
     return out
 
 
-def _yield(doc):
+def _interfaces(doc, kinds):
+    return [x for x in sorted(doc["interfaces"], key=id_key) if x["kind"] in kinds]
+
+
+def _ends(x):
+    return "%s -> %s (%s)" % (x["from"], x["to"], x["kind"])
+
+
+def _l1_l2(doc, cell):
+    return table(("id", "strategy", "from -> to", "route", "legal class", "instrument", "claim holder", "terms",
+                  "governing law"),
+                 [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["route"]), cell(x["legal_class"]),
+                   cell(x["instrument"]), cell(x["claim_holder"]), cell(x["terms"]), cell(x["governing_law"])]
+                  for x in _interfaces(doc, ("holder_L1", "L1_L2", "within_L1"))])
+
+
+def _l2_l3(doc, cell):
+    return table(("id", "strategy", "from -> to", "method", "legal class", "security", "collateral", "perfection",
+                  "enforcement", "recourse", "terms"),
+                 [[x["id"], x["strategy"], md_text(_ends(x)), cell(x["method"]), cell(x["legal_class"]),
+                   cell(x["security"]), cell(x["collateral"]), cell(x["perfection"]), cell(x["enforcement"]),
+                   cell(x["recourse"]), cell(x["terms"])]
+                  for x in _interfaces(doc, ("L2_L3", "within_L2", "within_L3"))])
+
+
+HOLDER_FIELDS = (("instrument_nature", "Instrument nature"), ("claim_against", "Claim against"),
+                 ("look_through", "Look-through"), ("recourse", "Recourse"), ("governing_law", "Governing law"),
+                 ("forum", "Forum"), ("insolvency_protection", "Insolvency protection"),
+                 ("disclaimers", "Disclaimers"))
+DEFAULT_FIELDS = (("events_of_default", "Events of default"), ("enforcement", "Enforcement"))
+L3_FIELDS = (("description", "Description"), ("revenue_model", "Revenue model"),
+             ("cash_generation", "Cash generation"), ("collections_control", "Collections control"),
+             ("concentration", "Concentration"), ("performance", "Performance"),
+             ("operating_history", "Operating history"))
+
+
+def _holder_rights(doc, cell):
     out = []
     for p in sorted(doc["project"]["products"], key=id_key):
         out += ["### " + product_title(p), ""]
+        entries = [h for h in doc["holder_rights"] if h["product"] == p["id"]]
+        out += ["- %s: %s" % (label, cell(h[field])) for h in entries for field, label in HOLDER_FIELDS] or [NONE]
+        out.append("")
+    return out[:-1]
+
+
+def _waterfall(claim, cell):
+    label = "- Loss waterfall (1 absorbs first): "
+    value = claim["value"]
+    if isinstance(value, list) and value:
+        return [label + _tail(claim, cell.flag(claim))] + [
+            "  %d. %s" % (i, fmt_value(item)) for i, item in enumerate(value, start=1)]
+    return [label + cell(claim)]
+
+
+def _default_path(doc, cell):
+    out = []
+    for t in sorted(doc["strategies"], key=id_key):
+        path = t["default_path"]
+        out += ["### " + strategy_title(t), ""]
+        out += ["- %s: %s" % (label, cell(path[field])) for field, label in DEFAULT_FIELDS]
+        out += _waterfall(path["loss_waterfall"], cell)
+        out += ["- Recovery history: " + cell(path["recovery_history"]), ""]
+    return out[:-1]
+
+
+def _l3_business(doc, cell):
+    out = []
+    for t in sorted(doc["strategies"], key=id_key):
+        out += ["### " + strategy_title(t), ""]
+        out += ["- %s: %s" % (label, cell(t["l3_business"][field])) for field, label in L3_FIELDS]
+        out.append("")
+    return out[:-1]
+
+
+def _yield(doc, cell):
+    out = []
+    for p in sorted(doc["project"]["products"], key=id_key):
+        out += ["### Yield " + product_title(p), ""]
         entries = [y for y in doc["yield"] if y["product"] == p["id"]]
         if not entries:
             out += [NONE, ""]
         for y in entries:
             out += [
-                "- Mechanism: " + claim_cell(y["mechanism"]),
-                "- Gross yield: " + claim_cell(y["gross_yield"]),
-                "- Net yield to holder: " + claim_cell(y["net_yield_to_holder"]),
-                "- Distribution method: " + claim_cell(y["distribution"]["method"]),
-                "- Distribution frequency: " + claim_cell(y["distribution"]["frequency"]),
-                "- Loss absorption: " + claim_cell(y["loss_absorption"]),
+                "- Mechanism: " + cell(y["mechanism"]),
+                "- Gross yield: " + cell(y["gross_yield"]),
+                "- Net yield to holder: " + cell(y["net_yield_to_holder"]),
+                "- Distribution method: " + cell(y["distribution"]["method"]),
+                "- Distribution frequency: " + cell(y["distribution"]["frequency"]),
                 "",
                 "Underlying:",
                 "",
             ]
             out += table(("description", "asset class", "share pct", "location"),
-                         [[claim_cell(u["description"]), claim_cell(u["asset_class"]),
-                           claim_cell(u["share_pct"]), claim_cell(u["location"])] for u in y["underlying"]])
+                         [[cell(u["description"]), cell(u["asset_class"]), cell(u["share_pct"]),
+                           cell(u["location"])] for u in y["underlying"]])
             out += ["", "Fees:", ""]
             out += table(("type", "rate", "recipient"),
-                         [[claim_cell(f["type"]), claim_cell(f["rate"]), claim_cell(f["recipient"])]
-                          for f in y["fees"]])
+                         [[cell(f["type"]), cell(f["rate"]), cell(f["recipient"])] for f in y["fees"]])
             out.append("")
-    return out[:-1] if out and out[-1] == "" else out
+    out += ["### Redemption", ""]
+    out += table(("product", "mechanism", "queue", "settlement time", "gating", "fees"),
+                 [[r["product"], cell(r["mechanism"]), cell(r["queue"]), cell(r["settlement_time"]),
+                   cell(r["gating"]), cell(r["fees"])]
+                  for r in sorted(doc["redemption"], key=lambda r: id_key(r["product"]))])
+    out += ["", "### Eligibility", ""]
+    out += table(("product", "restrictions"),
+                 [[e["product"], cell(e["restrictions"])]
+                  for e in sorted(doc["eligibility"], key=lambda e: id_key(e["product"]))])
+    return out
 
 
-def _flows(doc, figures):
+def _flows(doc, figures, cell):
     nodes = {n["id"]: n for n in doc["flows"]["nodes"]}
 
     def node_cell(nid):
@@ -160,76 +257,79 @@ def _flows(doc, figures):
         return nid if node is None else "%s %s" % (nid, md_text(node["label"], 40))
 
     out = ["Nodes:", ""]
-    out += table(("id", "label", "lane", "kind", "chain", "ref"),
-                 [[n["id"], md_text(n["label"], 40), n["lane"], n["kind"], text(n["chain"], 24), text(n["ref"])]
-                  for n in sorted(doc["flows"]["nodes"], key=id_key)])
-    for p in sorted(doc["project"]["products"], key=id_key):
-        out += ["", "### " + product_title(p), ""]
-        if p["id"] in figures:
-            out += ["![Fund flow %s](%s.flow-%s.svg)" % (p["id"], doc["run"]["slug"], p["id"]), ""]
-        out += table(("from", "to", "kind", "mechanism", "rail", "label", "claim"),
-                     [[node_cell(e["from"]), node_cell(e["to"]), e["kind"], e["mechanism"], e["rail"],
-                       md_text(e["label"], 40), claim_cell(e["claim"])]
-                      for e in doc["flows"]["edges"] if p["id"] in e["products"]])
+    out += table(("id", "label", "lane", "layer", "kind", "chain", "ref"),
+                 [[n["id"], md_text(n["label"], 40), n["lane"], text(n["layer"]), n["kind"], text(n["chain"], 24),
+                   text(n["ref"])] for n in sorted(doc["flows"]["nodes"], key=id_key)])
+    for t in sorted(doc["strategies"], key=id_key):
+        for view in flow.VIEWS:
+            key = "%s-%s" % (t["id"], view)
+            out += ["", "### %s -- %s" % (strategy_title(t), view), ""]
+            if key in figures:
+                out += ["![Fund flow %s %s](%s.flow-%s.svg)" % (t["id"], view, doc["run"]["slug"], key), ""]
+            out += table(("from", "to", "kind", "mechanism", "rail", "interface", "label", "claim"),
+                         [[node_cell(e["from"]), node_cell(e["to"]), e["kind"], e["mechanism"], e["rail"],
+                           text(e["interface"]), md_text(e["label"], 40), cell(e["claim"])]
+                          for _, e in flow.view_edges(doc, t["id"], view)])
     return out
 
 
-def _onchain(doc):
+def _onchain(doc, cell):
     rows = []
     for c in doc["onchain"]["contracts"]:
         ctl = c["control"]
         ms = ctl["multisig"]
-        rows.append([text(c["chain"], 24), text(c["address"], 64), claim_cell(c["role"]),
-                     claim_cell(c["source_verified"]), claim_cell(c["proxy"]), claim_cell(ctl["upgrade_admin"]),
-                     claim_cell(ctl["role_admins"]), claim_cell(ctl["timelock_delay_s"]),
-                     claim_cell(ms["address"]), claim_cell(ms["threshold"]), claim_cell(ms["signers_count"])])
+        rows.append([text(c["chain"], 24), text(c["address"], 64), cell(c["role"]), cell(c["source_verified"]),
+                     cell(c["proxy"]), cell(ctl["upgrade_admin"]), cell(ctl["role_admins"]),
+                     cell(ctl["timelock_delay_s"]), cell(ms["address"]), cell(ms["threshold"]),
+                     cell(ms["signers_count"])])
     return table(("chain", "address", "role", "source verified", "proxy", "upgrade admin", "role admins",
                   "timelock delay s", "multisig", "threshold", "signers"), rows)
 
 
-def _redemption(doc):
-    out = ["Redemption:", ""]
-    out += table(("product", "mechanism", "queue", "settlement time", "gating", "fees"),
-                 [[r["product"], claim_cell(r["mechanism"]), claim_cell(r["queue"]),
-                   claim_cell(r["settlement_time"]), claim_cell(r["gating"]), claim_cell(r["fees"])]
-                  for r in sorted(doc["redemption"], key=lambda r: id_key(r["product"]))])
-    out += ["", "Eligibility:", ""]
-    out += table(("product", "restrictions"),
-                 [[e["product"], claim_cell(e["restrictions"])]
-                  for e in sorted(doc["eligibility"], key=lambda e: id_key(e["product"]))])
+def _findings(doc):
+    """Gaps (blocking ones marked; a draft nests the searches that resolve them), discrepancies with subjects,
+    structural changes and open questions."""
+    findings = sorted(doc["findings"], key=id_key)
+    searches = [] if doc["run"]["status"] == "final" else sorted(doc["next_searches"], key=id_key)
+    gaps = []
+    for f in findings:
+        if f["type"] != "gap":
+            continue
+        gaps.append(finding_line(f, marker="[BLOCKING] " if f["blocking"] else ""))
+        if f["blocking"]:
+            gaps += ["  " + search_line(n) for n in searches if f["id"] in n["resolves"]]
+    out = ["### Gaps", ""] + (gaps or [NONE])
+    out += ["", "### Discrepancies", ""]
+    out += [finding_line(f, subjects=True) for f in findings if f["type"] == "discrepancy"] or [NONE]
+    out += ["", "### Structural changes", ""]
+    out += [finding_line(f) for f in findings if f["type"] == "structural_change"] or [NONE]
+    out += ["", "### Open questions", ""]
+    out += ["- [%s] %s" % (q["topic"], md_text(q["question"], 200)) for q in doc["open_questions"]] or [NONE]
     return out
 
 
-def _audits(doc):
-    return table(("auditor", "scope", "date", "report"),
-                 [[claim_cell(a["auditor"]), claim_cell(a["scope"]), claim_cell(a["date"]), text(a["report_ref"])]
+def _requests(doc):
+    return [request_line(q) for q in sorted(doc["issuer_requests"], key=id_key)]
+
+
+def _not_run(doc, rejected):
+    return [search_line(n, not_run_suffix(n, rejected)) for n in sorted(doc["next_searches"], key=id_key)]
+
+
+def _audits_size(doc, cell):
+    out = ["### Audits", ""]
+    out += table(("auditor", "scope", "date", "report"),
+                 [[cell(a["auditor"]), cell(a["scope"]), cell(a["date"]), text(a["report_ref"])]
                   for a in doc["audits"]])
-
-
-def _size(doc):
-    return table(("product", "metric", "value", "as of"),
-                 [[text(s["product"]), s["metric"], claim_cell(s["value"]), text(s["as_of"])] for s in doc["size"]])
+    out += ["", "### Size", ""]
+    out += table(("product", "metric", "value", "as of"),
+                 [[text(s["product"]), s["metric"], cell(s["value"]), text(s["as_of"])] for s in doc["size"]])
+    return out
 
 
 def _history(doc):
     return table(("date", "change", "evidence"),
                  [[text(h["date"]), md_text(h["change"], 200), ", ".join(h["evidence"])] for h in doc["history"]])
-
-
-def _findings(doc):
-    findings = sorted(doc["findings"], key=id_key)
-    out = []
-    for title, pred in (("Discrepancies", lambda f: f["type"] == "discrepancy"),
-                        ("Structural changes", lambda f: f["type"] == "structural_change"),
-                        ("Other gaps", lambda f: f["type"] == "gap" and not f["blocking"])):
-        out += ["### " + title, ""]
-        out += [finding_line(f) for f in findings if pred(f)] or [NONE]
-        out.append("")
-    return out[:-1]
-
-
-def _questions(doc):
-    return ["- [%s] %s" % (q["topic"], md_text(q["question"], 200)) for q in doc["open_questions"]]
 
 
 def _sources(doc):
@@ -273,23 +373,35 @@ def _unmapped(doc):
 
 
 LEGEND = [
-    "- Claim cell: `value [marker] (evidence) -- note`.",
-    "- V verified: supported by an independent source (legal facts: regulator, registry, auditor or on-chain).",
-    "- S self_reported: supported only by the project or the subject itself.",
-    "- I inferred: derived by the analyst from the cited evidence; the note explains how.",
-    "- N not_found: checked in the cited sources and absent.",
-    "- N? not_found without evidence: not searched.",
-    "- `--`: no value.",
+    "- Claim cell: `value [FLAG] (evidence) -- note`; `--` means no value.",
+    "- CONFIRMED: verified by an independent source (legal facts: regulator, registry, auditor or on-chain).",
+    "- PARTIALLY_VERIFIED: self-reported by the project or the subject, or inferred from the cited evidence.",
+    "- UNRESOLVED: not found in the cited sources, or not searched when no source is cited.",
+    "- CONFLICTING: named by a discrepancy finding (see section 13).",
+    "- Layers: L1 on-chain capital vault; L2 credit financing layer; L3 underlying business layer.",
+    "- Route (L1->L2): POOL supply to a shared lending pool; FUND subscription to a fund or vehicle; DIRECT financing"
+    " of the credit counterparty itself; WRAPPER a position in another vault or token that holds the exposure.",
+    "- Method (L2->L3): DL direct loan; DI debt instrument (note, bond); AP purchase of receivables or other"
+    " assets; PI participation interest; REPO repurchase agreement; PT principal purchase and resale (trade"
+    " finance).",
+    "- Legal class: DL loan claim; DI debt instrument claim; AP ownership of purchased assets; PI participation"
+    " interest; FI fund interest; EI equity interest; OTHER other or contractual claim.",
+    "- Flow views: settlement (capital and asset movement); claim (legal rights and collateral);"
+    " repayment (cash back to L2 and L1, fees, enforcement path).",
     "- Lanes: offchain, boundary (conversion, bridge and custody hand-off points), onchain.",
-    "- Findings: G gap, D discrepancy, C structural change. No risk scores are given.",
+    "- Diagram suffixes: [C] CONFIRMED, [P] PARTIALLY_VERIFIED, [U] UNRESOLVED ([U?] not searched),"
+    " [X] CONFLICTING.",
+    "- Findings: G gap, D discrepancy, C structural change; issuer requests Q cite the research question codes"
+    " they answer. No risk scores are given.",
 ]
 
 
 def render(doc, rounds=(), figures=None, rejected=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
-    figures = {product id: SVG text}: a product with a figure gets an image link to <slug>.flow-<id>.svg;
+    figures = {"T<n>-<view>": SVG text}: a figure gets an image link to <slug>.flow-T<n>-<view>.svg;
     rejected = N ids the analyst rejected, marked in Appendix D (final reports only)."""
     figures = figures or {}
+    cell = _Cells(doc)
     name = doc["project"]["name"]["value"]
     title = doc["run"]["slug"] if name is None else fmt_value(name)
     lines = ["# RWA Due Diligence: " + title, ""]
@@ -300,19 +412,22 @@ def render(doc, rounds=(), figures=None, rejected=()):
     sections = (
         ("1. Executive summary", [md_text(doc["narrative"]["executive_summary"], 800)]
          if doc["narrative"]["executive_summary"] else []),
-        ("2. Blocking gaps and materials to request", _blocking(doc)),
-        ("3. Products", _products(doc)),
-        ("4. Legal structure", _legal(doc)),
-        ("5. Yield source", _yield(doc)),
-        ("6. Fund flows", _flows(doc, figures)),
-        ("7. On-chain contracts and control", _onchain(doc)),
-        ("8. Redemption and eligibility", _redemption(doc)),
-        ("9. Audits", _audits(doc)),
-        ("10. Size", _size(doc)),
-        ("11. History", _history(doc)),
-        ("12. Findings", _findings(doc)),
-        ("13. Open questions", _questions(doc)),
-        ("14. Sources", _sources(doc)),
+        ("2. Framework completeness", _completeness(doc)),
+        ("3. Three-layer functional map", _functional_map(doc, cell)),
+        ("4. Legal entity register", _register(doc, cell)),
+        ("5. L1 -> L2 capital allocation", _l1_l2(doc, cell)),
+        ("6. L2 -> L3 underlying transactions", _l2_l3(doc, cell)),
+        ("7. Holder legal rights", _holder_rights(doc, cell)),
+        ("8. Default and recovery path", _default_path(doc, cell)),
+        ("9. L3 business", _l3_business(doc, cell)),
+        ("10. Yield, fees and redemption", _yield(doc, cell)),
+        ("11. Fund flows", _flows(doc, figures, cell)),
+        ("12. On-chain contracts and control", _onchain(doc, cell)),
+        ("13. Findings", _findings(doc)),
+        ("14. Issuer requests", _requests(doc)),
+        ("15. Audits and size", _audits_size(doc, cell)),
+        ("16. History", _history(doc)),
+        ("17. Sources", _sources(doc)),
         ("Appendix A. Analyst interventions", _interventions(rounds)),
         ("Appendix B. Unmapped facts", _unmapped(doc)),
         ("Appendix C. Legend", LEGEND),

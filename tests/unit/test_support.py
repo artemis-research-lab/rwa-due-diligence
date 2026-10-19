@@ -24,6 +24,11 @@ def load_fixture():
     return json.loads((FIXTURES / "acme.dd.json").read_bytes().decode("utf-8"))
 
 
+def load_v1():
+    """The rwa-dd/1.0 fixture (same ledger as acme.dd.json), used by the migration tests."""
+    return json.loads((FIXTURES / "acme_v1.dd.json").read_bytes().decode("utf-8"))
+
+
 def fixture_sources():
     lines = (FIXTURES / "acme.sources.jsonl").read_bytes().decode("utf-8").splitlines()
     return [json.loads(line) for line in lines if line]

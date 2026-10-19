@@ -1,0 +1,1751 @@
+{
+  "schema_version": "rwa-dd/2.0",
+  "run": {
+    "run_id": "acme-20261101T000000Z",
+    "slug": "acme",
+    "root_url": "https://acme-yield.example/",
+    "round": 1,
+    "status": "draft",
+    "started_at": "2026-11-01T00:00:00Z",
+    "finalized_at": null,
+    "skill_version": "0.5.0",
+    "seeded_from": "acme-20261001T080000Z"
+  },
+  "project": {
+    "name": {
+      "value": "Acme Yield",
+      "status": "self_reported",
+      "evidence": [
+        "S1"
+      ],
+      "subject": null,
+      "note": ""
+    },
+    "asset_class": {
+      "value": [
+        "trade receivables",
+        "treasury bills"
+      ],
+      "status": "self_reported",
+      "evidence": [
+        "S1"
+      ],
+      "subject": null,
+      "note": ""
+    },
+    "products": [
+      {
+        "id": "P1",
+        "name": {
+          "value": "Acme Senior Note",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "symbol": {
+          "value": "aSN",
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "chains": {
+          "value": [
+            "ethereum"
+          ],
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "token_addresses": {
+          "value": [
+            "0x00000000000000000000000000000000000000a1"
+          ],
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "asset_class": {
+          "value": "trade receivables",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        }
+      },
+      {
+        "id": "P2",
+        "name": {
+          "value": "Acme Treasury Vault",
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": "P2",
+          "note": "Name taken from archived docs."
+        },
+        "symbol": {
+          "value": "aTV",
+          "status": "self_reported",
+          "evidence": [
+            "S1"
+          ],
+          "subject": "P2",
+          "note": ""
+        },
+        "chains": {
+          "value": [
+            "ethereum"
+          ],
+          "status": "self_reported",
+          "evidence": [
+            "S1"
+          ],
+          "subject": "P2",
+          "note": ""
+        },
+        "token_addresses": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S1",
+            "S4"
+          ],
+          "subject": null,
+          "note": "No vault address published on the site or found on the explorer."
+        },
+        "asset_class": {
+          "value": "treasury bills",
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": "P2",
+          "note": ""
+        }
+      }
+    ]
+  },
+  "strategies": [
+    {
+      "id": "T1",
+      "products": [
+        "P1"
+      ],
+      "name": "Acme Senior Note",
+      "business_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "sublayers": "",
+      "l3_business": {
+        "description": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "revenue_model": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "cash_generation": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "collections_control": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "concentration": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "performance": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "operating_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      },
+      "default_path": {
+        "events_of_default": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "enforcement": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "loss_waterfall": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "Memorandum does not describe loss order."
+        },
+        "recovery_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "T2",
+      "products": [
+        "P2"
+      ],
+      "name": "Acme Treasury Vault",
+      "business_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "sublayers": "",
+      "l3_business": {
+        "description": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "revenue_model": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "cash_generation": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "collections_control": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "concentration": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "performance": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "operating_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      },
+      "default_path": {
+        "events_of_default": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "enforcement": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "loss_waterfall": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "recovery_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://acme-yield.example/",
+      "title": "Acme Yield - Home",
+      "source_type": "project_site",
+      "origin": "first_party",
+      "publisher": "E4",
+      "retrieved_at": "2026-10-01T08:00:00Z",
+      "fetch": "ok",
+      "excerpt": "Acme Yield brings tokenized receivables and treasury bills on-chain.",
+      "excerpt_sha256": "273f9976c632e9b3a92f20eee433bc79585069e1bf31e45aeecf77dc87318003",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    },
+    {
+      "id": "S2",
+      "url": "https://regulator.example/register/AAM-0042",
+      "title": "Register entry: Acme Asset Management LLC",
+      "source_type": "regulator_registry",
+      "origin": "regulator",
+      "publisher": null,
+      "retrieved_at": "2026-10-01T08:05:00Z",
+      "fetch": "ok",
+      "excerpt": "Acme Asset Management LLC - Fund manager licence AAM-0042 - Status: active.",
+      "excerpt_sha256": "d0db8c4c53469b981af12d2edb5e5a091d85b43786fb6198e1d57a10d97fbaaa",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    },
+    {
+      "id": "S3",
+      "url": "https://companies.example/entity/ACME-SPV-1",
+      "title": "Company record: Acme Yield Issuer Ltd",
+      "source_type": "company_registry",
+      "origin": "registry",
+      "publisher": null,
+      "retrieved_at": "2026-10-01T08:10:00Z",
+      "fetch": "ok",
+      "excerpt": "Acme Yield Issuer Ltd, company number 100200, incorporated in Examplestan, type: private limited company.",
+      "excerpt_sha256": "a57fb5179f2fc01e3620a5a0066ce27ab029b534bdef5992397b5e7c52cb58b1",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    },
+    {
+      "id": "S4",
+      "url": "https://explorer.example/address/0x00000000000000000000000000000000000000a1",
+      "title": "Explorer: aSN token contract",
+      "source_type": "onchain_explorer",
+      "origin": "onchain",
+      "publisher": null,
+      "retrieved_at": "2026-10-01T08:15:00Z",
+      "fetch": "ok",
+      "excerpt": "Contract source code verified. Proxy: TransparentUpgradeableProxy. Admin: 0x...b2 (2-of-3 Safe).",
+      "excerpt_sha256": "3999ff06b3c38dc9b397c6be6425eddb1a9b26e30bfddab8e29af1065265a288",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    },
+    {
+      "id": "S5",
+      "url": "https://research.example/acme-yield-review",
+      "title": "Independent review of Acme Yield",
+      "source_type": "third_party_research",
+      "origin": "third_party",
+      "publisher": null,
+      "retrieved_at": "2026-10-01T08:20:00Z",
+      "fetch": "ok",
+      "excerpt": "The issuer appears to be controlled by Acme Labs; receivables are held with a third-party custodian.",
+      "excerpt_sha256": "6fc1477bb8ba9de0e05ad312f1d0a4519f0254f1eee97ede80083e3b33419ad5",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    },
+    {
+      "id": "S6",
+      "url": "analyst-call-notes-r1",
+      "title": "Analyst call with Acme team",
+      "source_type": "analyst_input",
+      "origin": "analyst",
+      "publisher": null,
+      "retrieved_at": null,
+      "fetch": "offline",
+      "excerpt": "Team stated a 2-business-day settlement target for redemptions.",
+      "excerpt_sha256": "144bd095c4aafe1e98d64d5e8dd98009d887096148aa59037653dab5f9b99bc1",
+      "archived": false,
+      "version_date": null,
+      "note": "Notes from a call; not independently checked."
+    },
+    {
+      "id": "S7",
+      "url": "https://web.archive.example/2026-03-01/https://docs.acme-yield.example/vault",
+      "title": "Acme Treasury Vault docs (archived)",
+      "source_type": "project_docs",
+      "origin": "first_party",
+      "publisher": "E1",
+      "retrieved_at": "2026-10-01T08:30:00Z",
+      "fetch": "archived",
+      "excerpt": "Vault yield is distributed daily to holders, net of a 0.30 percent fee.",
+      "excerpt_sha256": "1ee6776916dc243309fa8e2cbfa958e9616a4a1c612ae7ce1986667294d29a48",
+      "archived": true,
+      "version_date": "2026-03-01",
+      "note": ""
+    },
+    {
+      "id": "S8",
+      "url": "https://acme-yield.example/legal/offering-memorandum.pdf",
+      "title": "Offering memorandum (Acme Senior Note)",
+      "source_type": "legal_doc",
+      "origin": "first_party",
+      "publisher": "E1",
+      "retrieved_at": "2026-10-01T08:40:00Z",
+      "fetch": "pdf",
+      "excerpt": "The Notes are governed by the laws of Examplestan. Notes are offered only to professional investors.",
+      "excerpt_sha256": "a0051bbb310860a43a43ba415634b53109f4030f626a37cf858a9648a5844d53",
+      "archived": false,
+      "version_date": null,
+      "note": ""
+    }
+  ],
+  "entities": [
+    {
+      "id": "E1",
+      "legal_name": {
+        "value": "Acme Yield Issuer Ltd",
+        "status": "verified",
+        "evidence": [
+          "S3"
+        ],
+        "subject": "E1",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": "Examplestan",
+        "status": "verified",
+        "evidence": [
+          "S3"
+        ],
+        "subject": "E1",
+        "note": ""
+      },
+      "entity_type": {
+        "value": "private limited company",
+        "status": "verified",
+        "evidence": [
+          "S3"
+        ],
+        "subject": "E1",
+        "note": ""
+      },
+      "registration_id": {
+        "value": "100200",
+        "status": "verified",
+        "evidence": [
+          "S3"
+        ],
+        "subject": "E1",
+        "note": ""
+      },
+      "functions": [],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S2"
+        ],
+        "subject": null,
+        "note": "No licence entry found for the issuer."
+      },
+      "licenses": []
+    },
+    {
+      "id": "E2",
+      "legal_name": {
+        "value": "Acme Asset Management LLC",
+        "status": "verified",
+        "evidence": [
+          "S2"
+        ],
+        "subject": "E2",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": "Examplestan",
+        "status": "inferred",
+        "evidence": [
+          "S2"
+        ],
+        "subject": "E2",
+        "note": "Regulator only licenses local entities."
+      },
+      "entity_type": {
+        "value": "limited liability company",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E2",
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [],
+      "license_status": {
+        "value": "active",
+        "status": "verified",
+        "evidence": [
+          "S2"
+        ],
+        "subject": "E2",
+        "note": ""
+      },
+      "licenses": [
+        {
+          "regulator": {
+            "value": "Examplestan Financial Authority",
+            "status": "verified",
+            "evidence": [
+              "S2"
+            ],
+            "subject": "E2",
+            "note": ""
+          },
+          "license_type": {
+            "value": "fund manager",
+            "status": "verified",
+            "evidence": [
+              "S2"
+            ],
+            "subject": "E2",
+            "note": ""
+          },
+          "license_id": {
+            "value": "AAM-0042",
+            "status": "verified",
+            "evidence": [
+              "S2"
+            ],
+            "subject": "E2",
+            "note": ""
+          },
+          "status": {
+            "value": "active",
+            "status": "verified",
+            "evidence": [
+              "S2"
+            ],
+            "subject": "E2",
+            "note": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "legal_name": {
+        "value": "Example Custody Trust Co",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E3",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Memorandum names the custodian but not its jurisdiction."
+      },
+      "entity_type": {
+        "value": "trust company",
+        "status": "inferred",
+        "evidence": [
+          "S5"
+        ],
+        "subject": "E3",
+        "note": "Name suggests a trust company."
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E4",
+      "legal_name": {
+        "value": "Acme Labs Inc",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": "E4",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    }
+  ],
+  "interfaces": [],
+  "holder_rights": [
+    {
+      "product": "P1",
+      "instrument_nature": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_against": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "look_through": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "forum": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "insolvency_protection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "disclaimers": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      }
+    },
+    {
+      "product": "P2",
+      "instrument_nature": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_against": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "look_through": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "forum": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "insolvency_protection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "disclaimers": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      }
+    }
+  ],
+  "yield": [
+    {
+      "product": "P1",
+      "underlying": [
+        {
+          "description": {
+            "value": "Short-dated trade receivables",
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": "P1",
+            "note": ""
+          },
+          "asset_class": {
+            "value": "trade receivables",
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": "P1",
+            "note": ""
+          },
+          "share_pct": {
+            "value": 100,
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": "P1",
+            "note": ""
+          },
+          "location": {
+            "value": null,
+            "status": "not_found",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": "Receivables jurisdiction not stated."
+          }
+        }
+      ],
+      "mechanism": {
+        "value": "Interest on receivables purchased at a discount",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "gross_yield": {
+        "value": "11.0 percent",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "net_yield_to_holder": {
+        "value": "9.5 percent",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "fees": [
+        {
+          "type": {
+            "value": "management",
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "rate": {
+            "value": "1.5 percent p.a.",
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "recipient": {
+            "value": "E2",
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": ""
+          }
+        }
+      ],
+      "distribution": {
+        "method": {
+          "value": "rebasing",
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "frequency": {
+          "value": "monthly",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        }
+      }
+    },
+    {
+      "product": "P2",
+      "underlying": [
+        {
+          "description": {
+            "value": "Short-term treasury bills",
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": "P2",
+            "note": ""
+          },
+          "asset_class": {
+            "value": "treasury bills",
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": "P2",
+            "note": ""
+          },
+          "share_pct": {
+            "value": null,
+            "status": "not_found",
+            "evidence": [],
+            "subject": null,
+            "note": ""
+          },
+          "location": {
+            "value": null,
+            "status": "not_found",
+            "evidence": [],
+            "subject": null,
+            "note": ""
+          }
+        }
+      ],
+      "mechanism": {
+        "value": "Treasury bill coupons passed through the vault",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "gross_yield": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "net_yield_to_holder": {
+        "value": "4.1 percent",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "fees": [
+        {
+          "type": {
+            "value": "vault",
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "rate": {
+            "value": "0.30 percent",
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "recipient": {
+            "value": null,
+            "status": "not_found",
+            "evidence": [],
+            "subject": null,
+            "note": ""
+          }
+        }
+      ],
+      "distribution": {
+        "method": {
+          "value": "claim",
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": "P2",
+          "note": ""
+        },
+        "frequency": {
+          "value": "daily",
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": "P2",
+          "note": ""
+        }
+      }
+    }
+  ],
+  "redemption": [
+    {
+      "product": "P1",
+      "mechanism": {
+        "value": "redemption request to issuer",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "queue": {
+        "value": "monthly window",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "settlement_time": {
+        "value": "2 business days",
+        "status": "inferred",
+        "evidence": [
+          "S6"
+        ],
+        "subject": "P1",
+        "note": "Stated on an analyst call only."
+      },
+      "gating": {
+        "value": "issuer may suspend redemptions",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "fees": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "No redemption fee stated."
+      }
+    },
+    {
+      "product": "P2",
+      "mechanism": {
+        "value": "instant burn against vault liquidity",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "queue": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "settlement_time": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "gating": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "fees": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "product": "P1",
+      "restrictions": {
+        "value": "professional investors only",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      }
+    },
+    {
+      "product": "P2",
+      "restrictions": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S1"
+        ],
+        "subject": null,
+        "note": "Site does not state restrictions."
+      }
+    }
+  ],
+  "audits": [
+    {
+      "auditor": {
+        "value": "Example Audit Partners",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "scope": {
+        "value": "aSN token contract",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "date": {
+        "value": "2026-02-15",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "report_ref": null
+    }
+  ],
+  "size": [
+    {
+      "product": "P1",
+      "metric": "supply",
+      "value": {
+        "value": 12500000,
+        "status": "verified",
+        "evidence": [
+          "S4"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "as_of": "2026-10-01"
+    },
+    {
+      "product": "P2",
+      "metric": "tvl",
+      "value": {
+        "value": 3400000,
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "as_of": "2026-10-01"
+    },
+    {
+      "product": null,
+      "metric": "originated",
+      "value": {
+        "value": 48000000,
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    }
+  ],
+  "flows": {
+    "nodes": [
+      {
+        "id": "n1",
+        "label": "Investor wallet",
+        "lane": "onchain",
+        "kind": "investor",
+        "chain": "ethereum",
+        "ref": null,
+        "layer": null
+      },
+      {
+        "id": "n2",
+        "label": "aSN token",
+        "lane": "onchain",
+        "kind": "contract",
+        "chain": "ethereum",
+        "ref": "0x00000000000000000000000000000000000000a1",
+        "layer": null
+      },
+      {
+        "id": "n3",
+        "label": "Treasury vault",
+        "lane": "onchain",
+        "kind": "pool",
+        "chain": "ethereum",
+        "ref": "P2",
+        "layer": null
+      },
+      {
+        "id": "n4",
+        "label": "Ops multisig",
+        "lane": "onchain",
+        "kind": "multisig",
+        "chain": "ethereum",
+        "ref": "0x00000000000000000000000000000000000000b2",
+        "layer": null
+      },
+      {
+        "id": "n5",
+        "label": "Off-ramp desk",
+        "lane": "boundary",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E4",
+        "layer": null
+      },
+      {
+        "id": "n6",
+        "label": "Issuer bank account",
+        "lane": "offchain",
+        "kind": "bank_account",
+        "chain": null,
+        "ref": "E1",
+        "layer": null
+      },
+      {
+        "id": "n7",
+        "label": "Custodian",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E3",
+        "layer": null
+      },
+      {
+        "id": "n8",
+        "label": "Receivables portfolio",
+        "lane": "offchain",
+        "kind": "asset",
+        "chain": null,
+        "ref": null,
+        "layer": null
+      },
+      {
+        "id": "n9",
+        "label": "Manager",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E2",
+        "layer": null
+      }
+    ],
+    "edges": [
+      {
+        "from": "n1",
+        "to": "n2",
+        "kind": "subscription",
+        "mechanism": "deposit",
+        "rail": "stablecoin",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": null,
+        "label": "USDC in, aSN minted",
+        "claim": {
+          "value": true,
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n5",
+        "to": "n6",
+        "kind": "conversion",
+        "mechanism": "conversion",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1",
+          "T2"
+        ],
+        "interface": null,
+        "label": "stablecoin to fiat",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S1"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n8",
+        "to": "n7",
+        "kind": "custody",
+        "mechanism": "title_transfer",
+        "rail": "internal",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": null,
+        "label": "receivables held",
+        "claim": {
+          "value": true,
+          "status": "inferred",
+          "evidence": [
+            "S5"
+          ],
+          "subject": null,
+          "note": "Review mentions a custodian."
+        }
+      },
+      {
+        "from": "n8",
+        "to": "n6",
+        "kind": "yield",
+        "mechanism": "interest",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": null,
+        "label": "collections",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n6",
+        "to": "n9",
+        "kind": "fee",
+        "mechanism": "fee_payment",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1",
+          "T2"
+        ],
+        "interface": null,
+        "label": "management fee",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n2",
+        "to": "n1",
+        "kind": "redemption",
+        "mechanism": "burn",
+        "rail": "burn",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": null,
+        "label": "aSN burned on redemption",
+        "claim": {
+          "value": true,
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n3",
+        "to": "n4",
+        "kind": "collateral",
+        "mechanism": "pledge",
+        "rail": "internal",
+        "view": "settlement",
+        "strategies": [
+          "T2"
+        ],
+        "interface": null,
+        "label": "reserve pledge",
+        "claim": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": "No pledge transfer observed on-chain."
+        }
+      },
+      {
+        "from": "n1",
+        "to": "n3",
+        "kind": "subscription",
+        "mechanism": "deposit",
+        "rail": "stablecoin",
+        "view": "settlement",
+        "strategies": [
+          "T2"
+        ],
+        "interface": null,
+        "label": "vault deposit",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n3",
+        "to": "n1",
+        "kind": "yield",
+        "mechanism": "distribution",
+        "rail": "stablecoin",
+        "view": "settlement",
+        "strategies": [
+          "T2"
+        ],
+        "interface": null,
+        "label": "daily yield",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      }
+    ]
+  },
+  "onchain": {
+    "contracts": [
+      {
+        "chain": "ethereum",
+        "address": "0x00000000000000000000000000000000000000a1",
+        "role": {
+          "value": "aSN token",
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "source_verified": {
+          "value": true,
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": ""
+        },
+        "proxy": {
+          "value": "TransparentUpgradeableProxy",
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": ""
+        },
+        "control": {
+          "upgrade_admin": {
+            "value": "0x00000000000000000000000000000000000000b2",
+            "status": "verified",
+            "evidence": [
+              "S4"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "role_admins": {
+            "value": [
+              "0x00000000000000000000000000000000000000b2"
+            ],
+            "status": "verified",
+            "evidence": [
+              "S4"
+            ],
+            "subject": null,
+            "note": ""
+          },
+          "timelock_delay_s": {
+            "value": 0,
+            "status": "verified",
+            "evidence": [
+              "S4"
+            ],
+            "subject": null,
+            "note": "No timelock between admin and proxy."
+          },
+          "multisig": {
+            "address": {
+              "value": "0x00000000000000000000000000000000000000b2",
+              "status": "verified",
+              "evidence": [
+                "S4"
+              ],
+              "subject": null,
+              "note": ""
+            },
+            "threshold": {
+              "value": 2,
+              "status": "verified",
+              "evidence": [
+                "S4"
+              ],
+              "subject": null,
+              "note": ""
+            },
+            "signers_count": {
+              "value": 3,
+              "status": "verified",
+              "evidence": [
+                "S4"
+              ],
+              "subject": null,
+              "note": ""
+            }
+          }
+        }
+      }
+    ]
+  },
+  "history": [
+    {
+      "date": "2026-03-01",
+      "change": "Vault fee stated as 0.30 percent in archived docs.",
+      "evidence": [
+        "S7"
+      ]
+    },
+    {
+      "date": "2026-09-15",
+      "change": "Upgrade admin moved to a 2-of-3 multisig.",
+      "evidence": [
+        "S4"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "G1",
+      "type": "gap",
+      "topic": "legal",
+      "blocking": true,
+      "statement": "Issuer financial statements and the custody agreement are not public.",
+      "evidence": [
+        "S8"
+      ],
+      "subjects": []
+    },
+    {
+      "id": "G2",
+      "type": "gap",
+      "topic": "yield",
+      "blocking": false,
+      "statement": "Gross yield of the Treasury Vault is not disclosed.",
+      "evidence": [
+        "S1",
+        "S7"
+      ],
+      "subjects": []
+    },
+    {
+      "id": "D1",
+      "type": "discrepancy",
+      "topic": "yield",
+      "blocking": false,
+      "statement": "Archived docs state a 0.30 percent vault fee; the current site states no fee.",
+      "evidence": [
+        "S1",
+        "S7"
+      ],
+      "subjects": []
+    },
+    {
+      "id": "C1",
+      "type": "structural_change",
+      "topic": "onchain",
+      "blocking": false,
+      "statement": "Upgrade admin changed from a single key to a 2-of-3 multisig.",
+      "evidence": [
+        "S4"
+      ],
+      "subjects": []
+    }
+  ],
+  "open_questions": [
+    {
+      "topic": "legal",
+      "question": "Which entity holds legal title to the receivables?"
+    },
+    {
+      "topic": "redemption",
+      "question": "Can the issuer suspend redemptions without notice?"
+    }
+  ],
+  "next_searches": [],
+  "issuer_requests": [],
+  "narrative": {
+    "executive_summary": "Acme Yield offers two products: a receivables-backed note (P1) and a treasury bill vault (P2). The issuer and the manager are registered; custody and loss order are not documented in public sources."
+  },
+  "x_unmapped": [
+    {
+      "fact": "The team plans a second chain deployment in 2027.",
+      "evidence": [
+        "S1"
+      ],
+      "why_unmapped": "Forward-looking statement; no schema field."
+    },
+    {
+      "fact": "E1 roles in rwa-dd/1.0: issuer, spv",
+      "evidence": [],
+      "why_unmapped": "assign layers in functions"
+    },
+    {
+      "fact": "E2 roles in rwa-dd/1.0: manager",
+      "evidence": [],
+      "why_unmapped": "assign layers in functions"
+    },
+    {
+      "fact": "E3 roles in rwa-dd/1.0: custodian",
+      "evidence": [],
+      "why_unmapped": "assign layers in functions"
+    },
+    {
+      "fact": "E4 roles in rwa-dd/1.0: developer, platform_operator",
+      "evidence": [],
+      "why_unmapped": "assign layers in functions"
+    },
+    {
+      "fact": "E4 controls E1: true",
+      "evidence": [
+        "S5"
+      ],
+      "why_unmapped": "rwa-dd/1.0 relationship; re-map into interfaces"
+    },
+    {
+      "fact": "E2 manages P1: true",
+      "evidence": [
+        "S8"
+      ],
+      "why_unmapped": "rwa-dd/1.0 relationship; re-map into interfaces"
+    },
+    {
+      "fact": "E3 custodies P1: true",
+      "evidence": [
+        "S8"
+      ],
+      "why_unmapped": "rwa-dd/1.0 relationship; re-map into interfaces"
+    }
+  ]
+}

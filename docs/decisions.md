@@ -38,12 +38,23 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D34 - Analyst downloads - 2026-10-18 - Files viewable only in the browser are requested from the analyst after the review packet as download lines and enter the run through add-source.
 - D35 - Terms per domain - 2026-10-18 - Terms of Use and robots.txt are read for every domain before any scripted fetch from it.
 - D36 - Address lint - 2026-10-18 - dd.py lint warns on EVM addresses that are all lowercase or all uppercase; it checks case shape only, not the EIP-55 checksum.
+- D37 - Three-layer model - 2026-10-19 - The research model follows the Artemis Three-Layer Private Credit & RWA Business Model Framework (Draft v0.1): L1 vault, L2 credit financing, L3 underlying business, as functions, not entities.
+- D38 - Schema 2.0 - 2026-10-19 - rwa-dd/2.0 replaces relationships with typed interfaces (route, method, legal class and the framework edge fields), adds strategies, holder rights, default path, L3 business, flow views and issuer requests; 1.0 records are migrated, not patched.
+- D39 - Coded claims - 2026-10-19 - Classification codes are claims with evidence; null when not established; the validator checks their values against the framework enums.
+- D40 - Derived flags - 2026-10-19 - CONFIRMED, PARTIALLY_VERIFIED, UNRESOLVED and CONFLICTING are derived from claim status and discrepancy subjects, never stored.
+- D41 - Completeness - 2026-10-19 - The packet and report show a per-strategy checklist K1-K7 mirroring the framework's mandatory outputs.
+- D42 - Seeded runs - 2026-10-19 - init --seed-from archives the old run, copies its ledger byte for byte and starts from a converted record; cached downloads stay in .scratch.
+- D43 - Question codes - 2026-10-19 - Research questions A1-F3 are the shared vocabulary of the protocol, issuer requests and curator feedback.
+- D44 - HTML suspended - 2026-10-19 - The HTML renderer is removed until the curator has reviewed the data model; Markdown is the only report.
+- D45 - Diagrams per strategy and view - 2026-10-19 - One diagram per strategy and view (settlement, claim, repayment); layout engine unchanged pending the layout decision.
+- D46 - No risk methodology - 2026-10-19 - The skill records classification and evidence only; no ratings, scores, thresholds, limits or loss estimates.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
 - 2026-10-18 - P1 accepted at 903f20f after independent re-run; one test failed only on a Windows checkout (CRLF in fixtures), fixed by D20.
 - 2026-10-18 - usd-ai end-to-end run finalized after 3 rounds; final acceptance found admin actions missed by the run (sUSDai upgraded twice, three direct upgrades without timelock), leading to D27-D28.
 - 2026-10-18 - usd-ai (amendment 1), huma and hastra finalized and accepted; all three showed rejected searches under section 2, leading to D32.
+- 2026-10-19 - Curator feedback on the usd-ai, huma and hastra reports: reports must follow the three-layer framework; HTML hard to read (deferred).
 
 ## Incidents
 

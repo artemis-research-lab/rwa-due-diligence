@@ -6,7 +6,7 @@ This module and lib/ledger.py are the only writers of <root>/<slug>/.
 import re
 from pathlib import Path
 
-from lib import directives, flow, ledger, render_html, render_md, review, schema, validate
+from lib import directives, flow, ledger, migrate, render_md, review, schema, validate
 from lib.textutil import dump_json, id_key, load_json_text
 
 PHASE_RESEARCH = "research"
@@ -30,8 +30,10 @@ class InvalidError(Exception):
 
 
 # Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=()) -> text);
-# figures maps product id -> sanitized SVG text and may be empty; rejected is a set of N ids.
-RENDERERS = [("report.md", render_md.render), ("report.html", render_html.render)]
+# figures maps "T<n>-<view>" -> sanitized SVG text and may be empty; rejected is a set of N ids.
+RENDERERS = [("report.md", render_md.render)]
+
+FLOW_VIEWS = schema.ENUMS["flow_view"]
 
 
 def check_slug(slug):
@@ -60,18 +62,25 @@ class Project:
     def output(self, suffix):
         return self.dir / ("%s.%s" % (self.slug, suffix))
 
-    def flow_output(self, product_id):
-        return self.output("flow-%s.svg" % product_id)
+    def flow_output(self, key):
+        """Diagram output for key T<n>-<view>."""
+        return self.output("flow-%s.svg" % key)
 
     def flow_outputs(self):
-        """Existing flow diagram outputs, by product id."""
-        pattern = re.compile(r"^%s\.flow-(P[1-9][0-9]*)\.svg$" % re.escape(self.slug))
+        """Existing flow diagram outputs, by strategy id then view order settlement, claim, repayment."""
+        pattern = re.compile(r"^%s\.flow-(T[1-9][0-9]*)-(settlement|claim|repayment)\.svg$" % re.escape(self.slug))
         found = {}
-        for path in self.dir.glob("%s.flow-P*.svg" % self.slug):
+        for path in self.dir.glob("%s.flow-T*.svg" % self.slug):
             match = pattern.match(path.name)
             if match:
-                found[match.group(1)] = path
-        return [found[pid] for pid in sorted(found, key=id_key)]
+                found[(id_key(match.group(1)), FLOW_VIEWS.index(match.group(2)))] = path
+        return [found[key] for key in sorted(found)]
+
+    def legacy_outputs(self):
+        """Final outputs of runs made before v0.5.0 (HTML report, one diagram per product)."""
+        pattern = re.compile(r"^%s\.flow-P[1-9][0-9]*\.svg$" % re.escape(self.slug))
+        flows = sorted(p for p in self.dir.glob("%s.flow-P*.svg" % self.slug) if pattern.match(p.name))
+        return [p for p in [self.output("report.html")] + flows if p.exists()]
 
     def outputs(self):
         return ([self.output("dd.json")] + [self.output(suffix) for suffix, _ in RENDERERS]
@@ -171,19 +180,114 @@ def rejected_ids(project, k):
 
 # --------------------------------------------------------------------------- commands
 
-def _skeleton(slug, url, clock):
+def _new_run(slug, url, clock, seeded_from=None):
     started = ledger.format_ts(clock())
     run_id = "%s-%s" % (slug, started.replace("-", "").replace(":", ""))
+    return {"run_id": run_id, "slug": slug, "root_url": url, "round": 1, "status": "draft",
+            "started_at": started, "finalized_at": None, "skill_version": schema.SKILL_VERSION,
+            "seeded_from": seeded_from}
+
+
+def _skeleton(slug, url, clock):
     doc = schema.skeleton(schema.DOCUMENT)
-    doc["run"] = {"run_id": run_id, "slug": slug, "root_url": url, "round": 1, "status": "draft",
-                  "started_at": started, "finalized_at": None, "skill_version": schema.SKILL_VERSION}
+    doc["run"] = _new_run(slug, url, clock)
     product = schema.skeleton(schema.PRODUCT)
     product["id"] = "P1"
     doc["project"]["products"] = [product]
+    strategy = schema.skeleton(schema.STRATEGY)
+    strategy.update({"id": "T1", "products": ["P1"]})
+    doc["strategies"] = [strategy]
+    rights = schema.skeleton(schema.HOLDER_RIGHTS)
+    rights["product"] = "P1"
+    doc["holder_rights"] = [rights]
     errors = validate.structural_errors(doc)
     if errors:
         raise InvalidError(sorted(set(errors)))
-    return doc, run_id
+    return doc, doc["run"]["run_id"]
+
+
+def _archive_run(project, state):
+    """Move the run's outputs and audit/ to archive/<run_id>/; returns [(src, dst), ...] for a rollback."""
+    dest = project.archive / state["run_id"]
+    if dest.exists():
+        raise ContractError("archive %s already exists" % dest)
+    moved = []
+    for path in project.outputs() + project.legacy_outputs():
+        if path.exists():
+            project.move(path, dest / path.name)
+            moved.append((path, dest / path.name))
+    project.move(project.audit, dest / "audit")
+    moved.append((project.audit, dest / "audit"))
+    return moved
+
+
+def _rollback(project, moved, archive_existed):
+    """Undo _archive_run: move everything back and remove the directories it created."""
+    for src, dst in reversed(moved):
+        project.move(dst, src)
+    created = [moved[-1][1].parent] + ([] if archive_existed else [project.archive])
+    for path in created:
+        path = project.safe(path)
+        if path.is_dir() and not any(path.iterdir()):
+            path.rmdir()
+
+
+def _start_layout(project):
+    for sub in SCRATCH_DIRS:
+        project.mkdir(project.scratch / sub)
+    project.mkdir(project.rounds)
+
+
+def _seed_version(old):
+    """Schema version of the record to seed from; ContractError unless it is 1.0 or 2.0."""
+    version = old.get("schema_version") if isinstance(old, dict) else None
+    if version not in (migrate.FROM_VERSION, schema.SCHEMA_VERSION):
+        raise ContractError("cannot seed from schema version %r (supported: %s, %s)"
+                            % (version, migrate.FROM_VERSION, schema.SCHEMA_VERSION))
+    return version
+
+
+def _seeded_doc(old, run):
+    """Working document of a seeded run (4.2 step 3)."""
+    if _seed_version(old) == migrate.FROM_VERSION:
+        return migrate.convert(old, run)
+    return schema.order_like_schema(dict(old, run=run, next_searches=[]))
+
+
+def seed(root, slug, url, clock=ledger.system_clock):
+    """init --seed-from (4.2): archive the existing run and start a new one from its record and ledger."""
+    project = Project(root, slug)
+    if not project.state_file.is_file():
+        raise ContractError("no run for slug %s under %s to seed from" % (slug, project.root))
+    state = load_state(project)
+    old = load_work(project)
+    run = _new_run(slug, url, clock, seeded_from=state["run_id"])
+    _seed_version(old)  # refuses unknown versions before anything moves
+    archive_existed = project.archive.exists()
+    moved = _archive_run(project, state)
+    try:
+        ledger_bytes = (project.archive / state["run_id"] / "audit" / "sources.jsonl").read_bytes()
+        try:
+            doc = _seeded_doc(old, run)
+        except (KeyError, TypeError, AttributeError, IndexError) as exc:
+            raise InvalidError(["seed: %s record cannot be converted (%s: %s)"
+                                % (old.get("schema_version"), type(exc).__name__, exc)])
+        errors = validate.structural_errors(doc)
+        if not errors:
+            sources = ledger.read_ledger(project.archive / state["run_id"] / "audit" / "sources.jsonl")
+            errors = validate.validate_document(doc, sources)
+        if errors:
+            raise InvalidError(sorted(set(errors)))
+    except Exception:
+        _rollback(project, moved, archive_existed)
+        raise
+    _start_layout(project)
+    project.write_bytes(project.ledger_file, ledger_bytes)
+    save_work(project, doc)
+    save_state(project, {"slug": slug, "run_id": run["run_id"], "round": 1, "phase": PHASE_RESEARCH,
+                         "status": "draft"})
+    return {"project_dir": str(project.dir), "run_id": run["run_id"], "work_file": str(project.work_file),
+            "seeded_from": state["run_id"], "sources": len(doc["sources"])}
 
 
 def init(root, slug, url, clock=ledger.system_clock, new_run=False):
@@ -193,23 +297,15 @@ def init(root, slug, url, clock=ledger.system_clock, new_run=False):
         state = load_state(project)
         if not new_run:
             if state.get("status") == "final":
-                raise ContractError('run %s is final; use "dd.py amend" to correct it or --new-run to archive it and'
-                                    ' start again' % state.get("run_id"))
+                raise ContractError('run %s is final; use "dd.py amend" to correct it, --seed-from to re-map it or'
+                                    ' --new-run to archive it and start again' % state.get("run_id"))
             raise ContractError('run exists (phase %s); use "dd.py status" to inspect or --new-run to archive it'
                                 ' and start again' % state.get("phase"))
-        dest = project.archive / state["run_id"]
-        if dest.exists():
-            raise ContractError("archive %s already exists" % dest)
-        for path in project.outputs() + [project.output("report.html")]:
-            if path.exists():
-                project.move(path, dest / path.name)
-        project.move(project.audit, dest / "audit")
+        _archive_run(project, state)
     elif project.audit.exists():
         raise ContractError("%s exists without state.json" % project.audit)
 
-    for sub in SCRATCH_DIRS:
-        project.mkdir(project.scratch / sub)
-    project.mkdir(project.rounds)
+    _start_layout(project)
     project.write_bytes(project.ledger_file, b"")
     save_work(project, doc)
     state = {"slug": slug, "run_id": run_id, "round": 1, "phase": PHASE_RESEARCH, "status": "draft"}
@@ -306,8 +402,8 @@ def render_draft(root, slug):
     for suffix, fn in RENDERERS:
         outputs.append(str(project.write_text(draft / ("%s.%s" % (slug, suffix)),
                                               fn(doc, round_records(project, state["round"]), figures))))
-    for pid, svg in figures.items():
-        outputs.append(str(project.write_text(draft / project.flow_output(pid).name, svg)))
+    for key, svg in figures.items():
+        outputs.append(str(project.write_text(draft / project.flow_output(key).name, svg)))
     result = {"outputs": outputs}
     if warnings:
         result["warnings"] = warnings
@@ -322,7 +418,8 @@ def status(root, slug):
         doc = load_work(project)
         errors = check_work(project, doc)
         for key, path in (("products", ("project", "products")), ("sources", ("sources",)),
-                          ("entities", ("entities",)), ("flow_edges", ("flows", "edges")),
+                          ("entities", ("entities",)), ("strategies", ("strategies",)),
+                          ("interfaces", ("interfaces",)), ("flow_edges", ("flows", "edges")),
                           ("findings", ("findings",)), ("next_searches", ("next_searches",))):
             value = doc
             for part in path:
@@ -334,7 +431,7 @@ def status(root, slug):
 
 
 def render_figures(doc):
-    """Sanitized SVG per product; DependencyError when d2 is missing or not the pinned version."""
+    """Sanitized SVG per "T<n>-<view>" key; DependencyError when d2 is missing or not the pinned version."""
     d2_path = flow.find_d2()
     if d2_path is None:
         raise flow.DependencyError("d2 %s required, found none on PATH" % flow.D2_VERSION)
@@ -361,8 +458,8 @@ def finalize(root, slug, clock=ledger.system_clock):
     outputs = [project.write_json(project.output("dd.json"), doc)]
     for suffix, fn in RENDERERS:
         outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected)))
-    for pid, svg in figures.items():
-        outputs.append(project.write_text(project.flow_output(pid), svg))
+    for key, svg in figures.items():
+        outputs.append(project.write_text(project.flow_output(key), svg))
     save_work(project, doc)
     state["status"] = "final"
     state["phase"] = PHASE_FINAL
@@ -396,7 +493,7 @@ def amend(root, slug, file_path):
 
     k = state["round"]
     project.mkdir(dest)
-    for path in project.outputs():
+    for path in project.outputs() + project.legacy_outputs():
         if path.exists():
             project.move(path, dest / path.name)
     rdir = project.round_dir(k + 1)

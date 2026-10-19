@@ -1,5 +1,5 @@
 {
-  "schema_version": "rwa-dd/1.0",
+  "schema_version": "rwa-dd/2.0",
   "run": {
     "run_id": "acme-20261001T080000Z",
     "slug": "acme",
@@ -8,7 +8,8 @@
     "status": "draft",
     "started_at": "2026-10-01T08:00:00Z",
     "finalized_at": null,
-    "skill_version": "0.1.0"
+    "skill_version": "0.5.0",
+    "seeded_from": null
   },
   "project": {
     "name": {
@@ -138,6 +139,238 @@
       }
     ]
   },
+  "strategies": [
+    {
+      "id": "T1",
+      "products": [
+        "P1"
+      ],
+      "name": "Acme equipment credit",
+      "business_type": {
+        "value": "private_credit",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "sublayers": "L2a credit fund; L2b warehouse SPV",
+      "l3_business": {
+        "description": {
+          "value": "Equipment leasing to mid-size manufacturers",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "E7",
+          "note": ""
+        },
+        "revenue_model": {
+          "value": "Monthly lease payments from lessees",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "E7",
+          "note": ""
+        },
+        "cash_generation": {
+          "value": "Lease collections paid to the warehouse SPV",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "E7",
+          "note": ""
+        },
+        "collections_control": {
+          "value": "Collection account controlled by the security agent",
+          "status": "inferred",
+          "evidence": [
+            "S5"
+          ],
+          "subject": null,
+          "note": "Review mentions a third-party custodian over the receivables."
+        },
+        "concentration": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "Memorandum gives no obligor concentration."
+        },
+        "performance": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "No delinquency or default data published."
+        },
+        "operating_history": {
+          "value": "Leasing since 2019",
+          "status": "self_reported",
+          "evidence": [
+            "S1"
+          ],
+          "subject": "E7",
+          "note": ""
+        }
+      },
+      "default_path": {
+        "events_of_default": {
+          "value": "Payment default continuing for 30 days",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "enforcement": {
+          "value": "Security agent E3 enforces over the leased equipment",
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "loss_waterfall": {
+          "value": [
+            "Borrower equity",
+            "Credit fund junior tranche",
+            "Senior noteholders"
+          ],
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": "P1",
+          "note": ""
+        },
+        "recovery_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "No recoveries reported."
+        }
+      }
+    },
+    {
+      "id": "T2",
+      "products": [
+        "P2"
+      ],
+      "name": "Acme commodity trade finance",
+      "business_type": {
+        "value": "trade_finance_pt",
+        "status": "inferred",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Vault docs describe purchase and resale of goods."
+      },
+      "sublayers": "",
+      "l3_business": {
+        "description": {
+          "value": "Purchase and resale of agricultural commodities",
+          "status": "self_reported",
+          "evidence": [
+            "S7"
+          ],
+          "subject": "P2",
+          "note": ""
+        },
+        "revenue_model": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S7"
+          ],
+          "subject": null,
+          "note": "Margin on resale not described."
+        },
+        "cash_generation": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "collections_control": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "concentration": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "performance": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "operating_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      },
+      "default_path": {
+        "events_of_default": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S7"
+          ],
+          "subject": null,
+          "note": "Vault docs describe no default events."
+        },
+        "enforcement": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        },
+        "loss_waterfall": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S7"
+          ],
+          "subject": null,
+          "note": "Vault docs do not describe loss order."
+        },
+        "recovery_history": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      }
+    }
+  ],
   "sources": [
     {
       "id": "S1",
@@ -299,9 +532,32 @@
         "subject": "E1",
         "note": ""
       },
-      "roles": [
-        "issuer",
-        "spv"
+      "functions": [
+        {
+          "layer": "L1",
+          "role": "token_issuer",
+          "strategy": null,
+          "evidence": [
+            "S3",
+            "S8"
+          ]
+        },
+        {
+          "layer": "L1",
+          "role": "holder_counterparty",
+          "strategy": null,
+          "evidence": [
+            "S8"
+          ]
+        },
+        {
+          "layer": "L2",
+          "role": "lender_of_record",
+          "strategy": "T2",
+          "evidence": [
+            "S7"
+          ]
+        }
       ],
       "license_status": {
         "value": null,
@@ -350,8 +606,16 @@
         "subject": null,
         "note": ""
       },
-      "roles": [
-        "manager"
+      "functions": [
+        {
+          "layer": "L2",
+          "role": "credit_manager",
+          "strategy": "T1",
+          "evidence": [
+            "S2",
+            "S8"
+          ]
+        }
       ],
       "license_status": {
         "value": "active",
@@ -439,8 +703,15 @@
         "subject": null,
         "note": ""
       },
-      "roles": [
-        "custodian"
+      "functions": [
+        {
+          "layer": "L2",
+          "role": "security_agent",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
       ],
       "license_status": {
         "value": null,
@@ -483,9 +754,284 @@
         "subject": null,
         "note": ""
       },
-      "roles": [
-        "developer",
-        "platform_operator"
+      "functions": [
+        {
+          "layer": "L1",
+          "role": "protocol_operator",
+          "strategy": null,
+          "evidence": [
+            "S1"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E5",
+      "legal_name": {
+        "value": "Acme Credit Fund LP",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "entity_type": {
+        "value": "limited partnership",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L2",
+          "role": "lender_of_record",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E6",
+      "legal_name": {
+        "value": "Acme Warehouse SPV Ltd",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E6",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": "private limited company",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E6",
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L2",
+          "role": "asset_holding_spv",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E7",
+      "legal_name": {
+        "value": "Example Equipment Lessors Ltd",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L3",
+          "role": "financing_recipient",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        },
+        {
+          "layer": "L3",
+          "role": "ultimate_obligor",
+          "strategy": "T1",
+          "evidence": [
+            "S8"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E8",
+      "legal_name": {
+        "value": "Example Receivables Originator",
+        "status": "inferred",
+        "evidence": [
+          "S5"
+        ],
+        "subject": null,
+        "note": "Named as receivables seller in the review."
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L3",
+          "role": "receivables_seller",
+          "strategy": "T1",
+          "evidence": [
+            "S5"
+          ]
+        }
+      ],
+      "license_status": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "licenses": []
+    },
+    {
+      "id": "E9",
+      "legal_name": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Vault docs do not name the commodity buyer."
+      },
+      "jurisdiction": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "entity_type": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "registration_id": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "functions": [
+        {
+          "layer": "L3",
+          "role": "ultimate_obligor",
+          "strategy": "T2",
+          "evidence": [
+            "S7"
+          ]
+        }
       ],
       "license_status": {
         "value": null,
@@ -497,27 +1043,898 @@
       "licenses": []
     }
   ],
-  "relationships": [
+  "interfaces": [
     {
-      "from": "E4",
+      "id": "X1",
+      "strategy": "T1",
+      "kind": "holder_L1",
+      "from": "P1",
       "to": "E1",
-      "type": "controls",
-      "claim": {
-        "value": true,
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "DI",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "instrument": {
+        "value": "Senior notes",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "currency": {
+        "value": "USDC",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": "Noteholders",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "terms": {
+        "value": "Monthly redemption window",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": "Limited recourse to the issuer's assets",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "as_of": "2026-10-01"
+    },
+    {
+      "id": "X2",
+      "strategy": "T1",
+      "kind": "L1_L2",
+      "from": "E1",
+      "to": "E5",
+      "route": {
+        "value": "FUND",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "FI",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "instrument": {
+        "value": "Limited partnership interests",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E5",
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": "E5",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": "E1",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X3",
+      "strategy": "T1",
+      "kind": "within_L2",
+      "from": "E5",
+      "to": "E6",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "DI",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E6",
+        "note": ""
+      },
+      "instrument": {
+        "value": "Warehouse notes",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E6",
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": "E5",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X4",
+      "strategy": "T1",
+      "kind": "L2_L3",
+      "from": "E6",
+      "to": "E7",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": [
+          "DL"
+        ],
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "legal_class": {
+        "value": "DL",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "instrument": {
+        "value": "Equipment loans",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "currency": {
+        "value": "USD",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": "36-month amortising, 12 percent",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "security": {
+        "value": "secured",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "collateral": {
+        "value": "Leased equipment",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "No lien filing cited."
+      },
+      "enforcement": {
+        "value": "Security agent E3 enforces on default",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "recourse": {
+        "value": "Full recourse to the lessor",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "E7",
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X5",
+      "strategy": "T1",
+      "kind": "L2_L3",
+      "from": "E6",
+      "to": "E8",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": [
+          "AP"
+        ],
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "AP",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "instrument": {
+        "value": "Receivables purchase agreement",
         "status": "inferred",
         "evidence": [
           "S5"
         ],
-        "subject": "E1",
-        "note": "Third-party review links the issuer to Acme Labs."
-      }
+        "subject": null,
+        "note": "Review describes purchased receivables."
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "No collateral beyond the receivables described."
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S5"
+        ],
+        "subject": null,
+        "note": "Recourse to the seller not stated."
+      },
+      "as_of": null
     },
     {
-      "from": "E2",
-      "to": "P1",
-      "type": "manages",
-      "claim": {
-        "value": true,
+      "id": "X6",
+      "strategy": "T2",
+      "kind": "holder_L1",
+      "from": "P2",
+      "to": "E1",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "inferred",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Vault share is a contractual claim."
+      },
+      "instrument": {
+        "value": "Vault shares",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "security": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    },
+    {
+      "id": "X7",
+      "strategy": "T2",
+      "kind": "L2_L3",
+      "from": "E1",
+      "to": "E9",
+      "route": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "method": {
+        "value": [
+          "PT"
+        ],
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "legal_class": {
+        "value": "OTHER",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "instrument": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "currency": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "counterparty": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "claim_holder": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "terms": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Trade terms not published."
+      },
+      "security": {
+        "value": "unsecured",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": "P2",
+        "note": ""
+      },
+      "collateral": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "perfection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "enforcement": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "as_of": null
+    }
+  ],
+  "holder_rights": [
+    {
+      "product": "P1",
+      "instrument_nature": {
+        "value": "Senior notes issued by E1",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "claim_against": {
+        "value": "E1",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "look_through": {
+        "value": "via_spv",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": "Notes are limited to the issuer SPV's assets."
+      },
+      "recourse": {
+        "value": "Limited recourse",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": "P1",
+        "note": ""
+      },
+      "governing_law": {
+        "value": "Examplestan",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": ""
+      },
+      "forum": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "No forum clause quoted."
+      },
+      "insolvency_protection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Not described."
+      },
+      "disclaimers": {
+        "value": "Noteholders have no direct claim on borrowers",
         "status": "self_reported",
         "evidence": [
           "S8"
@@ -527,29 +1944,71 @@
       }
     },
     {
-      "from": "E3",
-      "to": "P1",
-      "type": "custodies",
-      "claim": {
-        "value": true,
+      "product": "P2",
+      "instrument_nature": {
+        "value": "Vault shares",
         "status": "self_reported",
         "evidence": [
-          "S8"
+          "S7"
         ],
-        "subject": "E3",
+        "subject": "P2",
+        "note": ""
+      },
+      "claim_against": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Not stated."
+      },
+      "look_through": {
+        "value": "unresolved",
+        "status": "inferred",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "Docs describe no claim beyond the vault."
+      },
+      "recourse": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "governing_law": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "forum": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "insolvency_protection": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": ""
+      },
+      "disclaimers": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
         "note": ""
       }
     }
   ],
-  "governing_law": {
-    "value": "Examplestan",
-    "status": "self_reported",
-    "evidence": [
-      "S8"
-    ],
-    "subject": null,
-    "note": ""
-  },
   "yield": [
     {
       "product": "P1",
@@ -670,15 +2129,6 @@
           "subject": "P1",
           "note": ""
         }
-      },
-      "loss_absorption": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [
-          "S8"
-        ],
-        "subject": null,
-        "note": "Memorandum does not describe loss order."
       }
     },
     {
@@ -686,7 +2136,7 @@
       "underlying": [
         {
           "description": {
-            "value": "Short-term treasury bills",
+            "value": "Commodity purchase and resale contracts",
             "status": "self_reported",
             "evidence": [
               "S7"
@@ -695,7 +2145,7 @@
             "note": ""
           },
           "asset_class": {
-            "value": "treasury bills",
+            "value": "trade finance",
             "status": "self_reported",
             "evidence": [
               "S7"
@@ -720,7 +2170,7 @@
         }
       ],
       "mechanism": {
-        "value": "Treasury bill coupons passed through the vault",
+        "value": "Resale margin passed through the vault",
         "status": "self_reported",
         "evidence": [
           "S7"
@@ -792,13 +2242,6 @@
           "subject": "P2",
           "note": ""
         }
-      },
-      "loss_absorption": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
       }
     }
   ],
@@ -1002,7 +2445,8 @@
         "lane": "onchain",
         "kind": "investor",
         "chain": "ethereum",
-        "ref": null
+        "ref": null,
+        "layer": null
       },
       {
         "id": "n2",
@@ -1010,7 +2454,8 @@
         "lane": "onchain",
         "kind": "contract",
         "chain": "ethereum",
-        "ref": "0x00000000000000000000000000000000000000a1"
+        "ref": "0x00000000000000000000000000000000000000a1",
+        "layer": "L1"
       },
       {
         "id": "n3",
@@ -1018,7 +2463,8 @@
         "lane": "onchain",
         "kind": "pool",
         "chain": "ethereum",
-        "ref": "P2"
+        "ref": "P2",
+        "layer": "L1"
       },
       {
         "id": "n4",
@@ -1026,7 +2472,8 @@
         "lane": "onchain",
         "kind": "multisig",
         "chain": "ethereum",
-        "ref": "0x00000000000000000000000000000000000000b2"
+        "ref": "0x00000000000000000000000000000000000000b2",
+        "layer": null
       },
       {
         "id": "n5",
@@ -1034,7 +2481,8 @@
         "lane": "boundary",
         "kind": "entity",
         "chain": null,
-        "ref": "E4"
+        "ref": "E4",
+        "layer": null
       },
       {
         "id": "n6",
@@ -1042,7 +2490,8 @@
         "lane": "offchain",
         "kind": "bank_account",
         "chain": null,
-        "ref": "E1"
+        "ref": "E1",
+        "layer": "L1"
       },
       {
         "id": "n7",
@@ -1050,7 +2499,8 @@
         "lane": "offchain",
         "kind": "entity",
         "chain": null,
-        "ref": "E3"
+        "ref": "E3",
+        "layer": "L2"
       },
       {
         "id": "n8",
@@ -1058,7 +2508,8 @@
         "lane": "offchain",
         "kind": "asset",
         "chain": null,
-        "ref": null
+        "ref": null,
+        "layer": "L3"
       },
       {
         "id": "n9",
@@ -1066,7 +2517,44 @@
         "lane": "offchain",
         "kind": "entity",
         "chain": null,
-        "ref": "E2"
+        "ref": "E2",
+        "layer": "L2"
+      },
+      {
+        "id": "n10",
+        "label": "Credit fund",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E5",
+        "layer": "L2"
+      },
+      {
+        "id": "n11",
+        "label": "Warehouse SPV",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E6",
+        "layer": "L2"
+      },
+      {
+        "id": "n12",
+        "label": "Equipment lessor",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E7",
+        "layer": "L3"
+      },
+      {
+        "id": "n13",
+        "label": "Commodity buyer",
+        "lane": "offchain",
+        "kind": "entity",
+        "chain": null,
+        "ref": "E9",
+        "layer": "L3"
       }
     ],
     "edges": [
@@ -1076,9 +2564,11 @@
         "kind": "subscription",
         "mechanism": "deposit",
         "rail": "stablecoin",
-        "products": [
-          "P1"
+        "view": "settlement",
+        "strategies": [
+          "T1"
         ],
+        "interface": "X1",
         "label": "USDC in, aSN minted",
         "claim": {
           "value": true,
@@ -1096,10 +2586,12 @@
         "kind": "conversion",
         "mechanism": "conversion",
         "rail": "fiat_wire",
-        "products": [
-          "P1",
-          "P2"
+        "view": "settlement",
+        "strategies": [
+          "T1",
+          "T2"
         ],
+        "interface": null,
         "label": "stablecoin to fiat",
         "claim": {
           "value": true,
@@ -1112,14 +2604,126 @@
         }
       },
       {
+        "from": "n6",
+        "to": "n10",
+        "kind": "subscription",
+        "mechanism": "purchase",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X2",
+        "label": "fund subscription",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n10",
+        "to": "n11",
+        "kind": "subscription",
+        "mechanism": "drawdown",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X3",
+        "label": "warehouse notes",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n11",
+        "to": "n12",
+        "kind": "subscription",
+        "mechanism": "drawdown",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X4",
+        "label": "equipment loans",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n11",
+        "to": "n8",
+        "kind": "subscription",
+        "mechanism": "purchase",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X5",
+        "label": "receivables purchase",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n12",
+        "to": "n7",
+        "kind": "collateral",
+        "mechanism": "pledge",
+        "rail": "internal",
+        "view": "claim",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X4",
+        "label": "equipment pledged",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
         "from": "n8",
         "to": "n7",
         "kind": "custody",
         "mechanism": "title_transfer",
         "rail": "internal",
-        "products": [
-          "P1"
+        "view": "claim",
+        "strategies": [
+          "T1"
         ],
+        "interface": "X5",
         "label": "receivables held",
         "claim": {
           "value": true,
@@ -1132,15 +2736,61 @@
         }
       },
       {
-        "from": "n8",
+        "from": "n12",
+        "to": "n11",
+        "kind": "yield",
+        "mechanism": "repayment",
+        "rail": "fiat_wire",
+        "view": "repayment",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X4",
+        "label": "lease collections",
+        "claim": {
+          "value": true,
+          "status": "self_reported",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n11",
+        "to": "n10",
+        "kind": "yield",
+        "mechanism": "repayment",
+        "rail": "fiat_wire",
+        "view": "repayment",
+        "strategies": [
+          "T1"
+        ],
+        "interface": "X3",
+        "label": "note repayments",
+        "claim": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "Memorandum does not describe this hop."
+        }
+      },
+      {
+        "from": "n10",
         "to": "n6",
         "kind": "yield",
-        "mechanism": "interest",
+        "mechanism": "distribution",
         "rail": "fiat_wire",
-        "products": [
-          "P1"
+        "view": "repayment",
+        "strategies": [
+          "T1"
         ],
-        "label": "collections",
+        "interface": "X2",
+        "label": "fund distributions",
         "claim": {
           "value": true,
           "status": "self_reported",
@@ -1157,10 +2807,11 @@
         "kind": "fee",
         "mechanism": "fee_payment",
         "rail": "fiat_wire",
-        "products": [
-          "P1",
-          "P2"
+        "view": "repayment",
+        "strategies": [
+          "T1"
         ],
+        "interface": null,
         "label": "management fee",
         "claim": {
           "value": true,
@@ -1178,9 +2829,11 @@
         "kind": "redemption",
         "mechanism": "burn",
         "rail": "burn",
-        "products": [
-          "P1"
+        "view": "repayment",
+        "strategies": [
+          "T1"
         ],
+        "interface": "X1",
         "label": "aSN burned on redemption",
         "claim": {
           "value": true,
@@ -1193,34 +2846,16 @@
         }
       },
       {
-        "from": "n3",
-        "to": "n4",
-        "kind": "collateral",
-        "mechanism": "pledge",
-        "rail": "internal",
-        "products": [
-          "P2"
-        ],
-        "label": "reserve pledge",
-        "claim": {
-          "value": null,
-          "status": "not_found",
-          "evidence": [
-            "S4"
-          ],
-          "subject": null,
-          "note": "No pledge transfer observed on-chain."
-        }
-      },
-      {
         "from": "n1",
         "to": "n3",
         "kind": "subscription",
         "mechanism": "deposit",
         "rail": "stablecoin",
-        "products": [
-          "P2"
+        "view": "settlement",
+        "strategies": [
+          "T2"
         ],
+        "interface": "X6",
         "label": "vault deposit",
         "claim": {
           "value": true,
@@ -1234,13 +2869,57 @@
       },
       {
         "from": "n3",
+        "to": "n4",
+        "kind": "collateral",
+        "mechanism": "pledge",
+        "rail": "internal",
+        "view": "settlement",
+        "strategies": [
+          "T2"
+        ],
+        "interface": null,
+        "label": "reserve pledge",
+        "claim": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": "No pledge transfer observed on-chain."
+        }
+      },
+      {
+        "from": "n6",
+        "to": "n13",
+        "kind": "subscription",
+        "mechanism": "purchase",
+        "rail": "fiat_wire",
+        "view": "settlement",
+        "strategies": [
+          "T2"
+        ],
+        "interface": "X7",
+        "label": "goods purchased",
+        "claim": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": ""
+        }
+      },
+      {
+        "from": "n3",
         "to": "n1",
         "kind": "yield",
         "mechanism": "distribution",
         "rail": "stablecoin",
-        "products": [
-          "P2"
+        "view": "settlement",
+        "strategies": [
+          "T2"
         ],
+        "interface": "X6",
         "label": "daily yield",
         "claim": {
           "value": true,
@@ -1374,6 +3053,9 @@
       "statement": "Issuer financial statements and the custody agreement are not public.",
       "evidence": [
         "S8"
+      ],
+      "subjects": [
+        "E1"
       ]
     },
     {
@@ -1385,6 +3067,20 @@
       "evidence": [
         "S1",
         "S7"
+      ],
+      "subjects": []
+    },
+    {
+      "id": "G3",
+      "type": "gap",
+      "topic": "credit",
+      "blocking": true,
+      "statement": "Perfection of the security interest over the leased equipment is not evidenced.",
+      "evidence": [
+        "S8"
+      ],
+      "subjects": [
+        "X4.perfection"
       ]
     },
     {
@@ -1396,6 +3092,21 @@
       "evidence": [
         "S1",
         "S7"
+      ],
+      "subjects": []
+    },
+    {
+      "id": "D2",
+      "type": "discrepancy",
+      "topic": "credit",
+      "blocking": false,
+      "statement": "The memorandum describes the equipment loans as secured; the independent review describes them as unsecured.",
+      "evidence": [
+        "S5",
+        "S8"
+      ],
+      "subjects": [
+        "X4.security"
       ]
     },
     {
@@ -1406,7 +3117,8 @@
       "statement": "Upgrade admin changed from a single key to a 2-of-3 multisig.",
       "evidence": [
         "S4"
-      ]
+      ],
+      "subjects": []
     }
   ],
   "open_questions": [
@@ -1440,10 +3152,44 @@
         "D1"
       ],
       "est_calls": 4
+    },
+    {
+      "id": "N3",
+      "what": "Lien filings over the leased equipment",
+      "where": "Examplestan collateral registry",
+      "why": "Resolve the secured/unsecured discrepancy",
+      "resolves": [
+        "G3",
+        "D2"
+      ],
+      "est_calls": 3
+    }
+  ],
+  "issuer_requests": [
+    {
+      "id": "Q1",
+      "request": "Security agreement and lien filings for the equipment loans",
+      "why": "Confirm whether the T1 loans are secured and the security interest is perfected",
+      "answers": [
+        "C2",
+        "C5"
+      ],
+      "priority": 1
+    },
+    {
+      "id": "Q2",
+      "request": "Commodity purchase and offtake contracts for the trade vault",
+      "why": "Identify the T2 counterparties and how the L3 business generates cash",
+      "answers": [
+        "A4",
+        "E1",
+        "E2"
+      ],
+      "priority": 2
     }
   ],
   "narrative": {
-    "executive_summary": "Acme Yield offers two products: a receivables-backed note (P1) and a treasury bill vault (P2). The issuer and the manager are registered; custody and loss order are not documented in public sources."
+    "executive_summary": "Acme Yield offers two products: a note (P1) financing equipment leases through a credit fund and a warehouse SPV (T1), and a vault (P2) financing commodity purchase and resale (T2). Entities are mapped to layers; the security over the T1 loans is disputed between sources."
   },
   "x_unmapped": [
     {

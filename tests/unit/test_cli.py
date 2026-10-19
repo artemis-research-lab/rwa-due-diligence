@@ -59,8 +59,9 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert result["rounds"] == 2
     base = (tmp_path / "acme").resolve()
     assert Path(result["project_dir"]) == base
-    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md", "acme.report.html",
-                                                         "acme.flow-P1.svg", "acme.flow-P2.svg"]
+    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md",
+                                                         "acme.flow-T1-settlement.svg", "acme.flow-T1-claim.svg",
+                                                         "acme.flow-T1-repayment.svg", "acme.flow-T2-settlement.svg"]
     for p in result["outputs"] + [result["audit_dir"], result["scratch_dir"]]:
         assert os.path.exists(p) and base in Path(p).resolve().parents
 
@@ -70,9 +71,6 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert "### Round 1\n\n```text\naccept N1\n```" in report
     assert "### Round 2\n\n```text\nnote good enough\nfinalize\n```" in report
     assert "DRAFT" not in report
-    page = Path(result["outputs"][2]).read_bytes().decode("utf-8")
-    assert '<pre class="dd-pre">note good enough\nfinalize</pre>' in page
-    assert "DRAFT" not in page
 
     # Nothing was created outside <tmp>/acme.
     assert before == []
@@ -84,21 +82,45 @@ def test_exit_codes(tmp_path):
     assert run_cli(["init", "--slug", "../x", "--url", "u", "--root", str(tmp_path)])[0] == 3
     assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
     code, out, _ = cli(tmp_path, "validate")
-    assert code == 2 and out == ("project.products[0]: P1 has no flow edge\n"
-                                 "project.products[0]: P1 has no yield entry\n")
+    assert code == 2 and out == ("project.products[0]: P1 has no yield entry\n"
+                                 "strategies[0]: T1 has no flow edge with view settlement\n")
     assert cli(tmp_path, "review")[0] == 2
     assert cli(tmp_path, "finalize")[0] == 3
     code, _, err = cli(tmp_path, "init", "--url", "https://a.example/")
     assert code == 3 and 'run exists (phase research); use "dd.py status" to inspect or --new-run' in err
 
 
-def test_render_writes_draft_html(tmp_path):
+def test_render_writes_draft_markdown_only(tmp_path):
     assert cli(tmp_path, "init", "--url", "https://a.example/")[0] == 0
     code, out, _ = cli(tmp_path, "render")
     assert code == 0
     draft = tmp_path / "acme" / ".scratch" / "draft"
-    assert (draft / "acme.report.md").is_file() and (draft / "acme.report.html").is_file()
-    assert '<p class="dd-banner dd-banner--draft">' in (draft / "acme.report.html").read_bytes().decode("utf-8")
+    assert (draft / "acme.report.md").is_file() and not (draft / "acme.report.html").exists()
+    assert "> DRAFT -- not finalized\n" in (draft / "acme.report.md").read_bytes().decode("utf-8")
+
+
+def test_init_seed_from_cli(tmp_path):
+    build_run(tmp_path)
+    old_id = runstate.load_state(runstate.open_project(tmp_path, "acme"))["run_id"]
+    code, out, err = cli(tmp_path, "init", "--url", "https://acme-yield.example/", "--seed-from")
+    assert (code, err) == (0, "")
+    result = json.loads(out)
+    assert list(result) == ["project_dir", "run_id", "work_file", "seeded_from", "sources"]
+    assert result["seeded_from"] == old_id and result["sources"] == 8 and result["run_id"] != old_id
+    assert cli(tmp_path, "validate")[:2] == (0, "valid\n")
+
+
+def test_init_seed_from_errors(tmp_path):
+    code, _, err = cli(tmp_path, "init", "--url", "https://a.example/", "--seed-from")
+    assert code == 3 and "to seed from" in err
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stderr(buf), pytest.raises(SystemExit) as exc:
+        from test_support import load_cli
+        load_cli().main(["init", "--slug", "acme", "--root", str(tmp_path), "--url", "u", "--seed-from",
+                         "--new-run"])
+    assert exc.value.code == 2 and "not allowed with argument" in buf.getvalue()
 
 
 def test_help_lists_all_commands():

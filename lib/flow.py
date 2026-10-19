@@ -1,4 +1,4 @@
-"""Fund-flow diagrams (D11, D12, D21): D2 source builder and the d2 v0.9.0 renderer wrapper.
+"""Fund-flow diagrams (D11, D12, D21, D45): D2 source per strategy and view, and the d2 v0.9.0 renderer wrapper.
 
 build_d2 is pure. This is the only module that starts a subprocess: the pinned d2 binary, with explicit flags.
 """
@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 
+from lib import framework, schema
 from lib.textutil import id_key
 
 D2_VERSION = "v0.9.0"
@@ -44,8 +45,9 @@ EDGE_STYLES = {
     "collateral": ("#b91c1c", 4),
 }
 
-STATUS_SUFFIX = {"verified": " [V]", "self_reported": " [S]", "inferred": " [I]", "not_found": " [N]"}
-STATUS_OPACITY = {"inferred": 0.7, "not_found": 0.5}
+FLAG_SUFFIX = {"CONFIRMED": " [C]", "PARTIALLY_VERIFIED": " [P]", "UNRESOLVED": " [U]", "CONFLICTING": " [X]"}
+FLAG_OPACITY = {"PARTIALLY_VERIFIED": 0.7, "UNRESOLVED": 0.5}
+VIEWS = schema.ENUMS["flow_view"]
 
 LABEL_ALLOWED = re.compile(r"[^A-Za-z0-9 .,:;()/&+%@'_=-]")
 NODE_ID = re.compile(r"^n[1-9][0-9]*$")
@@ -85,9 +87,23 @@ def _node_id(ident):
     return ident
 
 
-def build_d2(doc, product_id):
-    """D2 source of one product's fund flow; same document -> same bytes on every OS."""
-    edges = [e for e in doc["flows"]["edges"] if product_id in e["products"]]
+def view_edges(doc, strategy_id, view):
+    """[(index, edge), ...] of the strategy's edges in one view, in document order."""
+    return [(i, e) for i, e in enumerate(doc["flows"]["edges"])
+            if strategy_id in e["strategies"] and e["view"] == view]
+
+
+def figure_keys(doc):
+    """`T<n>-<view>` for every (strategy, view) with at least one edge: strategy id order, then view order."""
+    return ["%s-%s" % (t["id"], view) for t in sorted(doc["strategies"], key=id_key) for view in VIEWS
+            if view_edges(doc, t["id"], view)]
+
+
+def build_d2(doc, strategy_id, view):
+    """D2 source of one strategy's fund flow in one view; same document -> same bytes on every OS."""
+    selected = view_edges(doc, strategy_id, view)
+    edges = [e for _, e in selected]
+    edge_flags = framework.flags(doc)
     by_id = {n["id"]: n for n in doc["flows"]["nodes"]}
     used = sorted({e["from"] for e in edges} | {e["to"] for e in edges}, key=id_key)
     nodes = [by_id[nid] for nid in used]
@@ -106,18 +122,19 @@ def build_d2(doc, product_id):
         blocks.append("\n".join(lines))
 
     lines = []
-    for e in edges:
+    for index, e in selected:
         src, dst = by_id[e["from"]], by_id[e["to"]]
         claim = e["claim"]
-        suffix = STATUS_SUFFIX[claim["status"]]
-        if claim["status"] == "not_found" and not claim["evidence"]:
-            suffix = " [N?]"
+        fl = edge_flags[("flows", "edges", index, "claim")]
+        suffix = FLAG_SUFFIX[fl]
+        if fl == "UNRESOLVED" and not claim["evidence"]:
+            suffix = " [U?]"
         colour, dash = EDGE_STYLES[e["kind"]]
         style = 'style.stroke: "%s"; style.font-size: 12' % colour
         if dash is not None:
             style += "; style.stroke-dash: %d" % dash
-        if claim["status"] in STATUS_OPACITY:
-            style += "; style.opacity: %s" % STATUS_OPACITY[claim["status"]]
+        if fl in FLAG_OPACITY:
+            style += "; style.opacity: %s" % FLAG_OPACITY[fl]
         lines.append('%s.%s -> %s.%s: "%s%s" {%s}' % (
             src["lane"], _node_id(src["id"]), dst["lane"], _node_id(dst["id"]),
             clean_label(e["label"]), suffix, style))
@@ -179,6 +196,9 @@ def sanitize_svg(svg):
 
 
 def render_all(doc, d2_path, env=None):
-    """Sanitized SVG per product, in product id order."""
-    return {p["id"]: sanitize_svg(render_svg(build_d2(doc, p["id"]), d2_path, env=env))
-            for p in sorted(doc["project"]["products"], key=id_key)}
+    """Sanitized SVG per `T<n>-<view>` key (figure_keys order), only for pairs with at least one edge."""
+    out = {}
+    for key in figure_keys(doc):
+        strategy_id, view = key.split("-", 1)
+        out[key] = sanitize_svg(render_svg(build_d2(doc, strategy_id, view), d2_path, env=env))
+    return out

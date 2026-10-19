@@ -1,0 +1,43 @@
+direction: down
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+  }
+}
+
+offchain: "Off-chain" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n6: "Issuer bank account" {shape: cylinder; style.font-size: 13; style.fill: "#ffffff"}
+  n8: "Receivables portfolio" {shape: hexagon; style.font-size: 13; style.fill: "#ffffff"}
+  n10: "Credit fund" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+  n11: "Warehouse SPV" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+  n12: "Equipment lessor" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+boundary: "Boundary" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n5: "Off-ramp desk" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+onchain: "On-chain" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n1: "Investor wallet" {shape: person; style.font-size: 13; style.fill: "#ffffff"}
+  n2: "aSN token" {shape: rectangle; style.border-radius: 8; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+onchain.n1 -> onchain.n2: "USDC in, aSN minted [C]" {style.stroke: "#2563eb"; style.font-size: 12}
+boundary.n5 -> offchain.n6: "stablecoin to fiat [P]" {style.stroke: "#0891b2"; style.font-size: 12; style.stroke-dash: 3; style.opacity: 0.7}
+offchain.n6 -> offchain.n10: "fund subscription [P]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}
+offchain.n10 -> offchain.n11: "warehouse notes [P]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}
+offchain.n11 -> offchain.n12: "equipment loans [P]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}
+offchain.n11 -> offchain.n8: "receivables purchase [P]" {style.stroke: "#2563eb"; style.font-size: 12; style.opacity: 0.7}

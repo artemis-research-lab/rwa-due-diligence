@@ -1,0 +1,20 @@
+direction: down
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+  }
+}
+
+offchain: "Off-chain" {
+  direction: right
+  style.fill: "#f8fafc"
+  style.stroke: "#cbd5e1"
+  style.font-size: 14
+  n7: "Custodian" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+  n8: "Receivables portfolio" {shape: hexagon; style.font-size: 13; style.fill: "#ffffff"}
+  n12: "Equipment lessor" {shape: rectangle; style.font-size: 13; style.fill: "#ffffff"}
+}
+
+offchain.n12 -> offchain.n7: "equipment pledged [P]" {style.stroke: "#b91c1c"; style.font-size: 12; style.stroke-dash: 4; style.opacity: 0.7}
+offchain.n8 -> offchain.n7: "receivables held [P]" {style.stroke: "#9333ea"; style.font-size: 12; style.opacity: 0.7}

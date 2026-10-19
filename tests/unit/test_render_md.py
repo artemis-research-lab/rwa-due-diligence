@@ -1,11 +1,13 @@
-"""Test group 9: Markdown report."""
+"""Test group 9: Markdown report (v0.5.0 section 6)."""
 
 from test_support import GOLDEN, load_fixture
 from lib import render_md
 
+KEYS = ("T1-settlement", "T1-claim", "T1-repayment", "T2-settlement")
+
 
 def _figures():
-    return {pid: (GOLDEN / ("acme.flow-%s.svg" % pid)).read_bytes().decode("utf-8") for pid in ("P1", "P2")}
+    return {key: (GOLDEN / ("acme.flow-%s.svg" % key)).read_bytes().decode("utf-8") for key in KEYS}
 
 
 def test_report_matches_golden():
@@ -21,21 +23,34 @@ def test_free_text_is_escaped():
     doc = load_fixture()
     doc["project"]["name"]["value"] = "Acme | * _ <script>alert(1)</script>\nnext"
     doc["flows"]["edges"][0]["label"] = "a|b"
+    doc["strategies"][0]["name"] = "T|<b>"
     text = render_md.render(doc)
     assert "# RWA Due Diligence: Acme \\| \\* \\_ \\<script\\>alert(1)\\</script\\> next\n" in text
-    assert "<script>" not in text
+    assert "<script>" not in text and "<b>" not in text
     assert "Acme | * _" not in text
     assert "| a\\|b |" in text
+    assert "### T1 T\\|\\<b\\>\n" in text
 
 
-def test_claim_cell_markers():
+def test_claim_cell_flags():
     nf = {"value": None, "status": "not_found", "evidence": [], "subject": None, "note": ""}
-    assert render_md.claim_cell(nf) == "-- [N?]"
+    assert render_md.claim_cell(nf) == "-- [UNRESOLVED]"
     nf2 = dict(nf, evidence=["S2"], note="absent")
-    assert render_md.claim_cell(nf2) == "-- [N] (S2) -- absent"
+    assert render_md.claim_cell(nf2) == "-- [UNRESOLVED] (S2) -- absent"
     v = {"value": {"a": [1, "x"], "b": None}, "status": "verified", "evidence": ["S1", "S4"], "subject": None,
          "note": ""}
-    assert render_md.claim_cell(v) == "a=1; x; b=-- [V] (S1, S4)"
+    assert render_md.claim_cell(v) == "a=1; x; b=-- [CONFIRMED] (S1, S4)"
+    assert render_md.claim_cell(dict(v, status="inferred", note="n")) == "a=1; x; b=-- [PARTIALLY_VERIFIED] (S1, S4) -- n"
+    assert render_md.claim_cell(v, "CONFLICTING") == "a=1; x; b=-- [CONFLICTING] (S1, S4)"
+
+
+def test_conflicting_flag_in_report():
+    text = render_md.render(load_fixture())
+    assert "| secured [CONFLICTING] (S8) |" in text
+    assert "(S5, S8) -- subjects: X4.security\n" in text
+    doc = load_fixture()
+    doc["findings"] = [f for f in doc["findings"] if f["id"] != "D2"]
+    assert "CONFLICTING]" not in render_md.render(doc)
 
 
 def test_draft_banner_only_for_draft():
@@ -43,6 +58,14 @@ def test_draft_banner_only_for_draft():
     assert "> DRAFT -- not finalized\n" in render_md.render(doc)
     doc["run"].update({"status": "final", "finalized_at": "2026-10-02T00:00:00Z"})
     assert "DRAFT" not in render_md.render(doc)
+
+
+def test_seeded_from_row():
+    doc = load_fixture()
+    assert "| seeded from |" not in render_md.render(doc)
+    doc["run"]["seeded_from"] = "acme-20260901T000000Z"
+    assert "| run id | acme-20261001T080000Z |\n| seeded from | acme-20260901T000000Z |\n| status |" in \
+        render_md.render(doc)
 
 
 def test_appendix_a_verbatim_with_safe_fence():
@@ -56,19 +79,28 @@ def test_section_order():
     text = render_md.render(load_fixture())
     headings = [line for line in text.split("\n") if line.startswith("## ")]
     assert headings == [
-        "## 1. Executive summary", "## 2. Blocking gaps and materials to request", "## 3. Products",
-        "## 4. Legal structure", "## 5. Yield source", "## 6. Fund flows", "## 7. On-chain contracts and control",
-        "## 8. Redemption and eligibility", "## 9. Audits", "## 10. Size", "## 11. History", "## 12. Findings",
-        "## 13. Open questions", "## 14. Sources", "## Appendix A. Analyst interventions",
-        "## Appendix B. Unmapped facts", "## Appendix C. Legend"]
+        "## 1. Executive summary", "## 2. Framework completeness", "## 3. Three-layer functional map",
+        "## 4. Legal entity register", "## 5. L1 -> L2 capital allocation", "## 6. L2 -> L3 underlying transactions",
+        "## 7. Holder legal rights", "## 8. Default and recovery path", "## 9. L3 business",
+        "## 10. Yield, fees and redemption", "## 11. Fund flows", "## 12. On-chain contracts and control",
+        "## 13. Findings", "## 14. Issuer requests", "## 15. Audits and size", "## 16. History", "## 17. Sources",
+        "## Appendix A. Analyst interventions", "## Appendix B. Unmapped facts", "## Appendix C. Legend"]
     assert text.endswith("\n") and not text.endswith("\n\n")
 
 
+def test_loss_waterfall_ordered_list():
+    text = render_md.render(load_fixture())
+    assert ("- Loss waterfall (1 absorbs first): [PARTIALLY_VERIFIED] (S8)\n  1. Borrower equity\n"
+            "  2. Credit fund junior tranche\n  3. Senior noteholders\n") in text
+
+
 def test_flow_image_links_only_with_figures():
-    with_fig = render_md.render(load_fixture(), (), {"P2": "<svg/>"})
-    assert "### P2 Acme Treasury Vault\n\n![Fund flow P2](acme.flow-P2.svg)\n\n| from |" in with_fig
-    assert "![Fund flow P1]" not in with_fig
+    with_fig = render_md.render(load_fixture(), (), {"T2-settlement": "<svg/>"})
+    assert ("### T2 Acme commodity trade finance -- settlement\n\n"
+            "![Fund flow T2 settlement](acme.flow-T2-settlement.svg)\n\n| from |") in with_fig
+    assert "![Fund flow T1" not in with_fig
     assert "![Fund flow" not in render_md.render(load_fixture())
+
 
 def test_amendment_heading_and_metadata_row():
     rounds = [("Round 1", "accept N1\n"), ("Amendment 1 (reopens round 2)", "note fix\n"), ("Round 2", "finalize\n")]
@@ -78,7 +110,7 @@ def test_amendment_heading_and_metadata_row():
     assert "| amendments |" not in render_md.render(load_fixture(), [("Round 1", "accept N1\n")])
 
 
-# --------------------------------------------------------------------------- v0.4.2 Appendix D
+# --------------------------------------------------------------------------- v0.4.2 Appendix D, blocking gaps
 
 def _final_doc():
     doc = load_fixture()
@@ -92,22 +124,28 @@ def _section(text, heading):
     return text[start:] if end < 0 else text[start:end]
 
 
-def test_final_section_2_has_no_search_lines():
-    s2 = _section(render_md.render(_final_doc()), "2. Blocking gaps and materials to request")
-    assert "**G1**" in s2 and "**N" not in s2
-    assert "  - **N1**" in _section(render_md.render(load_fixture()), "2. Blocking gaps and materials to request")
+def test_blocking_gaps_marked_in_findings():
+    s13 = _section(render_md.render(load_fixture()), "13. Findings")
+    assert "- **G1** [legal] [BLOCKING] Issuer financial statements" in s13
+    assert "- **G2** [yield] Gross yield" in s13
+    assert "  - **N1**" in s13
+
+
+def test_final_findings_have_no_search_lines():
+    s13 = _section(render_md.render(_final_doc()), "13. Findings")
+    assert "[BLOCKING]" in s13 and "**N" not in s13
 
 
 def test_final_appendix_d_marks_rejected():
     text = render_md.render(_final_doc(), (), None, {"N1"})
     d = _section(text, "Appendix D. Searches not run")
     lines = [line for line in d.split("\n") if line.startswith("- ")]
-    assert [line[:8] for line in lines] == ["- **N1**", "- **N2**"]
+    assert [line[:8] for line in lines] == ["- **N1**", "- **N2**", "- **N3**"]
     assert lines[0].endswith("(resolves G1; est 6 calls) -- rejected by the analyst")
     assert lines[1].endswith("(resolves G2, D1; est 4 calls) -- not run")
-    assert text.rstrip("\n").endswith(lines[1])
+    assert text.rstrip("\n").endswith(lines[2])
     plain = _section(render_md.render(_final_doc()), "Appendix D. Searches not run")
-    assert "rejected by the analyst" not in plain and plain.count(" -- not run") == 2
+    assert "rejected by the analyst" not in plain and plain.count(" -- not run") == 3
 
 
 def test_final_appendix_d_empty_and_draft_has_none():

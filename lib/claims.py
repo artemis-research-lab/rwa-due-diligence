@@ -1,4 +1,7 @@
-"""Claim rules (section 3.3) and per-claim independence derivation (D3, D14)."""
+"""Claim rules (section 3.3) and per-claim independence derivation (D3, D14).
+
+Legal paths are the sections in schema.LEGAL_SECTIONS; coded-claim value checks (D39) live in validate.py.
+"""
 
 from lib import schema
 

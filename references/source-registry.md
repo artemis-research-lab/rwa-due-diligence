@@ -13,6 +13,17 @@
 | Delaware ICIS | registry | site forbids automated tools -> do not use |
 | OpenCorporates API | registry | needs an API key -> do not use |
 
+## Credit and fund records
+| source | origin | access observed / expected |
+|---|---|---|
+| SEC EDGAR Form D (private fund and note offerings) | regulator | public; issuer-filed, so facts about the issuer itself stay self_reported |
+| US state UCC lien searches (Secretary of State) | registry | many states need an account or a fee: analyst add-source |
+| Delaware UCC | registry | site forbids automated tools: analyst add-source only |
+| Cayman CIMA fund search | regulator | reCAPTCHA: analyst add-source |
+| Brazil CVM fund registry (FIDC) | regulator | public search; not yet observed by this skill |
+| AUP, attestation and audit reports | auditor | usually PDFs on the project's docs host; check that host's terms first |
+| Rating agency reports | third_party | often behind a login: analyst add-source |
+
 ## On-chain
 | need | first choice | fallback |
 |---|---|---|

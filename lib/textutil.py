@@ -81,12 +81,24 @@ def id_key(item):
     return (ident[0], int(ident[1:]))
 
 
-def finding_line(finding):
-    """`- **G3** [topic] statement (S4, S9)`; the parenthesis is omitted without evidence."""
-    line = "- **%s** [%s] %s" % (finding["id"], finding["topic"], md_text(finding["statement"], 280))
+def finding_line(finding, subjects=False, marker=""):
+    """`- **G3** [topic] statement (S4, S9)`; the parenthesis is omitted without evidence.
+
+    subjects=True appends ` -- subjects: X3.security, ...` when the finding names subjects; marker (for example
+    `[BLOCKING] `) is placed before the statement."""
+    line = "- **%s** [%s] %s%s" % (finding["id"], finding["topic"], marker, md_text(finding["statement"], 280))
     if finding["evidence"]:
         line += " (%s)" % ", ".join(finding["evidence"])
+    if subjects and finding.get("subjects"):
+        line += " -- subjects: " + ", ".join(md_text(s) for s in finding["subjects"])
     return line
+
+
+def request_line(request):
+    """`- **Q1** (priority 1) request -- why (answers A2, C6)`."""
+    return "- **%s** (priority %d) %s -- %s (answers %s)" % (
+        request["id"], request["priority"], md_text(request["request"], 200), md_text(request["why"], 200),
+        ", ".join(request["answers"]))
 
 
 def search_line(search, suffix=""):

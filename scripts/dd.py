@@ -32,7 +32,8 @@ def _json(value):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="dd.py",
-        description="Read-only RWA due diligence: run directory, source ledger, validation, review loop, reports.",
+        description="Read-only RWA due diligence (three-layer model, schema rwa-dd/2.0): run directory, source "
+                    "ledger, validation, review loop, Markdown report and flow diagrams.",
         epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state), "
                "4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
@@ -45,7 +46,11 @@ def build_parser():
 
     p = with_slug("init", "create <root>/<slug>/ with a skeleton working document")
     p.add_argument("--url", required=True, help="project root URL")
-    p.add_argument("--new-run", action="store_true", help="archive the previous run and start a new one")
+    group = p.add_mutually_exclusive_group()
+    group.add_argument("--new-run", action="store_true", help="archive the previous run and start a new one")
+    group.add_argument("--seed-from", action="store_true",
+                       help="archive the previous run and start a new one from its record (converted from "
+                            "rwa-dd/1.0 if needed) and its source ledger")
 
     p = with_slug("add-source", "append a source to the ledger and the working document")
     p.add_argument("--url", required=True, help="source URL or local path (<=500)")
@@ -102,7 +107,10 @@ def run(args):
     if cmd == "schema-doc":
         sys.stdout.write(schema.schema_doc())
     elif cmd == "init":
-        _json(runstate.init(args.root, args.slug, args.url, new_run=args.new_run))
+        if args.seed_from:
+            _json(runstate.seed(args.root, args.slug, args.url))
+        else:
+            _json(runstate.init(args.root, args.slug, args.url, new_run=args.new_run))
     elif cmd == "add-source":
         source = runstate.add_source(
             args.root, args.slug, url=args.url, title=args.title, source_type=args.source_type,
