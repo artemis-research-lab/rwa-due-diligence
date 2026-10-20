@@ -247,6 +247,21 @@ def test_provenance_warning():
     assert len(lint.provenance_warnings(doc)) == 1
 
 
+def test_provenance_warning_legal_character_through_auditor_procedure():
+    doc = load_fixture()
+    x5 = _x(doc, "X5")
+    x5["legal_class"] = claim("DL", "verified", ["S9"], origin="auditor_procedure", assurance="TESTED")
+    assert lint.provenance_warnings(doc) == [{
+        "path": "interfaces[4].legal_class",
+        "message": "X5.legal_class: an auditor procedure shows the documents were inspected, not their legal effect "
+                   "(curator Q8); take origin from the source that states the legal character"}]
+    x5["legal_class"] = claim("DL", "verified", ["S2", "S9"], origin="regulator", assurance="NOT_TESTED")
+    assert lint.provenance_warnings(doc) == []
+    doc["holder_rights"][0]["look_through"] = claim("none", "verified", ["S9"], origin="auditor_procedure",
+                                                    assurance="TESTED")
+    assert [w["message"][:30] for w in lint.provenance_warnings(doc)] == ["P1.holder_rights.look_through:"]
+
+
 def test_claim_warning_deployment_not_set():
     doc = load_fixture()
     doc["strategies"][1]["deployment"] = claim()

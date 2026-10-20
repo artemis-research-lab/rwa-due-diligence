@@ -59,6 +59,9 @@ thresholds, limits or loss estimates.
   with an observation time and outside alternative groups, are counted, and totals add only amounts with the same
   basis, unit, valuation basis and observation date. Stocks are never added to flows, commitments or proceeds;
   look-through, alternatives and sale proceeds are never counted. An amount you cannot type is not counted.
+- One edge is one position: only its first countable entry is counted. Put the position measure first (entry 0) and
+  add receipt-token quantities, USD values and later observations of the same position after it; start their scope
+  with what they are (for example "same position as entry 0, pool receipt units" or "later read of entry 0").
 - Pool supply concentration is recorded on the L1_L2 edge as a ratio with its numerator, denominator, observation time,
   block and chain; it never changes the route from POOL to DIRECT and is not borrower concentration.
 - Deployment (curator P1): set each credit strategy's deployment: DEPLOYED_VERIFIED only when transfers into the
@@ -151,7 +154,11 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
   recalculated gets origin auditor_procedure and assurance TESTED, and only within the procedure's stated scope and
   date: an inspected security agreement confirms that the document was inspected, not that the security is perfected.
   Auditor branding never upgrades surrounding claims. Every claim that cites an auditor source sets origin and
-  assurance.
+  assurance. Combinations: inferred is your conclusion (origin analyst or null, no assurance); auditor_procedure with
+  TESTED is verified, with NOT_TESTED third_party_reported; a claim verified by a regulator, registry or on-chain
+  source keeps that origin and states in assurance whether a cited auditor also tested it; assurance always needs an
+  auditor source. An AUP or attestation never establishes legal character (legal class, method, security,
+  perfection, title, look-through, instrument nature): take that origin from the document or filing that states it.
 - Never assign an entity to a layer, or an interface to a route, method or legal class, without a source: leave the
   claim not_found with the sources checked, and add an issuer request.
 - Route and legal claim are separate questions (curator Constraint 1): a pool supply is not a loan to the pool

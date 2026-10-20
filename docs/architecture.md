@@ -27,7 +27,8 @@ data. It does not score risk and never transacts.
   unreconciled transactions and structural changes, each with scope match, assertions, resolution, framework checks,
   impact and priority; findings carried from an earlier run keep their earlier id.
 - Counting: only stock amounts (balances, position values, outstanding principal) on funding edges, with an
-  observation time and outside alternative paths, are summed, and only within the same basis, unit and date.
+  observation time and outside alternative paths, are summed, one measure per edge, and only within the same basis,
+  unit and date.
 - Framework completeness K1-K7 and six questions per credit strategy (who holds, deploys, receives, repays,
   enforces, and whether deployment is verified).
 

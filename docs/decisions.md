@@ -78,6 +78,9 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D74 - Change log - 2026-10-20 - A seeded run's report lists changes against the migrated earlier record, linking re-typed findings through carried_from.
 - D75 - Derived output - 2026-10-20 - Finalize writes <slug>.derived.json with flags, conflicts, totals, the section 1 selection, QA results and changes, tied to the record by SHA-256.
 - D76 - Run-scoped logs - 2026-10-20 - Directive and amendment logs are named with the run id so seeded runs never overwrite earlier logs.
+- D77 - Q8 gating - 2026-10-21 - The curator Q8 auditor-source rules apply once a claim's origin is set; a null origin is valid but fails QA7, so finalize refuses; claims under audits[] describe the audit itself and are exempt (decided during the v0.7.0 build).
+- D78 - One measure per edge - 2026-10-21 - Only the first countable amount of an interface is counted; later entries are other measures of the same position (QA12).
+- D79 - Provenance combinations - 2026-10-21 - Assurance needs an auditor source; inferred has origin analyst or null; auditor_procedure TESTED is verified and NOT_TESTED third_party_reported; a regulator, registry or on-chain verification keeps that origin; AUP procedures never establish legal character (lint).
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -88,6 +91,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-20 - Seeded re-maps of usd-ai, huma and hastra (rwa-dd/2.0): layer convention L1 vault and legal entity, L2 credit provider, L3 borrower running the business, L3-O its paying customers; renderer and validator gaps fixed in v0.5.1.
 - 2026-10-20 - Curator review of v2 samples: architecture accepted conditionally; revisions implemented in v0.6.0.
 - 2026-10-20 - Curator review of v2.1 samples: Q8-Q10 decided; minor data-model revision implemented in v0.7.0.
+- 2026-10-21 - Round-1 packets of the 2.2 re-runs (hastra, usd-ai, huma): double-counted measures and Q8 combinations found; fixed in v0.7.1.
 
 ## Incidents
 

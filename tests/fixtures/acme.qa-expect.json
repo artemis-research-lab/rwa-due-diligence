@@ -14,6 +14,13 @@
     "value": true
   },
   {
+    "id": "x2-second-measure",
+    "case": "The fund-unit value is another measure of the X2 position",
+    "path": "X2.amounts[1]",
+    "op": "counted",
+    "value": false
+  },
+  {
     "id": "aup-not-counted",
     "case": "The AUP sample amount is never counted",
     "path": "X2.amounts[2]",

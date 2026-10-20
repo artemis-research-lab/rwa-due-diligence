@@ -1,11 +1,11 @@
-"""Claim rules (section 3.3, v0.6.0 third_party_reported, v0.7.0 provenance) and per-claim independence
-derivation (D3, D14).
+"""Claim rules (section 3.3, v0.6.0 third_party_reported, v0.7.0 provenance, v0.7.1 provenance combinations
+P1-P5) and per-claim independence derivation (D3, D14).
 
 Legal paths are the sections in schema.LEGAL_SECTIONS; coded-claim value checks (D39) live in validate.py.
 Provenance (curator Q8): origin is who asserted the fact, the evidence sources are where it was published and
 assurance is what an auditor or reviewer tested for this precise claim. The Q8 auditor-source rules apply only once
 origin is set: a null origin means unstated (lint warning, QA7 failure, finalize refuses). Claims under audits[]
-describe the audit itself and are exempt from them (CChat decision during the v0.7.0 build).
+describe the audit itself and are exempt from them (D77).
 """
 
 from lib import schema
@@ -36,6 +36,42 @@ AUDIT_SECTIONS = ("audits",)
 
 def q8_exempt(parts):
     return bool(parts) and parts[0] in AUDIT_SECTIONS
+
+
+# Status an auditor_procedure claim must have for each assurance value (P4).
+AUDITOR_PROCEDURE_STATUS = {"TESTED": "verified", "NOT_TESTED": "third_party_reported"}
+# Origins that keep their own source when verifying a claim that also cites an auditor source (P5).
+SOURCE_VERIFIED_ORIGINS = ("regulator", "registry", "onchain")
+
+
+def provenance_errors(parts, claim, source_origins):
+    """Curator Q8 combination errors P1-P5 (v0.7.1 section 2, D79) of one claim; source_origins are the origins
+    of its cited sources. Claims under audits[] give none. Shared by validation and QA7."""
+    if q8_exempt(parts):
+        return []
+    path = schema.format_path(parts)
+    status, origin, assurance = claim["status"], claim["origin"], claim["assurance"]
+    cites_auditor = "auditor" in source_origins
+    errors = []
+    if assurance is not None and not cites_auditor:
+        errors.append("%s: assurance requires an auditor source (curator Q8)" % path)
+    if origin == "analyst" and assurance is not None:
+        errors.append("%s: origin analyst cannot carry assurance" % path)
+    if status == "inferred" and origin not in ("analyst", None):
+        errors.append("%s: inferred is the analyst's conclusion; origin must be analyst or null" % path)
+    required = AUDITOR_PROCEDURE_STATUS.get(assurance)
+    if origin == "auditor_procedure" and required is not None and status != required:
+        errors.append("%s: origin auditor_procedure with assurance %s requires status %s" % (path, assurance, required))
+    if status == "verified" and cites_auditor and origin is not None:
+        if origin in SOURCE_VERIFIED_ORIGINS:
+            if origin not in source_origins:
+                errors.append("%s: verified with origin %s needs a %s source in evidence" % (path, origin, origin))
+            if assurance not in ("TESTED", "NOT_TESTED"):
+                errors.append("%s: verified citing an auditor source needs assurance TESTED or NOT_TESTED" % path)
+        elif origin != "auditor_procedure":
+            errors.append("%s: verified citing an auditor source requires origin auditor_procedure, regulator, "
+                          "registry or onchain (curator Q8)" % path)
+    return errors
 
 
 def check_claim(parts, claim, sources_by_id, subject_ids):
@@ -70,10 +106,8 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
         errors.append("%s: %s requires a non-null value" % (path, status))
 
     if status == "verified":
-        audited_ok = not q8 or (assurance == "TESTED" and origin in AUDITED_VERIFIED_ORIGINS)
-        if not audited_ok:
-            errors.append("%s: verified with an auditor source requires assurance TESTED for this claim "
-                          "(curator Q8)" % path)
+        # An auditor source verifies a legal field only through a tested auditor procedure (P5).
+        audited_ok = not q8 or (origin == "auditor_procedure" and assurance == "TESTED")
         if is_legal_path(parts):
             verifiers = [o for o in independent if o in LEGAL_VERIFIERS and (o != "auditor" or audited_ok)]
             if not verifiers:
@@ -116,8 +150,9 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
             errors.append("%s: origin auditor_procedure requires assurance TESTED or NOT_TESTED" % path)
     if origin == "analyst" and status in ("verified", "self_reported", "third_party_reported"):
         errors.append("%s: origin analyst allows only inferred or not_found" % path)
-    if assurance is not None and not independent:
+    if q8_exempt(parts) and assurance is not None and not independent:
         errors.append("%s: assurance requires an auditor or independent source" % path)
+    errors.extend(provenance_errors(parts, claim, source_origins))
     return errors
 
 

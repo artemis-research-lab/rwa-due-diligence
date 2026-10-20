@@ -52,9 +52,10 @@ c.subject; `analyst` if s.origin is analyst; otherwise `independent:<origin>`.
 Legal paths: entities, interfaces, holder_rights, supports, eligibility. Issuer origins: issuer_management, issuer_documents, borrower.
 
 - verified: at least one independent evidence and no analyst evidence; on legal paths its origin must be
-  regulator, registry, auditor or onchain. When any cited source has origin auditor, assurance must be
-  TESTED and origin auditor_procedure, regulator, registry or onchain (an auditor source counts for the
-  legal rule only then).
+  regulator, registry, auditor or onchain. When any cited source has origin auditor: origin
+  auditor_procedure with assurance TESTED, or origin regulator, registry or onchain with a source of that
+  same origin in evidence and assurance TESTED or NOT_TESTED; any other origin is an error. An auditor
+  source counts for the legal rule only with origin auditor_procedure and assurance TESTED.
 - The auditor-source rules (curator Q8) apply once origin is set; a null origin is unstated: valid, but
   lint warns, QA7 fails and finalize refuses. Claims under audits[] describe the audit itself and are
   exempt from them.
@@ -62,13 +63,15 @@ Legal paths: entities, interfaces, holder_rights, supports, eligibility. Issuer 
   statement quoted in an auditor or third-party publication).
 - third_party_reported: at least one independent evidence of any origin (allowed on legal paths; it is
   not verification). Citing only auditor sources requires origin independent_party or auditor_procedure.
-- inferred: at least one evidence and a non-empty note.
+- inferred: at least one evidence and a non-empty note; origin analyst or null.
 - verified, self_reported, third_party_reported and inferred: value is not null.
 - not_found: value is null, origin and assurance are null; if evidence is non-empty the note must be
   non-empty.
 - An issuer origin allows only self_reported or not_found (curator Q8). Origin auditor_procedure needs an
-  auditor source and assurance TESTED or NOT_TESTED. Origin analyst allows only inferred or not_found.
-- assurance non-null needs an auditor or other independent source in evidence.
+  auditor source and assurance TESTED or NOT_TESTED; with TESTED the status must be verified, with
+  NOT_TESTED third_party_reported. Origin analyst allows only inferred or not_found, and no assurance.
+- assurance non-null needs an auditor source in evidence (under audits[]: an auditor or other
+  independent source).
 - subject references an existing entity or product, or is null.
 
 ### Coded claims
@@ -151,8 +154,10 @@ FACILITY_COMMITMENT and UNDRAWN_COMMITMENT only on L1_L2, L2_L3 and within_L2.
   and asset_sale; such an interface without amounts gives one row with reason `no amount`.
 - Counted only when the kind is L1_L2 or sleeve_holding, the basis is CURRENT_BALANCE, POSITION_VALUE, OUTSTANDING_PRINCIPAL, the value
   is set, as_of is set, alternative.group is null and the scope is not the migration placeholder.
+- One edge is one position: only the first entry (lowest index) of an interface that meets these
+  conditions is counted; each later one gets reason `other measure of X<n>[<k>]` (k the counted entry).
 - Reasons (first that applies): `alternative A<n><o>`, `not a funding edge`, `basis <BASIS> not counted`,
-  `no amount`, `no observation time`, `migrated scope`, `counted`.
+  `no amount`, `no observation time`, `migrated scope`, `other measure of X<n>[<k>]`, `counted`.
 - Totals per strategy, component and product add only counted amounts with the same total key (basis,
   unit, observation date YYYY-MM-DD, valuation basis); two keys are never added. Label:
   `<sum> <unit> <BASIS> @<date>`.
@@ -165,17 +170,18 @@ FACILITY_COMMITMENT and UNDRAWN_COMMITMENT only on L1_L2, L2_L3 and within_L2.
 - QA4 proceeds: No SALE_PROCEEDS amount is counted; SALE_PROCEEDS amounts whose value status is not verified are listed as unverified (informational).
 - QA5 asof: No amount with as_of null is counted.
 - QA6 stockflow: No CUMULATIVE_FUNDED, FACILITY_COMMITMENT or UNDRAWN_COMMITMENT amount is counted or labelled outstanding in totals.
-- QA7 provenance: No claim citing an auditor source (outside audits[]) has origin null; no claim with an issuer origin has status other than self_reported or not_found; no verified claim citing an auditor source lacks assurance TESTED.
+- QA7 provenance: No claim citing an auditor source (outside audits[]) has origin null; no claim with an issuer origin has status other than self_reported or not_found; every origin, assurance and status combination follows the curator Q8 rules.
 - QA8 conflicts: Every claim flagged CONFLICTING is a subject of an open discrepancy with scope_match matched and at least two assertions; no scope_unresolved or unreconciled_transaction subject is flagged CONFLICTING.
 - QA9 placeholder: No finding scope note and no amount scope is a migration placeholder.
 - QA10 section1: Every material finding and every blocking finding with k_checks is in section 1.
 - QA11 deployment: No CORE_CREDIT or DEFI_LENDING strategy has deployment DEPLOYED_VERIFIED without status verified.
+- QA12 onemeasure: No interface has more than one counted amount (entry 0 or the first countable entry is the position measure; later entries are other measures of the same position).
 
 Expectations (`--expect <file>`, default `audit/qa-expect.json` when it exists; written by the analyst and
 never edited by the agent): a JSON array of `{"id": <1..20 chars>, "case": <<=120 chars>, "path": <path>,
 "op": <op>, "value": <json>}`. Paths: `(@?)(E|P|T|X|Z|G|D|C|U|R)<n>` followed by `.field` and `[i]`
 parts; `@<id>` selects the finding carried from that id. Ops: equals, in, status, flag, counted, exists, not_contains.
-Each gives a result `E:<id>` after QA11. `dd.py qa` exits 5 when any check fails.
+Each gives a result `E:<id>` after QA12. `dd.py qa` exits 5 when any check fails.
 
 ## Derived output
 

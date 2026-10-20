@@ -194,8 +194,9 @@ def test_issuer_origin_quoted_by_auditor_is_self_reported():
         _x2_funded(doc)["status"] = "verified"
     assert errors_for(verified) == [
         path + ": origin issuer_management is an issuer assertion; status must be self_reported (curator Q8)",
-        path + ": verified requires a regulator/registry/auditor/onchain source for legal fields",
-        path + ": verified with an auditor source requires assurance TESTED for this claim (curator Q8)"]
+        path + ": verified citing an auditor source requires origin auditor_procedure, regulator, registry or "
+               "onchain (curator Q8)",
+        path + ": verified requires a regulator/registry/auditor/onchain source for legal fields"]
 
     def no_origin(doc):
         _x2_funded(doc)["origin"] = None
@@ -208,23 +209,23 @@ def test_auditor_procedure_rules():
 
     def no_assurance(doc):
         _performance(doc)["assurance"] = None
-    assert errors_for(no_assurance) == [
-        path + ": origin auditor_procedure requires assurance TESTED or NOT_TESTED",
-        path + ": verified with an auditor source requires assurance TESTED for this claim (curator Q8)"]
+    assert errors_for(no_assurance) == [path + ": origin auditor_procedure requires assurance TESTED or NOT_TESTED"]
 
     def not_tested(doc):
         _performance(doc)["assurance"] = "NOT_TESTED"
     assert errors_for(not_tested) == [
-        path + ": verified with an auditor source requires assurance TESTED for this claim (curator Q8)"]
+        path + ": origin auditor_procedure with assurance NOT_TESTED requires status third_party_reported"]
 
     def without_auditor(doc):
         _performance(doc)["evidence"] = ["S4"]
-    assert errors_for(without_auditor) == [path + ": origin auditor_procedure requires an auditor source"]
+    assert errors_for(without_auditor) == [path + ": assurance requires an auditor source (curator Q8)",
+                                           path + ": origin auditor_procedure requires an auditor source"]
 
     def other_origin(doc):
         _performance(doc)["origin"] = "independent_party"
     assert errors_for(other_origin) == [
-        path + ": verified with an auditor source requires assurance TESTED for this claim (curator Q8)"]
+        path + ": verified citing an auditor source requires origin auditor_procedure, regulator, registry or "
+               "onchain (curator Q8)"]
 
 
 def test_legal_verified_through_auditor_needs_tested():
@@ -237,9 +238,9 @@ def test_legal_verified_through_auditor_needs_tested():
         tested(doc)
         doc["entities"][2]["jurisdiction"]["assurance"] = "NOT_TESTED"
     assert errors_for(untested) == [
-        "entities[2].jurisdiction: verified requires a regulator/registry/auditor/onchain source for legal fields",
-        "entities[2].jurisdiction: verified with an auditor source requires assurance TESTED for this claim "
-        "(curator Q8)"]
+        "entities[2].jurisdiction: origin auditor_procedure with assurance NOT_TESTED requires status "
+        "third_party_reported",
+        "entities[2].jurisdiction: verified requires a regulator/registry/auditor/onchain source for legal fields"]
 
 
 def test_third_party_reported_through_auditor_needs_origin():
@@ -271,11 +272,12 @@ def test_analyst_origin_and_assurance_source():
     def assurance_self(doc):
         doc["holder_rights"][0]["governing_law"]["assurance"] = "TESTED"
     assert errors_for(assurance_self) == [
-        "holder_rights[0].governing_law: assurance requires an auditor or independent source"]
+        "holder_rights[0].governing_law: assurance requires an auditor source (curator Q8)"]
 
     def assurance_independent(doc):
         doc["holder_rights"][0]["governing_law"].update({"evidence": ["S8", "S5"], "assurance": "NOT_APPLICABLE"})
-    assert errors_for(assurance_independent) == []
+    assert errors_for(assurance_independent) == [
+        "holder_rights[0].governing_law: assurance requires an auditor source (curator Q8)"]
 
 
 def test_not_found_requires_null_origin_and_assurance():
@@ -296,6 +298,7 @@ def test_issuer_origin_on_first_party_claim():
     def inferred(doc):
         doc["entities"][1]["jurisdiction"]["origin"] = "issuer_documents"
     assert errors_for(inferred) == [
+        "entities[1].jurisdiction: inferred is the analyst's conclusion; origin must be analyst or null",
         "entities[1].jurisdiction: origin issuer_documents is an issuer assertion; status must be self_reported "
         "(curator Q8)"]
 
@@ -307,7 +310,7 @@ def test_origin_and_assurance_enums():
                              "holder_rights[0].governing_law.origin: not a valid assertion_origin"]
 
 
-# --------------------------------------------------------------------------- CChat decision during the v0.7.0 build
+# --------------------------------------------------------------------------- D77 Q8 gating
 
 def test_verified_auditor_source_with_null_origin_is_unstated():
     from lib import lint, qa
@@ -330,9 +333,9 @@ def test_verified_auditor_source_with_issuer_origin_fails():
     assert errors_for(m) == [
         "entities[2].jurisdiction: origin issuer_management is an issuer assertion; status must be self_reported "
         "(curator Q8)",
-        "entities[2].jurisdiction: verified requires a regulator/registry/auditor/onchain source for legal fields",
-        "entities[2].jurisdiction: verified with an auditor source requires assurance TESTED for this claim "
-        "(curator Q8)"]
+        "entities[2].jurisdiction: verified citing an auditor source requires origin auditor_procedure, regulator, "
+        "registry or onchain (curator Q8)",
+        "entities[2].jurisdiction: verified requires a regulator/registry/auditor/onchain source for legal fields"]
 
 
 def test_audit_claims_are_exempt_from_q8():
@@ -345,3 +348,79 @@ def test_audit_claims_are_exempt_from_q8():
     doc["audits"][0]["scope"]["origin"] = "issuer_management"
     assert validate.validate_document(doc) == [
         "audits[0].scope: origin issuer_management is an issuer assertion; status must be self_reported (curator Q8)"]
+
+
+# --------------------------------------------------------------------------- v0.7.1 provenance combinations P1-P5
+
+JURISDICTION = "entities[2].jurisdiction"
+
+
+def _jurisdiction(status, evidence, origin=None, assurance=None):
+    def mutate(doc):
+        doc["entities"][2]["jurisdiction"] = claim("Examplestan", status, evidence, "E3", origin=origin,
+                                                   assurance=assurance)
+    return mutate
+
+
+def _inferred(origin, assurance=None):
+    """entities[1].jurisdiction (inferred) citing the S9 auditor source."""
+    def mutate(doc):
+        doc["entities"][1]["jurisdiction"].update({"origin": origin, "evidence": ["S1", "S9"], "assurance": assurance})
+    return mutate
+
+
+def test_p1_assurance_needs_an_auditor_source():
+    assert errors_for(_jurisdiction("third_party_reported", ["S5", "S9"], "independent_party", "NOT_TESTED")) == []
+    assert errors_for(_jurisdiction("third_party_reported", ["S5"], "independent_party", "NOT_TESTED")) == [
+        JURISDICTION + ": assurance requires an auditor source (curator Q8)"]
+
+
+def test_p2_analyst_origin_carries_no_assurance():
+    assert errors_for(_inferred("analyst")) == []
+    assert errors_for(_inferred("analyst", "NOT_TESTED")) == [
+        "entities[1].jurisdiction: origin analyst cannot carry assurance"]
+
+
+def test_p3_inferred_origin_is_analyst_or_null():
+    assert errors_for(_inferred(None)) == []
+    assert errors_for(_inferred("auditor_procedure", "TESTED")) == [
+        "entities[1].jurisdiction: inferred is the analyst's conclusion; origin must be analyst or null",
+        "entities[1].jurisdiction: origin auditor_procedure with assurance TESTED requires status verified"]
+
+
+def test_p4_auditor_procedure_assurance_sets_status():
+    assert errors_for(_jurisdiction("third_party_reported", ["S9"], "auditor_procedure", "NOT_TESTED")) == []
+    assert errors_for(_jurisdiction("verified", ["S9"], "auditor_procedure", "TESTED")) == []
+    assert errors_for(_jurisdiction("third_party_reported", ["S9"], "auditor_procedure", "TESTED")) == [
+        JURISDICTION + ": origin auditor_procedure with assurance TESTED requires status verified"]
+
+
+def test_p5_verified_citing_an_auditor_source():
+    assert errors_for(_jurisdiction("verified", ["S2", "S9"], "regulator", "NOT_TESTED")) == []
+    assert errors_for(_jurisdiction("verified", ["S3", "S9"], "registry", "TESTED")) == []
+    assert errors_for(_jurisdiction("verified", ["S3", "S9"], "regulator", "TESTED")) == [
+        JURISDICTION + ": verified with origin regulator needs a regulator source in evidence"]
+    assert errors_for(_jurisdiction("verified", ["S2", "S9"], "regulator", "NOT_APPLICABLE")) == [
+        JURISDICTION + ": verified citing an auditor source needs assurance TESTED or NOT_TESTED"]
+    assert errors_for(_jurisdiction("verified", ["S2", "S9"], "independent_party", "TESTED")) == [
+        JURISDICTION + ": verified citing an auditor source requires origin auditor_procedure, regulator, registry "
+                       "or onchain (curator Q8)"]
+
+
+def test_onchain_verified_claim_citing_an_auditor_source():
+    def amount(assurance):
+        def mutate(doc):
+            doc["interfaces"][1]["amounts"][0]["value"].update({"evidence": ["S4", "S9"], "origin": "onchain",
+                                                                "assurance": assurance})
+        return mutate
+    assert load_fixture()["interfaces"][1]["amounts"][0]["value"]["status"] == "verified"
+    assert errors_for(amount("NOT_TESTED")) == []
+    assert errors_for(amount(None)) == [
+        "interfaces[1].amounts[0].value: verified citing an auditor source needs assurance TESTED or NOT_TESTED"]
+
+
+def test_audit_claim_with_independent_source_is_exempt_from_p1():
+    def m(doc):
+        doc["audits"][0]["scope"] = claim("Loan sample procedures", "third_party_reported", ["S5"],
+                                          assurance="NOT_APPLICABLE")
+    assert errors_for(m) == []

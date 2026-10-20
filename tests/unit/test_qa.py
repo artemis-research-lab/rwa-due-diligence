@@ -1,13 +1,13 @@
-"""v0.7.0 section 6: quantitative and provenance checks QA1-QA11 and analyst expectations (lib/qa.py)."""
+"""v0.7.0 section 6, v0.7.1: quantitative and provenance checks QA1-QA12 and analyst expectations (lib/qa.py)."""
 
 import json
 
 import pytest
 
 from test_support import FIXTURES, load_fixture
-from lib import framework, qa, schema
+from lib import claims, framework, qa, schema
 
-IDS = ["QA%d" % i for i in range(1, 12)]
+IDS = ["QA%d" % i for i in range(1, 13)]
 
 
 def _results(doc, expectations=None):
@@ -20,10 +20,16 @@ def _detail(doc, rule):
     return result["detail"]
 
 
+def _one_measure_off(monkeypatch):
+    """Switch off the one-measure-per-edge rule (D78)."""
+    monkeypatch.setattr(framework, "_one_measure", lambda x, reasons: reasons)
+
+
 def _count_also(monkeypatch, xid):
     """Break the counting rule for one interface so the QA rules have something to catch."""
     original = framework._reason
     monkeypatch.setattr(framework, "_reason", lambda x, a: "counted" if x["id"] == xid else original(x, a))
+    _one_measure_off(monkeypatch)
 
 
 def test_fixture_passes_every_rule():
@@ -40,8 +46,8 @@ def test_qa1_basis(monkeypatch):
 
     def merged(doc):
         totals = original(doc)
-        first, second = totals["strategies"]["T1"]
-        totals["strategies"]["T1"] = [dict(first, sum=first["sum"] + second["sum"])]
+        first, = totals["strategies"]["T1"]
+        totals["strategies"]["T1"] = [dict(first, sum=first["sum"] + 1)]
         return totals
     monkeypatch.setattr(framework, "allocation_totals", merged)
     assert _detail(load_fixture(), "QA1") == "T1"
@@ -99,7 +105,17 @@ def test_qa7_provenance():
     doc["interfaces"][1]["amounts"][2]["value"]["status"] = "third_party_reported"
     assert _detail(doc, "QA7") == "X2.amounts[2].value"
     doc = load_fixture()
-    doc["strategies"][0]["l3_business"]["performance"]["assurance"] = "NOT_TESTED"
+    doc["strategies"][0]["l3_business"]["performance"]["assurance"] = "NOT_TESTED"  # P4: verified needs TESTED
+    assert _detail(doc, "QA7") == "T1.l3_business.performance"
+
+
+def test_qa7_reuses_the_claim_combination_rules():
+    doc = load_fixture()
+    perf = doc["strategies"][0]["l3_business"]["performance"]
+    perf["status"] = "third_party_reported"  # P4: auditor_procedure TESTED requires verified
+    assert claims.provenance_errors(("strategies", 0, "l3_business", "performance"), perf, ["auditor"]) == [
+        "strategies[0].l3_business.performance: origin auditor_procedure with assurance TESTED requires status "
+        "verified"]
     assert _detail(doc, "QA7") == "T1.l3_business.performance"
 
 
@@ -132,6 +148,13 @@ def test_qa11_deployment():
     assert _results(doc)["QA11"]["result"] == "pass"
 
 
+def test_qa12_onemeasure(monkeypatch):
+    assert _results(load_fixture())["QA12"] == {"id": "QA12", "rule": "onemeasure", "result": "pass",
+                                                 "detail": "ok"}
+    _one_measure_off(monkeypatch)
+    assert _detail(load_fixture(), "QA12") == "X2"
+
+
 # --------------------------------------------------------------------------- expectations
 
 def _entry(path, op, value, ident="e1"):
@@ -146,7 +169,7 @@ def _entry(path, op, value, ident="e1"):
     ("X6.terms", "flag", "CONFLICTING", "SELF_REPORTED"),
     ("X4.security", "flag", "SELF_REPORTED", "CONFLICTING"),
     ("X2.amounts[0]", "counted", True, False),
-    ("X2.amounts[1]", "counted", True, False),
+    ("X2.amounts[1]", "counted", False, True),
     ("X13.amounts[0]", "counted", False, True),
     ("X13.loan_identity", "exists", True, False),
     ("X13.amounts[5]", "exists", False, True),
@@ -172,7 +195,7 @@ def test_expectation_detail_and_missing_paths():
         assert result["result"] == "fail" and result["detail"].endswith(" -> missing"), entry
 
 
-def test_fixture_expectations_pass_and_append_after_qa11():
+def test_fixture_expectations_pass_and_append_after_qa12():
     doc = load_fixture()
     entries = qa.parse_expectations((FIXTURES / "acme.qa-expect.json").read_bytes().decode("utf-8"))
     ops = {e["op"] for e in entries}

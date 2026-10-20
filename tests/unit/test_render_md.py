@@ -263,8 +263,9 @@ def test_portfolio_allocation_and_totals():
     assert "| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] |" in s2
     assert ("| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale"
             " to E13 | no | not a funding edge |") in s2
-    assert ("| strategy | T1 | 25000000 USDC CURRENT\\_BALANCE @2026-09-30; 25150000 USD POSITION\\_VALUE"
-            " @2026-09-30 |") in s2
+    assert "| strategy | T1 | 25000000 USDC CURRENT\\_BALANCE @2026-09-30 |" in s2
+    assert ("| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP"
+            " | no | other measure of X2[0] |") in s2
     assert "| product | P2 | 5000000 USDC CURRENT\\_BALANCE @2026-10-01 |" in s2
     assert s2.rstrip("\n").endswith("Totals add only amounts with the same basis, unit and observation date; see"
                                     " Appendix N for the checks.")

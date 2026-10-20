@@ -64,7 +64,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 | strategy | component | deployment | products | business type | counted totals |
 |---|---|---|---|---|---|
-| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1 into the E5 pool observed on-chain. | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1 into the E5 pool observed on-chain. | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | T2 Acme commodity trade finance | CORE_CREDIT | DISCLOSED\_UNVERIFIED [SELF_REPORTED] (S7) -- The vault docs describe the trade finance path; no settlement is shown. | P2 | trade\_finance\_pt [INFERRED] (S7) -- Vault docs describe purchase and resale of goods. | -- |
 | T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
 
@@ -73,7 +73,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 | strategy | interface | entry | kind | value | unit | basis | as_of | scope | counted | reason |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | USDC supplied by E1 to the E5 credit pool, read at the block | yes | counted |
-| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | yes | counted |
+| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | no | other measure of X2[0] |
 | T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |
 | T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale to E13 | no | not a funding edge |
 | T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | 2026-10-01 | Stablecoin held by E1 in the treasury sleeve | yes | counted |
@@ -83,11 +83,11 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 | level | name | counted totals |
 |---|---|---|
-| strategy | T1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| strategy | T1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | strategy | T3 | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
-| component | CORE_CREDIT | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| component | CORE_CREDIT | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | component | LIQUIDITY_SLEEVE | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
-| product | P1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| product | P1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | product | P2 | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
 
 Totals add only amounts with the same basis, unit and observation date; see Appendix N for the checks.
@@ -623,6 +623,7 @@ Fees:
 | QA9 | placeholder | pass | ok |
 | QA10 | section1 | pass | ok |
 | QA11 | deployment | pass | ok |
+| QA12 | onemeasure | pass | ok |
 
 Rules:
 
@@ -632,11 +633,12 @@ Rules:
 - QA4 proceeds: No SALE_PROCEEDS amount is counted; SALE_PROCEEDS amounts whose value status is not verified are listed as unverified (informational).
 - QA5 asof: No amount with as_of null is counted.
 - QA6 stockflow: No CUMULATIVE_FUNDED, FACILITY_COMMITMENT or UNDRAWN_COMMITMENT amount is counted or labelled outstanding in totals.
-- QA7 provenance: No claim citing an auditor source (outside audits[]) has origin null; no claim with an issuer origin has status other than self_reported or not_found; no verified claim citing an auditor source lacks assurance TESTED.
+- QA7 provenance: No claim citing an auditor source (outside audits[]) has origin null; no claim with an issuer origin has status other than self_reported or not_found; every origin, assurance and status combination follows the curator Q8 rules.
 - QA8 conflicts: Every claim flagged CONFLICTING is a subject of an open discrepancy with scope_match matched and at least two assertions; no scope_unresolved or unreconciled_transaction subject is flagged CONFLICTING.
 - QA9 placeholder: No finding scope note and no amount scope is a migration placeholder.
 - QA10 section1: Every material finding and every blocking finding with k_checks is in section 1.
 - QA11 deployment: No CORE_CREDIT or DEFI_LENDING strategy has deployment DEPLOYED_VERIFIED without status verified.
+- QA12 onemeasure: No interface has more than one counted amount (entry 0 or the first countable entry is the position measure; later entries are other measures of the same position).
 
 ## Appendix O. Changes
 

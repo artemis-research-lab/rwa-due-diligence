@@ -28,7 +28,7 @@
 
 | strategy | component | deployment | products | counted totals |
 |---|---|---|---|---|
-| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED_VERIFIED [CONFIRMED] | P1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED_VERIFIED [CONFIRMED] | P1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | T2 Acme commodity trade finance | CORE_CREDIT | DISCLOSED_UNVERIFIED [SELF_REPORTED] | P2 | -- |
 | T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
 
@@ -54,7 +54,7 @@
 | strategy | interface | entry | kind | value | unit | basis | as_of | scope | counted | reason |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | USDC supplied by E1 to the E5 credit pool, read at the block | yes | counted |
-| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | yes | counted |
+| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | no | other measure of X2[0] |
 | T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |
 | T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale to E13 | no | not a funding edge |
 | T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | 2026-10-01 | Stablecoin held by E1 in the treasury sleeve | yes | counted |
@@ -95,6 +95,7 @@
 | QA9 | placeholder | pass | ok |
 | QA10 | section1 | pass | ok |
 | QA11 | deployment | pass | ok |
+| QA12 | onemeasure | pass | ok |
 
 ## Migration checks pending
 

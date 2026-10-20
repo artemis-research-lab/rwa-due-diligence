@@ -77,7 +77,7 @@ def build_parser():
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
     with_slug("lint", "print address, layer, claim, path, amount and provenance warnings for audit/dd.work.json "
                       "as JSON (read-only, any phase; needs a structurally valid document)")
-    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA11 and the analyst expectations on "
+    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA12 and the analyst expectations on "
                         "audit/dd.work.json; prints results and failed ids as JSON; exit 5 when any check fails")
     p.add_argument("--expect", default=None,
                    help="expectation file (default: audit/qa-expect.json when it exists)")

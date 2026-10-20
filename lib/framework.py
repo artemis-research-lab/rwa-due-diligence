@@ -1,6 +1,6 @@
-"""Framework view (D40, D41, v0.6.0 section 3, v0.7.0 section 3): claim ids, evidence flags, conflict statuses,
-completeness checklist, chain lines, allocation with its counting rule, the six questions, the section 1
-selection and path resolution.
+"""Framework view (D40, D41, v0.6.0 section 3, v0.7.0 section 3, v0.7.1 section 1): claim ids, evidence flags,
+conflict statuses, completeness checklist, chain lines, allocation with its counting rule, the six questions, the
+section 1 selection and path resolution.
 
 Pure, deterministic functions over a structurally valid rwa-dd/2.2 document.
 """
@@ -357,9 +357,18 @@ def _reason(x, amount):
     return "counted"
 
 
+def _one_measure(x, reasons):
+    """reasons with every `counted` entry after the first of the interface turned into `other measure of
+    X<n>[<k>]`, k the index of the counted entry (v0.7.1 section 1, D78: one edge is one position)."""
+    first = next((j for j, reason in enumerate(reasons) if reason == "counted"), None)
+    return [reason if reason != "counted" or j == first else "other measure of %s[%d]" % (x["id"], first)
+            for j, reason in enumerate(reasons)]
+
+
 def allocation(doc):
     """One Row per amount entry on interfaces of an allocation kind, in strategy, interface id and entry order;
-    an interface without amounts gives one row with entry None and reason `no amount`."""
+    an interface without amounts gives one row with entry None and reason `no amount`. Only the first countable
+    entry of an interface is counted."""
     components = {t["id"]: t["component"] for t in doc["strategies"]}
     rows = []
     for x in sorted(doc["interfaces"], key=lambda x: (id_key(x["strategy"]), id_key(x))):
@@ -369,8 +378,8 @@ def allocation(doc):
         if not x["amounts"]:
             rows.append(Row(head + (None, x["kind"], None, None, None, None, None, False, "no amount")))
             continue
-        for j, a in enumerate(x["amounts"]):
-            reason = _reason(x, a)
+        reasons = _one_measure(x, [_reason(x, a) for a in x["amounts"]])
+        for j, (a, reason) in enumerate(zip(x["amounts"], reasons)):
             rows.append(Row(head + (j, x["kind"], a["value"]["value"], a["unit"], a["basis"], a["as_of"], a["scope"],
                                     reason == "counted", reason), a["valuation_basis"]))
     return rows

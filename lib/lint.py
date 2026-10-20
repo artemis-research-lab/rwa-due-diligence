@@ -3,8 +3,8 @@
 Address warnings flag EVM addresses whose letters are all lowercase or all uppercase. The check is case shape
 only: EIP-55 needs keccak-256, which the standard library lacks, so a mixed-case address with a wrong checksum is
 not detected. Strings inside the sources array are not checked.
-Layer, claim and path warnings (v0.6.0 2.3) and amount and provenance warnings (v0.7.0 2.3) need a structurally
-valid document.
+Layer, claim and path warnings (v0.6.0 2.3) and amount and provenance warnings (v0.7.0 2.3, v0.7.1 section 3)
+need a structurally valid document.
 """
 
 import re
@@ -155,10 +155,21 @@ def amount_warnings(doc):
     return out
 
 
+# Claims stating legal character, which an auditor procedure never establishes (v0.7.1 section 3).
+LEGAL_CHARACTER = {"interfaces": ("legal_class", "method", "security", "perfection", "title_transfer"),
+                   "holder_rights": ("look_through", "instrument_nature")}
+
+
 def provenance_warnings(doc):
     origins = {s["id"]: s["origin"] for s in doc["sources"]}
     out = []
     for parts, claim in schema.iter_claims(doc):
+        if (claim["status"] == "verified" and claim["origin"] == "auditor_procedure" and len(parts) == 3
+                and parts[2] in LEGAL_CHARACTER.get(parts[0], ())):
+            out.append(_warning(schema.format_path(parts), "%s: an auditor procedure shows the documents were "
+                                                            "inspected, not their legal effect (curator Q8); take "
+                                                            "origin from the source that states the legal character"
+                                                            % framework.claim_id(parts, doc)))
         if claim["status"] == "not_found" or claim["origin"] is not None or claims.q8_exempt(parts):
             continue
         if any(origins.get(sid) == "auditor" for sid in claim["evidence"]):

@@ -1,4 +1,5 @@
-"""Quantitative and provenance checks (v0.7.0 section 6, dd.py qa): rules QA1-QA11 and analyst expectations.
+"""Quantitative and provenance checks (v0.7.0 section 6, v0.7.1 sections 1 and 4, dd.py qa): rules QA1-QA12 and
+analyst expectations.
 
 Each rule recomputes what it asserts from the document (independently of allocation_totals) and compares;
 results are {"id", "rule", "result": "pass"|"fail", "detail"} with offending ids sorted, or `ok`.
@@ -67,7 +68,7 @@ def _qa1(doc, rows):
 
 
 def run(doc, expectations=None):
-    """Results of QA1-QA11 then one E:<id> result per expectation, in that order."""
+    """Results of QA1-QA12 then one E:<id> result per expectation, in that order."""
     rows = framework.allocation(doc)
     counted = [r for r in rows if r[10]]
     interfaces = {x["id"]: x for x in doc["interfaces"]}
@@ -88,12 +89,12 @@ def run(doc, expectations=None):
 
     provenance = []
     for parts, claim in schema.iter_claims(doc):
-        cites_auditor = (any(origins.get(sid) == "auditor" for sid in claim["evidence"])
-                         and not claims.q8_exempt(parts))
+        source_origins = [origins.get(sid) for sid in claim["evidence"]]
+        cites_auditor = "auditor" in source_origins and not claims.q8_exempt(parts)
         status = claim["status"]
         if ((cites_auditor and status != "not_found" and claim["origin"] is None)
                 or (claim["origin"] in schema.ISSUER_ORIGINS and status not in ("self_reported", "not_found"))
-                or (status == "verified" and cites_auditor and claim["assurance"] != "TESTED")):
+                or claims.provenance_errors(parts, claim, source_origins)):
             provenance.append(framework.claim_id(parts, doc))
     results.append(_result("QA7", "provenance", provenance))
 
@@ -120,6 +121,10 @@ def run(doc, expectations=None):
     results.append(_result("QA11", "deployment", [
         t["id"] for t in doc["strategies"] if t["component"] in CREDIT_COMPONENTS
         and t["deployment"]["value"] == "DEPLOYED_VERIFIED" and t["deployment"]["status"] != "verified"]))
+    per_interface = {}
+    for r in counted:
+        per_interface[r[2]] = per_interface.get(r[2], 0) + 1
+    results.append(_result("QA12", "onemeasure", [xid for xid, n in per_interface.items() if n > 1]))
 
     for entry in expectations or []:
         results.append(check_expectation(doc, entry, rows))

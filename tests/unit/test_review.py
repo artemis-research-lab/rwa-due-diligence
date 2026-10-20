@@ -68,7 +68,7 @@ def _section(text, heading):
 def test_portfolio_amounts_and_alternatives():
     text = review.render(load_fixture(), 1)
     assert ("| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED_VERIFIED [CONFIRMED] | P1 | 25000000 USDC"
-            " CURRENT\\_BALANCE @2026-09-30; 25150000 USD POSITION\\_VALUE @2026-09-30 |") in \
+            " CURRENT\\_BALANCE @2026-09-30 |") in \
         _section(text, "Portfolio components")
     assert "| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | 5000000 USDC" in text
     amounts = _section(text, "Amounts")

@@ -744,8 +744,8 @@ def test_finalize_writes_derived_json(tmp_path):
                                        "subjects": ["X6.terms"]}
     assert [q for q, _ in derived["five_questions"]["T1"]][-1] == "Is deployment verified?"
     assert sorted(derived["five_questions"]) == ["T1", "T2"]
-    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 12)] and derived["changes"] == []
-    assert derived["allocation"][0]["valuation_basis"] is None and derived["allocation"][1]["counted"] is True
+    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 13)] and derived["changes"] == []
+    assert derived["allocation"][0]["valuation_basis"] is None and derived["allocation"][1]["reason"] == "other measure of X2[0]"
     text = project.output("derived.json").read_bytes()
     assert text.endswith(b"}\n") and b"\r" not in text
 

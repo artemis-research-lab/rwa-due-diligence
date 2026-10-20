@@ -42,9 +42,11 @@ def test_skeleton_is_structurally_valid_once_run_is_filled():
 
 
 def test_version_constants():
-    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.0")
+    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.1")
     assert schema.MIGRATED_SCOPE_NOTE == "unchecked (migrated from rwa-dd/2.0)"
     assert schema.MIGRATED_NOTE_21 == schema.MIGRATED_AMOUNT_SCOPE == "unchecked (migrated from rwa-dd/2.1)"
+    assert [rule[0] for rule in schema.QA_RULES] == ["QA%d" % i for i in range(1, 13)]
+    assert schema.QA_RULES[-1][1] == "onemeasure"
     assert schema.MIGRATION_PLACEHOLDERS == (schema.MIGRATED_SCOPE_NOTE, schema.MIGRATED_NOTE_21)
     assert schema.ISSUER_ORIGINS == ("issuer_management", "issuer_documents", "borrower")
     assert schema.SECTION1_IMPACTS == ("capital_control", "ownership", "redemption", "enforcement", "security")
@@ -181,8 +183,8 @@ def test_schema_doc_documents_2_2():
                    "Severity (worst first): CONFLICTING, UNRESOLVED, INFERRED, THIRD_PARTY_REPORTED, SELF_REPORTED,",
                    "`supports`: array of object", "`interfaces[].amounts[].value`: a number >= 0",
                    "`interfaces[].supply_concentration.ratio`: a number 0..1", "SCOPE_UNRESOLVED",
-                   "UNRECONCILED_TRANSACTION", "## Quality checks (dd.py qa)", "QA11 deployment",
-                   "## Derived output", "rwa-dd-derived/1", "`record_sha256`", "not_contains",
+                   "UNRECONCILED_TRANSACTION", "## Quality checks (dd.py qa)", "QA11 deployment", "QA12 onemeasure",
+                   "other measure of X<n>[<k>]", "## Derived output", "rwa-dd-derived/1", "`record_sha256`", "not_contains",
                    "`CUMULATIVE_FUNDED`: actual disbursements over a stated period."):
         assert needle in text, needle
     assert "GROSS_FUNDED" not in text

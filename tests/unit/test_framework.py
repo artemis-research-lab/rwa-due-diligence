@@ -361,7 +361,7 @@ ROWS = [
     ("T1", "CORE_CREDIT", "X2", 0, "L1_L2", 25000000, "USDC", "CURRENT_BALANCE", "2026-09-30T12:00:00Z",
      "USDC supplied by E1 to the E5 credit pool, read at the block", True, "counted"),
     ("T1", "CORE_CREDIT", "X2", 1, "L1_L2", 25150000, "USD", "POSITION_VALUE", "2026-09-30",
-     "E1 units in Acme Credit Fund LP", True, "counted"),
+     "E1 units in Acme Credit Fund LP", False, "other measure of X2[0]"),
     ("T1", "CORE_CREDIT", "X2", 2, "L1_L2", 18000000, "USD", "CUMULATIVE_FUNDED", "2026-06-30",
      "AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested", False,
      "basis CUMULATIVE_FUNDED not counted"),
@@ -379,8 +379,7 @@ def _total(basis, unit, as_of, value, valuation_basis=None, **extra):
                  "label": "%s %s %s @%s" % (value, unit, basis, as_of)}, **extra)
 
 
-T1_TOTALS = [_total("CURRENT_BALANCE", "USDC", "2026-09-30", 25000000),
-             _total("POSITION_VALUE", "USD", "2026-09-30", 25150000, "Fund NAV per unit reported by E5")]
+T1_TOTALS = [_total("CURRENT_BALANCE", "USDC", "2026-09-30", 25000000)]
 T3_TOTALS = [_total("CURRENT_BALANCE", "USDC", "2026-10-01", 5000000)]
 
 
@@ -427,7 +426,8 @@ def test_allocation_every_reason():
     assert framework.allocation_totals(doc)["strategies"] == {"T3": T3_TOTALS}
 
 
-def test_totals_never_merge_keys():
+def test_totals_never_merge_keys(monkeypatch):
+    monkeypatch.setattr(framework, "_one_measure", lambda x, reasons: reasons)  # several measures of one edge
     doc = load_fixture()
     x9 = doc["interfaces"][8]
     x9["amounts"].append(dict(copy.deepcopy(x9["amounts"][0]), as_of="2026-09-01"))
@@ -440,16 +440,43 @@ def test_totals_never_merge_keys():
     assert len(framework.allocation_totals(doc)["strategies"]["T3"]) == 3
     t1 = framework.allocation_totals(load_fixture())["strategies"]["T1"]
     assert [t["basis"] for t in t1] == ["CURRENT_BALANCE", "POSITION_VALUE"]  # never summed together
+    assert t1[1] == _total("POSITION_VALUE", "USD", "2026-09-30", 25150000, "Fund NAV per unit reported by E5")
 
 
 def test_totals_by_product_marks_shared_strategies():
     doc = load_fixture()
     doc["strategies"][2]["products"] = ["P1", "P2"]
     totals = framework.allocation_totals(doc)
-    assert totals["products"]["P1"] == [dict(T1_TOTALS[0], shared=True), dict(T3_TOTALS[0], shared=True),
-                                        dict(T1_TOTALS[1], shared=True)]
+    assert totals["products"]["P1"] == [dict(T1_TOTALS[0], shared=True), dict(T3_TOTALS[0], shared=True)]
     assert totals["products"]["P2"] == [dict(T3_TOTALS[0], shared=True)]
     assert totals["components"] == {"CORE_CREDIT": T1_TOTALS, "LIQUIDITY_SLEEVE": T3_TOTALS}
+
+
+def _measures(*amounts):
+    """Fixture whose X2 carries only the given (basis, unit) amounts, all with an observation time."""
+    doc = load_fixture()
+    x2 = doc["interfaces"][1]
+    template = x2["amounts"][0]
+    x2["amounts"] = [dict(copy.deepcopy(template), basis=basis, unit=unit,
+                          valuation_basis="Pool share price" if basis == "POSITION_VALUE" else None)
+                     for basis, unit in amounts]
+    return doc
+
+
+def test_one_counted_measure_per_edge():
+    doc = _measures(("CURRENT_BALANCE", "YLDS"), ("CURRENT_BALANCE", "HEYLDS"), ("POSITION_VALUE", "USD"))
+    assert [r[2:4] + r[10:] for r in framework.allocation(doc) if r[2] == "X2"] == [
+        ("X2", 0, True, "counted"), ("X2", 1, False, "other measure of X2[0]"),
+        ("X2", 2, False, "other measure of X2[0]")]
+    assert [t["unit"] for t in framework.allocation_totals(doc)["strategies"]["T1"]] == ["YLDS"]
+
+
+def test_first_countable_entry_is_the_measure():
+    doc = _measures(("CUMULATIVE_FUNDED", "USD"), ("CURRENT_BALANCE", "USDC"))
+    assert [r[2:4] + r[10:] for r in framework.allocation(doc) if r[2] == "X2"] == [
+        ("X2", 0, False, "basis CUMULATIVE_FUNDED not counted"), ("X2", 1, True, "counted")]
+    totals = framework.allocation_totals(doc)["strategies"]["T1"]
+    assert [(t["basis"], t["unit"]) for t in totals] == [("CURRENT_BALANCE", "USDC")]
 
 
 def test_alternative_l2_l3_amount_not_in_allocation():
