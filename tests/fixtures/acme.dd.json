@@ -1,5 +1,5 @@
 {
-  "schema_version": "rwa-dd/2.1",
+  "schema_version": "rwa-dd/2.2",
   "run": {
     "run_id": "acme-20261001T080000Z",
     "slug": "acme",
@@ -8,7 +8,7 @@
     "status": "draft",
     "started_at": "2026-10-01T08:00:00Z",
     "finalized_at": null,
-    "skill_version": "0.6.0",
+    "skill_version": "0.7.0",
     "seeded_from": null
   },
   "project": {
@@ -19,7 +19,9 @@
         "S1"
       ],
       "subject": null,
-      "note": ""
+      "note": "",
+      "origin": null,
+      "assurance": null
     },
     "asset_class": {
       "value": [
@@ -31,7 +33,9 @@
         "S1"
       ],
       "subject": null,
-      "note": ""
+      "note": "",
+      "origin": null,
+      "assurance": null
     },
     "products": [
       {
@@ -43,7 +47,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "symbol": {
           "value": "aSN",
@@ -52,7 +58,9 @@
             "S4"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "chains": {
           "value": [
@@ -63,18 +71,22 @@
             "S4"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "token_addresses": {
           "value": [
-            "0x00000000000000000000000000000000000000a1"
+            "0x1111111111111111111111111111111111111111"
           ],
           "status": "verified",
           "evidence": [
             "S4"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "asset_class": {
           "value": "trade receivables",
@@ -83,7 +95,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -95,7 +109,9 @@
             "S7"
           ],
           "subject": "P2",
-          "note": "Name taken from archived docs."
+          "note": "Name taken from archived docs.",
+          "origin": null,
+          "assurance": null
         },
         "symbol": {
           "value": "aTV",
@@ -104,7 +120,9 @@
             "S1"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "chains": {
           "value": [
@@ -115,7 +133,9 @@
             "S1"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "token_addresses": {
           "value": null,
@@ -125,7 +145,9 @@
             "S4"
           ],
           "subject": null,
-          "note": "No vault address published on the site or found on the explorer."
+          "note": "No vault address published on the site or found on the explorer.",
+          "origin": null,
+          "assurance": null
         },
         "asset_class": {
           "value": "treasury bills",
@@ -134,7 +156,9 @@
             "S7"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     ]
@@ -154,7 +178,20 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "deployment": {
+        "value": "DEPLOYED_VERIFIED",
+        "status": "verified",
+        "evidence": [
+          "S4"
+        ],
+        "subject": null,
+        "note": "Transfers from E1 into the E5 pool observed on-chain.",
+        "origin": null,
+        "assurance": null
       },
       "sublayers": "L2a credit fund; L2b warehouse SPV",
       "l3_business": {
@@ -165,7 +202,9 @@
             "S8"
           ],
           "subject": "E7",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "revenue_model": {
           "value": "Monthly lease payments from lessees",
@@ -174,7 +213,9 @@
             "S8"
           ],
           "subject": "E7",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "cash_generation": {
           "value": "Lease collections paid to the warehouse SPV",
@@ -183,7 +224,9 @@
             "S8"
           ],
           "subject": "E7",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "collections_control": {
           "value": "Collection account controlled by the security agent",
@@ -192,7 +235,9 @@
             "S5"
           ],
           "subject": null,
-          "note": "Review mentions a third-party custodian over the receivables."
+          "note": "Review mentions a third-party custodian over the receivables.",
+          "origin": null,
+          "assurance": null
         },
         "concentration": {
           "value": "Top ten lessees about 40 percent of the book",
@@ -201,16 +246,20 @@
             "S5"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "performance": {
-          "value": null,
-          "status": "not_found",
+          "value": "No payment default in the 12 sampled loans to 2026-06-30",
+          "status": "verified",
           "evidence": [
-            "S8"
+            "S9"
           ],
           "subject": null,
-          "note": "No delinquency or default data published."
+          "note": "AUP sample only, not the portfolio.",
+          "origin": "auditor_procedure",
+          "assurance": "TESTED"
         },
         "operating_history": {
           "value": "Leasing since 2019",
@@ -219,7 +268,9 @@
             "S1"
           ],
           "subject": "E7",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       "default_path": {
@@ -230,7 +281,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "enforcement": {
           "value": "Security agent E3 enforces over the leased equipment",
@@ -239,7 +292,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "loss_waterfall": {
           "value": [
@@ -252,7 +307,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "recovery_history": {
           "value": null,
@@ -261,7 +318,9 @@
             "S8"
           ],
           "subject": null,
-          "note": "No recoveries reported."
+          "note": "No recoveries reported.",
+          "origin": null,
+          "assurance": null
         }
       }
     },
@@ -279,7 +338,20 @@
           "S7"
         ],
         "subject": null,
-        "note": "Vault docs describe purchase and resale of goods."
+        "note": "Vault docs describe purchase and resale of goods.",
+        "origin": null,
+        "assurance": null
+      },
+      "deployment": {
+        "value": "DISCLOSED_UNVERIFIED",
+        "status": "self_reported",
+        "evidence": [
+          "S7"
+        ],
+        "subject": null,
+        "note": "The vault docs describe the trade finance path; no settlement is shown.",
+        "origin": null,
+        "assurance": null
       },
       "sublayers": "",
       "l3_business": {
@@ -290,7 +362,9 @@
             "S7"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "revenue_model": {
           "value": null,
@@ -299,42 +373,54 @@
             "S7"
           ],
           "subject": null,
-          "note": "Margin on resale not described."
+          "note": "Margin on resale not described.",
+          "origin": null,
+          "assurance": null
         },
         "cash_generation": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "collections_control": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "concentration": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "performance": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "operating_history": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       "default_path": {
@@ -345,14 +431,18 @@
             "S7"
           ],
           "subject": null,
-          "note": "Vault docs describe no default events."
+          "note": "Vault docs describe no default events.",
+          "origin": null,
+          "assurance": null
         },
         "enforcement": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "loss_waterfall": {
           "value": null,
@@ -361,14 +451,18 @@
             "S7"
           ],
           "subject": null,
-          "note": "Vault docs do not describe loss order."
+          "note": "Vault docs do not describe loss order.",
+          "origin": null,
+          "assurance": null
         },
         "recovery_history": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     },
@@ -384,7 +478,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "deployment": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "sublayers": "",
       "l3_business": {
@@ -393,49 +498,63 @@
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "revenue_model": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "cash_generation": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "collections_control": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "concentration": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "performance": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "operating_history": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       "default_path": {
@@ -444,28 +563,36 @@
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "enforcement": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "loss_waterfall": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "recovery_history": {
           "value": null,
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     }
@@ -590,6 +717,21 @@
       "archived": false,
       "version_date": null,
       "note": ""
+    },
+    {
+      "id": "S9",
+      "url": "https://auditor.example/acme-credit-fund-aup-2026.pdf",
+      "title": "Agreed-upon procedures report on the Acme Credit Fund loan sample",
+      "source_type": "audit_report",
+      "origin": "auditor",
+      "publisher": null,
+      "retrieved_at": "2026-10-01T09:00:00Z",
+      "fetch": "pdf",
+      "excerpt": "We inspected 12 sampled loan files funded 2026-01-01 to 2026-06-30 and found no payment default. Management states that USD 18,000,000 was funded in the period.",
+      "excerpt_sha256": "2fde4e002e654882424412ad39656104443555fcbcc0a731105610984ee25a4c",
+      "archived": false,
+      "version_date": null,
+      "note": ""
     }
   ],
   "entities": [
@@ -603,7 +745,9 @@
           "S3"
         ],
         "subject": "E1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": "Examplestan",
@@ -612,7 +756,9 @@
           "S3"
         ],
         "subject": "E1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": "private limited company",
@@ -621,7 +767,9 @@
           "S3"
         ],
         "subject": "E1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": "100200",
@@ -630,7 +778,9 @@
           "S3"
         ],
         "subject": "E1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -666,7 +816,9 @@
           "S2"
         ],
         "subject": null,
-        "note": "No licence entry found for the issuer."
+        "note": "No licence entry found for the issuer.",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -680,7 +832,9 @@
           "S2"
         ],
         "subject": "E2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": "Examplestan",
@@ -689,7 +843,9 @@
           "S2"
         ],
         "subject": "E2",
-        "note": "Regulator only licenses local entities."
+        "note": "Regulator only licenses local entities.",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": "limited liability company",
@@ -698,14 +854,18 @@
           "S8"
         ],
         "subject": "E2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -725,7 +885,9 @@
           "S2"
         ],
         "subject": "E2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": [
         {
@@ -736,7 +898,9 @@
               "S2"
             ],
             "subject": "E2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "license_type": {
             "value": "fund manager",
@@ -745,7 +909,9 @@
               "S2"
             ],
             "subject": "E2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "license_id": {
             "value": "AAM-0042",
@@ -754,7 +920,9 @@
               "S2"
             ],
             "subject": "E2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "status": {
             "value": "active",
@@ -763,7 +931,9 @@
               "S2"
             ],
             "subject": "E2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           }
         }
       ]
@@ -778,7 +948,9 @@
           "S8"
         ],
         "subject": "E3",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
@@ -787,7 +959,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "Memorandum names the custodian but not its jurisdiction."
+        "note": "Memorandum names the custodian but not its jurisdiction.",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": "trust company",
@@ -796,14 +970,18 @@
           "S5"
         ],
         "subject": "E3",
-        "note": "Name suggests a trust company."
+        "note": "Name suggests a trust company.",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -820,7 +998,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -834,28 +1014,36 @@
           "S1"
         ],
         "subject": "E4",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -872,7 +1060,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -886,7 +1076,9 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": "Examplestan",
@@ -895,7 +1087,9 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": "limited partnership",
@@ -904,14 +1098,18 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -928,7 +1126,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -942,14 +1142,18 @@
           "S8"
         ],
         "subject": "E6",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": "private limited company",
@@ -958,14 +1162,18 @@
           "S8"
         ],
         "subject": "E6",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -982,7 +1190,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -996,28 +1206,36 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1034,7 +1252,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1048,28 +1268,36 @@
           "S5"
         ],
         "subject": null,
-        "note": "Named as receivables seller in the review."
+        "note": "Named as receivables seller in the review.",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1086,7 +1314,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1100,28 +1330,36 @@
           "S7"
         ],
         "subject": null,
-        "note": "Vault docs do not name the commodity buyer."
+        "note": "Vault docs do not name the commodity buyer.",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1138,7 +1376,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1150,28 +1390,36 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1188,7 +1436,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1202,28 +1452,36 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1240,7 +1498,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1252,28 +1512,36 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1290,7 +1558,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1304,28 +1574,36 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1342,7 +1620,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     },
@@ -1356,28 +1636,36 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "jurisdiction": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "entity_type": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "registration_id": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "functions": [
         {
@@ -1394,7 +1682,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "licenses": []
     }
@@ -1411,14 +1701,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "DI",
@@ -1427,7 +1721,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Senior notes",
@@ -1436,7 +1732,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": "USDC",
@@ -1445,14 +1743,18 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": "Examplestan",
@@ -1461,7 +1763,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": "Noteholders",
@@ -1470,7 +1774,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": "Monthly redemption window",
@@ -1479,35 +1785,45 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": "Limited recourse to the issuer's assets",
@@ -1516,47 +1832,93 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": "2026-10-01"
     },
@@ -1573,14 +1935,18 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "FI",
@@ -1589,7 +1955,9 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Limited partnership interests",
@@ -1598,14 +1966,18 @@
           "S8"
         ],
         "subject": "E5",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": "E5",
@@ -1614,7 +1986,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": "Examplestan",
@@ -1623,7 +1997,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": "E1",
@@ -1632,91 +2008,210 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": 25000000,
-        "status": "self_reported",
-        "evidence": [
-          "S8"
-        ],
-        "subject": "E5",
-        "note": ""
-      },
-      "amount_basis": "GROSS_FUNDED",
+      "amounts": [
+        {
+          "basis": "CURRENT_BALANCE",
+          "value": {
+            "value": 25000000,
+            "status": "verified",
+            "evidence": [
+              "S4"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USDC",
+          "as_of": "2026-09-30T12:00:00Z",
+          "block": 20871234,
+          "chain": "ethereum",
+          "scope": "USDC supplied by E1 to the E5 credit pool, read at the block",
+          "valuation_basis": null
+        },
+        {
+          "basis": "POSITION_VALUE",
+          "value": {
+            "value": 25150000,
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USD",
+          "as_of": "2026-09-30",
+          "block": null,
+          "chain": null,
+          "scope": "E1 units in Acme Credit Fund LP",
+          "valuation_basis": "Fund NAV per unit reported by E5"
+        },
+        {
+          "basis": "CUMULATIVE_FUNDED",
+          "value": {
+            "value": 18000000,
+            "status": "self_reported",
+            "evidence": [
+              "S9"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": "issuer_management",
+            "assurance": "NOT_TESTED"
+          },
+          "unit": "USD",
+          "as_of": "2026-06-30",
+          "block": null,
+          "chain": null,
+          "scope": "AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": 0.5,
+          "status": "verified",
+          "evidence": [
+            "S4"
+          ],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "Pool shares held by E1",
+        "denominator": "Total pool share supply",
+        "as_of": "2026-09-30T12:00:00Z",
+        "block": 20871234,
+        "chain": "ethereum"
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -1731,14 +2226,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "DI",
@@ -1747,7 +2246,9 @@
           "S8"
         ],
         "subject": "E6",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Warehouse notes",
@@ -1756,28 +2257,36 @@
           "S8"
         ],
         "subject": "E6",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": "E5",
@@ -1786,89 +2295,147 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -1883,7 +2450,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": [
@@ -1894,7 +2463,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "DL",
@@ -1903,7 +2474,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Equipment loans",
@@ -1912,7 +2485,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": "USD",
@@ -1921,28 +2496,36 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": "36-month amortising, 12 percent",
@@ -1951,7 +2534,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": "secured",
@@ -1960,7 +2545,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": "Leased equipment",
@@ -1969,7 +2556,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
@@ -1978,7 +2567,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "No lien filing cited."
+        "note": "No lien filing cited.",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": "Security agent E3 enforces on default",
@@ -1987,7 +2578,9 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": "Full recourse to the lessor",
@@ -1996,49 +2589,134 @@
           "S8"
         ],
         "subject": "E7",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": 10000000,
-        "status": "self_reported",
-        "evidence": [
-          "S8"
-        ],
-        "subject": "E7",
-        "note": ""
-      },
-      "amount_basis": "COMMITMENT",
+      "amounts": [
+        {
+          "basis": "FACILITY_COMMITMENT",
+          "value": {
+            "value": 10000000,
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USD",
+          "as_of": "2026-09-30",
+          "block": null,
+          "chain": null,
+          "scope": "Equipment loan facility from E6 to E7",
+          "valuation_basis": null
+        },
+        {
+          "basis": "UNDRAWN_COMMITMENT",
+          "value": {
+            "value": 4000000,
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USD",
+          "as_of": "2026-09-30",
+          "block": null,
+          "chain": null,
+          "scope": "Undrawn part of the E6 to E7 equipment loan facility",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2053,7 +2731,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": [
@@ -2064,7 +2744,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "AP",
@@ -2073,7 +2755,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Receivables purchase agreement",
@@ -2082,49 +2766,63 @@
           "S5"
         ],
         "subject": null,
-        "note": "Review describes purchased receivables."
+        "note": "Review describes purchased receivables.",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
@@ -2133,21 +2831,27 @@
           "S8"
         ],
         "subject": null,
-        "note": "No collateral beyond the receivables described."
+        "note": "No collateral beyond the receivables described.",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
@@ -2156,47 +2860,93 @@
           "S5"
         ],
         "subject": null,
-        "note": "Recourse to the seller not stated."
+        "note": "Recourse to the seller not stated.",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2211,14 +2961,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -2227,7 +2981,9 @@
           "S7"
         ],
         "subject": null,
-        "note": "Vault share is a contractual claim."
+        "note": "Vault share is a contractual claim.",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Vault shares",
@@ -2236,117 +2992,185 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
+        "value": "No vault fee charged to P2 holders",
+        "status": "self_reported",
+        "evidence": [
+          "S1"
+        ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2361,7 +3185,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": [
@@ -2372,7 +3198,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -2381,42 +3209,54 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
@@ -2425,7 +3265,9 @@
           "S7"
         ],
         "subject": null,
-        "note": "Trade terms not published."
+        "note": "Trade terms not published.",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": "unsecured",
@@ -2434,75 +3276,129 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2517,14 +3413,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -2533,124 +3433,192 @@
           "S8"
         ],
         "subject": null,
-        "note": "Equipment leases between the lessor and its lessees."
+        "note": "Equipment leases between the lessor and its lessees.",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2665,14 +3633,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -2681,7 +3653,9 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Stablecoin balances",
@@ -2690,7 +3664,9 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": "USD",
@@ -2699,112 +3675,195 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": 5000000,
-        "status": "self_reported",
-        "evidence": [
-          "S7"
-        ],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": "GROSS_FUNDED",
+      "amounts": [
+        {
+          "basis": "CURRENT_BALANCE",
+          "value": {
+            "value": 5000000,
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USDC",
+          "as_of": "2026-10-01",
+          "block": null,
+          "chain": null,
+          "scope": "Stablecoin held by E1 in the treasury sleeve",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2819,21 +3878,27 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": "Short-dated government bills",
@@ -2842,7 +3907,9 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": "USD",
@@ -2851,112 +3918,195 @@
           "S7"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": 5000000,
-        "status": "self_reported",
-        "evidence": [
-          "S7"
-        ],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": "LOOKTHROUGH",
+      "amounts": [
+        {
+          "basis": "RESERVE_LOOKTHROUGH",
+          "value": {
+            "value": 5000000,
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USD",
+          "as_of": "2026-09-30",
+          "block": null,
+          "chain": null,
+          "scope": "Reserve assets of E11 backing the sleeve stablecoin",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -2971,7 +4121,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": [
@@ -2982,7 +4134,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -2991,42 +4145,54 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": "Historical repo terms",
@@ -3035,7 +4201,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": "secured",
@@ -3044,77 +4212,150 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": "A1",
         "option": "a"
       },
-      "amount": {
-        "value": 2000000,
-        "status": "self_reported",
-        "evidence": [
-          "S7"
-        ],
-        "subject": "P2",
-        "note": ""
-      },
-      "amount_basis": "GROSS_FUNDED",
+      "amounts": [
+        {
+          "basis": "CURRENT_BALANCE",
+          "value": {
+            "value": 2000000,
+            "status": "self_reported",
+            "evidence": [
+              "S7"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USDC",
+          "as_of": "2026-09-30",
+          "block": null,
+          "chain": null,
+          "scope": "Principal under repo option A1a",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -3129,7 +4370,9 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": [
@@ -3140,7 +4383,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "OTHER",
@@ -3149,42 +4394,54 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": "Current live-rate terms",
@@ -3193,7 +4450,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": "unsecured",
@@ -3202,75 +4461,129 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": "A1",
         "option": "b"
       },
-      "amount": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": null,
+      "amounts": [],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     },
@@ -3285,14 +4598,18 @@
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "method": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "legal_class": {
         "value": "AP",
@@ -3301,14 +4618,18 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "instrument": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "currency": {
         "value": "USD",
@@ -3317,91 +4638,132 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "counterparty": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_holder": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "terms": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "security": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "collateral": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "perfection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforcement": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "alternative": {
         "group": null,
         "option": null
       },
-      "amount": {
-        "value": 3000000,
-        "status": "self_reported",
-        "evidence": [
-          "S8"
-        ],
-        "subject": null,
-        "note": ""
-      },
-      "amount_basis": "SALE_PROCEEDS",
+      "amounts": [
+        {
+          "basis": "SALE_PROCEEDS",
+          "value": {
+            "value": 3000000,
+            "status": "self_reported",
+            "evidence": [
+              "S8"
+            ],
+            "subject": null,
+            "note": "",
+            "origin": null,
+            "assurance": null
+          },
+          "unit": "USD",
+          "as_of": "2026-08-15",
+          "block": null,
+          "chain": null,
+          "scope": "Proceeds of the X13 loan sale to E13",
+          "valuation_basis": null
+        }
+      ],
       "supply_concentration": {
-        "value": null,
-        "status": "not_found",
-        "evidence": [],
-        "subject": null,
-        "note": ""
+        "ratio": {
+          "value": null,
+          "status": "not_found",
+          "evidence": [],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        },
+        "numerator": "",
+        "denominator": "",
+        "as_of": null,
+        "block": null,
+        "chain": null
       },
       "title_transfer": {
         "value": "true sale",
@@ -3410,7 +4772,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "servicing": {
         "value": "Retained by E2",
@@ -3419,7 +4783,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "residual_exposure": {
         "value": null,
@@ -3428,7 +4794,53 @@
           "S8"
         ],
         "subject": null,
-        "note": "Not disclosed in the memorandum."
+        "note": "Not disclosed in the memorandum.",
+        "origin": null,
+        "assurance": null
+      },
+      "loan_identity": {
+        "value": "Equipment loan pool EQ-2026-A",
+        "status": "inferred",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "Inferred from the sale schedule reference in the memorandum.",
+        "origin": null,
+        "assurance": null
+      },
+      "seller_of_record": {
+        "value": "E6 Acme Warehouse SPV Ltd",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "buyer_of_record": {
+        "value": "E13 Example Loan Buyer Fund",
+        "status": "self_reported",
+        "evidence": [
+          "S8"
+        ],
+        "subject": null,
+        "note": "",
+        "origin": null,
+        "assurance": null
+      },
+      "repayment_source": {
+        "value": null,
+        "status": "not_found",
+        "evidence": [
+          "S5"
+        ],
+        "subject": null,
+        "note": "The independent review does not say who repays the buyer.",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     }
@@ -3443,7 +4855,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_against": {
         "value": "E1",
@@ -3452,7 +4866,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "look_through": {
         "value": "via_spv",
@@ -3461,7 +4877,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": "Notes are limited to the issuer SPV's assets."
+        "note": "Notes are limited to the issuer SPV's assets.",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": "Limited recourse",
@@ -3470,7 +4888,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": "Examplestan",
@@ -3479,7 +4899,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "forum": {
         "value": null,
@@ -3488,7 +4910,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "No forum clause quoted."
+        "note": "No forum clause quoted.",
+        "origin": null,
+        "assurance": null
       },
       "insolvency_protection": {
         "value": null,
@@ -3497,7 +4921,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "Not described."
+        "note": "Not described.",
+        "origin": null,
+        "assurance": null
       },
       "disclaimers": {
         "value": "Noteholders have no direct claim on borrowers",
@@ -3506,7 +4932,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       }
     },
     {
@@ -3518,7 +4946,9 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "claim_against": {
         "value": null,
@@ -3527,7 +4957,9 @@
           "S7"
         ],
         "subject": null,
-        "note": "Not stated."
+        "note": "Not stated.",
+        "origin": null,
+        "assurance": null
       },
       "look_through": {
         "value": "unresolved",
@@ -3536,42 +4968,54 @@
           "S7"
         ],
         "subject": null,
-        "note": "Docs describe no claim beyond the vault."
+        "note": "Docs describe no claim beyond the vault.",
+        "origin": null,
+        "assurance": null
       },
       "recourse": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "forum": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "insolvency_protection": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "disclaimers": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       }
     }
   ],
@@ -3591,7 +5035,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "trigger": {
         "value": "Payment default continuing for 90 days",
@@ -3600,7 +5046,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "coverage": {
         "value": "Up to 20 percent of principal",
@@ -3609,7 +5057,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "exclusions": {
         "value": null,
@@ -3618,21 +5068,27 @@
           "S8"
         ],
         "subject": null,
-        "note": "Not disclosed in the memorandum."
+        "note": "Not disclosed in the memorandum.",
+        "origin": null,
+        "assurance": null
       },
       "priority": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "enforceability": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "governing_law": {
         "value": "Examplestan",
@@ -3641,7 +5097,9 @@
           "S8"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "holder_recourse": {
         "value": null,
@@ -3650,7 +5108,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "Noteholders are not named as insured."
+        "note": "Noteholders are not named as insured.",
+        "origin": null,
+        "assurance": null
       }
     }
   ],
@@ -3666,7 +5126,9 @@
               "S8"
             ],
             "subject": "P1",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "asset_class": {
             "value": "trade receivables",
@@ -3675,7 +5137,9 @@
               "S8"
             ],
             "subject": "P1",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "share_pct": {
             "value": 100,
@@ -3684,7 +5148,9 @@
               "S8"
             ],
             "subject": "P1",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "location": {
             "value": null,
@@ -3693,7 +5159,9 @@
               "S8"
             ],
             "subject": null,
-            "note": "Receivables jurisdiction not stated."
+            "note": "Receivables jurisdiction not stated.",
+            "origin": null,
+            "assurance": null
           }
         }
       ],
@@ -3704,7 +5172,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "gross_yield": {
         "value": "11.0 percent",
@@ -3713,7 +5183,9 @@
           "S1"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "net_yield_to_holder": {
         "value": "9.5 percent",
@@ -3722,7 +5194,9 @@
           "S1"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "fees": [
         {
@@ -3733,7 +5207,9 @@
               "S8"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "rate": {
             "value": "1.5 percent p.a.",
@@ -3742,7 +5218,9 @@
               "S8"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "recipient": {
             "value": "E2",
@@ -3751,7 +5229,9 @@
               "S8"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           }
         }
       ],
@@ -3763,7 +5243,9 @@
             "S4"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "frequency": {
           "value": "monthly",
@@ -3772,7 +5254,9 @@
             "S8"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     },
@@ -3787,7 +5271,9 @@
               "S7"
             ],
             "subject": "P2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "asset_class": {
             "value": "trade finance",
@@ -3796,21 +5282,27 @@
               "S7"
             ],
             "subject": "P2",
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "share_pct": {
             "value": null,
             "status": "not_found",
             "evidence": [],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "location": {
             "value": null,
             "status": "not_found",
             "evidence": [],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           }
         }
       ],
@@ -3821,14 +5313,18 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "gross_yield": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "net_yield_to_holder": {
         "value": "4.1 percent",
@@ -3837,7 +5333,9 @@
           "S1"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "fees": [
         {
@@ -3848,7 +5346,9 @@
               "S7"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "rate": {
             "value": "0.30 percent",
@@ -3857,14 +5357,18 @@
               "S7"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "recipient": {
             "value": null,
             "status": "not_found",
             "evidence": [],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           }
         }
       ],
@@ -3876,7 +5380,9 @@
             "S7"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "frequency": {
           "value": "daily",
@@ -3885,7 +5391,9 @@
             "S7"
           ],
           "subject": "P2",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     }
@@ -3900,7 +5408,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "queue": {
         "value": "monthly window",
@@ -3909,7 +5419,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "settlement_time": {
         "value": "2 business days",
@@ -3918,7 +5430,9 @@
           "S6"
         ],
         "subject": "P1",
-        "note": "Stated on an analyst call only."
+        "note": "Stated on an analyst call only.",
+        "origin": null,
+        "assurance": null
       },
       "gating": {
         "value": "issuer may suspend redemptions",
@@ -3927,7 +5441,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "fees": {
         "value": null,
@@ -3936,7 +5452,9 @@
           "S8"
         ],
         "subject": null,
-        "note": "No redemption fee stated."
+        "note": "No redemption fee stated.",
+        "origin": null,
+        "assurance": null
       }
     },
     {
@@ -3948,35 +5466,45 @@
           "S7"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "queue": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "settlement_time": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "gating": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "fees": {
         "value": null,
         "status": "not_found",
         "evidence": [],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       }
     }
   ],
@@ -3990,7 +5518,9 @@
           "S8"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       }
     },
     {
@@ -4002,7 +5532,9 @@
           "S1"
         ],
         "subject": null,
-        "note": "Site does not state restrictions."
+        "note": "Site does not state restrictions.",
+        "origin": null,
+        "assurance": null
       }
     }
   ],
@@ -4015,7 +5547,9 @@
           "S1"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "scope": {
         "value": "aSN token contract",
@@ -4024,7 +5558,9 @@
           "S1"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "date": {
         "value": "2026-02-15",
@@ -4033,7 +5569,9 @@
           "S1"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "report_ref": null
     }
@@ -4049,7 +5587,9 @@
           "S4"
         ],
         "subject": "P1",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": "2026-10-01"
     },
@@ -4063,7 +5603,9 @@
           "S1"
         ],
         "subject": "P2",
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": "2026-10-01"
     },
@@ -4077,7 +5619,9 @@
           "S1"
         ],
         "subject": null,
-        "note": ""
+        "note": "",
+        "origin": null,
+        "assurance": null
       },
       "as_of": null
     }
@@ -4099,7 +5643,7 @@
         "lane": "onchain",
         "kind": "contract",
         "chain": "ethereum",
-        "ref": "0x00000000000000000000000000000000000000a1",
+        "ref": "0x1111111111111111111111111111111111111111",
         "layer": "L1"
       },
       {
@@ -4117,7 +5661,7 @@
         "lane": "onchain",
         "kind": "multisig",
         "chain": "ethereum",
-        "ref": "0x00000000000000000000000000000000000000b2",
+        "ref": "0x2222222222222222222222222222222222222222",
         "layer": null
       },
       {
@@ -4222,7 +5766,9 @@
             "S4"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4245,7 +5791,9 @@
             "S1"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4267,7 +5815,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4289,7 +5839,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4311,7 +5863,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4333,7 +5887,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4355,7 +5911,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4377,7 +5935,9 @@
             "S5"
           ],
           "subject": null,
-          "note": "Review mentions a custodian."
+          "note": "Review mentions a custodian.",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4399,7 +5959,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4421,7 +5983,9 @@
             "S8"
           ],
           "subject": null,
-          "note": "Memorandum does not describe this hop."
+          "note": "Memorandum does not describe this hop.",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4443,7 +6007,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4465,7 +6031,9 @@
             "S8"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4487,7 +6055,9 @@
             "S4"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4509,7 +6079,9 @@
             "S7"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4531,7 +6103,9 @@
             "S4"
           ],
           "subject": null,
-          "note": "No pledge transfer observed on-chain."
+          "note": "No pledge transfer observed on-chain.",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4551,7 +6125,9 @@
           "status": "not_found",
           "evidence": [],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       },
       {
@@ -4573,7 +6149,9 @@
             "S7"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         }
       }
     ]
@@ -4582,7 +6160,7 @@
     "contracts": [
       {
         "chain": "ethereum",
-        "address": "0x00000000000000000000000000000000000000a1",
+        "address": "0x1111111111111111111111111111111111111111",
         "role": {
           "value": "aSN token",
           "status": "verified",
@@ -4590,7 +6168,9 @@
             "S4"
           ],
           "subject": "P1",
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "source_verified": {
           "value": true,
@@ -4599,7 +6179,9 @@
             "S4"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "proxy": {
           "value": "TransparentUpgradeableProxy",
@@ -4608,28 +6190,34 @@
             "S4"
           ],
           "subject": null,
-          "note": ""
+          "note": "",
+          "origin": null,
+          "assurance": null
         },
         "control": {
           "upgrade_admin": {
-            "value": "0x00000000000000000000000000000000000000b2",
+            "value": "0x2222222222222222222222222222222222222222",
             "status": "verified",
             "evidence": [
               "S4"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "role_admins": {
             "value": [
-              "0x00000000000000000000000000000000000000b2"
+              "0x2222222222222222222222222222222222222222"
             ],
             "status": "verified",
             "evidence": [
               "S4"
             ],
             "subject": null,
-            "note": ""
+            "note": "",
+            "origin": null,
+            "assurance": null
           },
           "timelock_delay_s": {
             "value": 0,
@@ -4638,17 +6226,21 @@
               "S4"
             ],
             "subject": null,
-            "note": "No timelock between admin and proxy."
+            "note": "No timelock between admin and proxy.",
+            "origin": null,
+            "assurance": null
           },
           "multisig": {
             "address": {
-              "value": "0x00000000000000000000000000000000000000b2",
+              "value": "0x2222222222222222222222222222222222222222",
               "status": "verified",
               "evidence": [
                 "S4"
               ],
               "subject": null,
-              "note": ""
+              "note": "",
+              "origin": null,
+              "assurance": null
             },
             "threshold": {
               "value": 2,
@@ -4657,7 +6249,9 @@
                 "S4"
               ],
               "subject": null,
-              "note": ""
+              "note": "",
+              "origin": null,
+              "assurance": null
             },
             "signers_count": {
               "value": 3,
@@ -4666,7 +6260,9 @@
                 "S4"
               ],
               "subject": null,
-              "note": ""
+              "note": "",
+              "origin": null,
+              "assurance": null
             }
           }
         }
@@ -4698,12 +6294,27 @@
       "material": true,
       "statement": "Issuer financial statements and the custody agreement are not public.",
       "scope_note": "",
+      "scope_match": "not_applicable",
       "evidence": [
         "S8"
       ],
       "subjects": [
         "E1"
-      ]
+      ],
+      "assertions": [],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [
+        "K1"
+      ],
+      "impact": [
+        "capital_control",
+        "ownership"
+      ],
+      "priority": 1,
+      "carried_from": "G1"
     },
     {
       "id": "G2",
@@ -4713,11 +6324,21 @@
       "material": false,
       "statement": "Gross yield of the Treasury Vault is not disclosed.",
       "scope_note": "",
+      "scope_match": "not_applicable",
       "evidence": [
         "S1",
         "S7"
       ],
-      "subjects": []
+      "subjects": [],
+      "assertions": [],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [],
+      "impact": [],
+      "priority": 3,
+      "carried_from": "G2"
     },
     {
       "id": "G3",
@@ -4725,14 +6346,28 @@
       "topic": "credit",
       "blocking": true,
       "material": false,
-      "statement": "Perfection of the security interest over the leased equipment is not evidenced.",
+      "statement": "The security agreement over the leased equipment is not public.",
       "scope_note": "",
+      "scope_match": "not_applicable",
       "evidence": [
         "S8"
       ],
       "subjects": [
-        "X4.perfection"
-      ]
+        "X4.collateral"
+      ],
+      "assertions": [],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [
+        "K4"
+      ],
+      "impact": [
+        "security"
+      ],
+      "priority": 1,
+      "carried_from": null
     },
     {
       "id": "D1",
@@ -4742,11 +6377,34 @@
       "material": false,
       "statement": "Archived docs state a 0.30 percent vault fee; the current site states no fee.",
       "scope_note": "Both state the vault fee charged to P2 holders; S7 is the March 2026 version.",
+      "scope_match": "matched",
       "evidence": [
         "S1",
         "S7"
       ],
-      "subjects": []
+      "subjects": [
+        "X6.terms"
+      ],
+      "assertions": [
+        {
+          "source": "S7",
+          "statement": "Vault fee: 0.30 percent of assets per year.",
+          "as_of": "2026-03-15"
+        },
+        {
+          "source": "S1",
+          "statement": "No fees are charged to vault holders.",
+          "as_of": "2026-10-01"
+        }
+      ],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [],
+      "impact": [],
+      "priority": 2,
+      "carried_from": "D1"
     },
     {
       "id": "D2",
@@ -4756,13 +6414,34 @@
       "material": false,
       "statement": "The memorandum describes the equipment loans as secured; the independent review describes them as unsecured.",
       "scope_note": "Both describe the security of the X4 equipment loans as currently documented.",
+      "scope_match": "matched",
       "evidence": [
         "S5",
         "S8"
       ],
       "subjects": [
         "X4.security"
-      ]
+      ],
+      "assertions": [
+        {
+          "source": "S8",
+          "statement": "The equipment loans are secured by the leased equipment.",
+          "as_of": null
+        },
+        {
+          "source": "S5",
+          "statement": "The equipment loans are unsecured.",
+          "as_of": "2026-07-15"
+        }
+      ],
+      "resolution": {
+        "status": "resolved",
+        "note": "The independent review was corrected: both now describe the loans as secured."
+      },
+      "k_checks": [],
+      "impact": [],
+      "priority": 2,
+      "carried_from": "D2"
     },
     {
       "id": "C1",
@@ -4772,26 +6451,98 @@
       "material": false,
       "statement": "Upgrade admin changed from a single key to a 2-of-3 multisig.",
       "scope_note": "",
+      "scope_match": "not_applicable",
       "evidence": [
         "S4"
       ],
-      "subjects": []
+      "subjects": [],
+      "assertions": [],
+      "resolution": {
+        "status": "not_applicable",
+        "note": ""
+      },
+      "k_checks": [],
+      "impact": [],
+      "priority": 3,
+      "carried_from": "C1"
     },
     {
       "id": "U1",
       "type": "scope_unresolved",
       "topic": "credit",
-      "blocking": false,
+      "blocking": true,
       "material": false,
       "statement": "The memorandum and the independent review may describe different coverage periods of the credit insurance.",
-      "scope_note": "",
+      "scope_note": "The memorandum covers the 2026 policy year; the review may describe the 2025 policy.",
+      "scope_match": "not_matched",
       "evidence": [
         "S5",
         "S8"
       ],
       "subjects": [
         "Z1.coverage"
-      ]
+      ],
+      "assertions": [
+        {
+          "source": "S8",
+          "statement": "Credit insurance covers 90 percent of principal.",
+          "as_of": null
+        },
+        {
+          "source": "S5",
+          "statement": "Credit insurance covers 50 percent of principal.",
+          "as_of": "2026-07-15"
+        }
+      ],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [],
+      "impact": [
+        "security"
+      ],
+      "priority": 2,
+      "carried_from": "U1"
+    },
+    {
+      "id": "R1",
+      "type": "unreconciled_transaction",
+      "topic": "credit",
+      "blocking": false,
+      "material": true,
+      "statement": "The memorandum reports the X13 loans as sold to E13; the independent review still lists them on the E6 balance sheet.",
+      "scope_note": "Both accounts concern the X13 sale of the equipment loan pool in August 2026.",
+      "scope_match": "matched",
+      "evidence": [
+        "S5",
+        "S8"
+      ],
+      "subjects": [
+        "X13"
+      ],
+      "assertions": [
+        {
+          "source": "S8",
+          "statement": "The X13 loans were sold to E13 under a true sale.",
+          "as_of": null
+        },
+        {
+          "source": "S5",
+          "statement": "The X13 loans remain on the warehouse SPV books.",
+          "as_of": "2026-07-15"
+        }
+      ],
+      "resolution": {
+        "status": "open",
+        "note": ""
+      },
+      "k_checks": [],
+      "impact": [
+        "ownership"
+      ],
+      "priority": 1,
+      "carried_from": "G3"
     }
   ],
   "open_questions": [

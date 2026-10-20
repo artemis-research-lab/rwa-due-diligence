@@ -49,10 +49,10 @@ def test_editing_a_source_in_work_doc_fails_validation(tmp_path):
 def test_adding_a_source_by_hand_fails_validation(tmp_path):
     project = build_run(tmp_path)
     doc = runstate.load_work(project)
-    extra = dict(doc["sources"][0], id="S9")
+    extra = dict(doc["sources"][0], id="S10")
     doc["sources"].append(extra)
     runstate.save_work(project, doc)
-    assert "sources: 9 entries but the ledger has 8 (sources must be added with add-source)" in \
+    assert "sources: 10 entries but the ledger has 9 (sources must be added with add-source)" in \
         runstate.check(tmp_path, "acme")
 
 

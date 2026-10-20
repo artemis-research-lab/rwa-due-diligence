@@ -3,12 +3,13 @@
 Address warnings flag EVM addresses whose letters are all lowercase or all uppercase. The check is case shape
 only: EIP-55 needs keccak-256, which the standard library lacks, so a mixed-case address with a wrong checksum is
 not detected. Strings inside the sources array are not checked.
-Layer, claim and path warnings (v0.6.0 2.3) need a structurally valid document.
+Layer, claim and path warnings (v0.6.0 2.3) and amount and provenance warnings (v0.7.0 2.3) need a structurally
+valid document.
 """
 
 import re
 
-from lib import schema
+from lib import claims, framework, schema
 
 ADDRESS = re.compile(r"0x[0-9a-fA-F]{40}(?![0-9a-fA-F])")
 
@@ -85,6 +86,11 @@ def layer_warnings(doc):
 def claim_warnings(doc):
     sources = {s["id"]: s for s in doc["sources"]}
     out = []
+    for i, t in enumerate(doc["strategies"]):
+        claim = t["deployment"]
+        if t["component"] in CREDIT_COMPONENTS and claim["status"] == "not_found" and not claim["evidence"]:
+            out.append(_warning("strategies[%d].deployment" % i,
+                                "%s.deployment: not set for a credit strategy" % t["id"]))
     for i, x in enumerate(doc["interfaces"]):
         claim = x["legal_class"]
         if x["kind"] != "L1_L2" or x["route"]["value"] != "POOL" or claim["value"] not in POOL_CLAIMS:
@@ -116,6 +122,48 @@ def path_warnings(doc):
         elif "sleeve_holding" not in kinds:
             missing.append("sleeve_holding")
         out += [_warning("strategies[%d]" % i, "%s: no %s interface" % (sid, kind)) for kind in missing]
+    for i, f in enumerate(doc["findings"]):
+        if f["blocking"] and not f["material"] and not f["k_checks"] and not f["impact"]:
+            out.append(_warning("findings[%d]" % i, "%s: blocking finding without k_checks or impact (section 1 "
+                                                    "cannot place it)" % f["id"]))
+    return out
+
+
+# --------------------------------------------------------------------------- v0.7.0 amount and provenance
+
+YEAR = re.compile(r"(?<![0-9])[0-9]{4}(?![0-9])")
+
+
+def amount_warnings(doc):
+    origins = {s["id"]: s["origin"] for s in doc["sources"]}
+    out = []
+    for i, x in enumerate(doc["interfaces"]):
+        for j, a in enumerate(x["amounts"]):
+            path = "interfaces[%d].amounts[%d]" % (i, j)
+            ref = "%s.amounts[%d]" % (x["id"], j)
+            onchain = any(origins.get(sid) == "onchain" for sid in a["value"]["evidence"])
+            if onchain and (a["block"] is None or a["chain"] is None):
+                out.append(_warning(path, "%s: on-chain amount without block and chain" % ref))
+            if a["as_of"] is None:
+                out.append(_warning(path, "%s: no observation time; it will not be counted" % ref))
+            if a["basis"] == "CUMULATIVE_FUNDED" and not YEAR.search(a["scope"]):
+                out.append(_warning(path, "%s: CUMULATIVE_FUNDED scope should state the period" % ref))
+        if x["kind"] in ("L1_L2", "sleeve_holding") and x["amounts"] and not any(
+                a["basis"] in schema.COUNTABLE for a in x["amounts"]):
+            out.append(_warning("interfaces[%d]" % i, "%s: no countable basis (%s)"
+                                % (x["id"], ", ".join(schema.COUNTABLE))))
+    return out
+
+
+def provenance_warnings(doc):
+    origins = {s["id"]: s["origin"] for s in doc["sources"]}
+    out = []
+    for parts, claim in schema.iter_claims(doc):
+        if claim["status"] == "not_found" or claim["origin"] is not None or claims.q8_exempt(parts):
+            continue
+        if any(origins.get(sid) == "auditor" for sid in claim["evidence"]):
+            out.append(_warning(schema.format_path(parts), "%s: cites an auditor source; set origin and assurance "
+                                                            "(curator Q8)" % framework.claim_id(parts, doc)))
     return out
 
 
@@ -126,4 +174,6 @@ def _sorted(warnings):
 def lint(doc):
     """All warnings of a structurally valid document, each list sorted by path then message."""
     return {"address_warnings": address_warnings(doc), "layer_warnings": _sorted(layer_warnings(doc)),
-            "claim_warnings": _sorted(claim_warnings(doc)), "path_warnings": _sorted(path_warnings(doc))}
+            "claim_warnings": _sorted(claim_warnings(doc)), "path_warnings": _sorted(path_warnings(doc)),
+            "amount_warnings": _sorted(amount_warnings(doc)),
+            "provenance_warnings": _sorted(provenance_warnings(doc))}

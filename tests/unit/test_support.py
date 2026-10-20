@@ -24,6 +24,17 @@ def load_fixture():
     return json.loads((FIXTURES / "acme.dd.json").read_bytes().decode("utf-8"))
 
 
+def claim(value=None, status="not_found", evidence=(), subject=None, note="", origin=None, assurance=None):
+    """A complete rwa-dd/2.2 claim."""
+    return {"value": value, "status": status, "evidence": list(evidence), "subject": subject, "note": note,
+            "origin": origin, "assurance": assurance}
+
+
+def load_v21():
+    """The rwa-dd/2.1 fixture (same ledger minus S9), used by the migration tests."""
+    return json.loads((FIXTURES / "acme_v21.dd.json").read_bytes().decode("utf-8"))
+
+
 def load_v1():
     """The rwa-dd/1.0 fixture (same ledger as acme.dd.json), used by the migration tests."""
     return json.loads((FIXTURES / "acme_v1.dd.json").read_bytes().decode("utf-8"))

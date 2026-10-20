@@ -9,8 +9,10 @@
 | rounds | 1 |
 | started | 2026-10-01T08:00:00Z |
 | finalized | -- |
-| skill version | 0.6.0 |
-| schema version | rwa-dd/2.1 |
+| Report generated | draft 2026-10-20 |
+| Data observed | 2026-06-30 to 2026-10-01 |
+| skill version | 0.7.0 |
+| schema version | rwa-dd/2.2 |
 
 > DRAFT -- not finalized
 
@@ -27,6 +29,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 | Who receives financing? | E7 Example Equipment Lessors Ltd (L3) \[SELF\_REPORTED\]; E8 Example Receivables Originator (L3) \[SELF\_REPORTED\] |
 | Who must repay? | E7 Example Equipment Lessors Ltd (L3) \[SELF\_REPORTED\]; E8 Example Receivables Originator (L3) \[SELF\_REPORTED\]; cash flows from: E10 (L3-O) \[SELF\_REPORTED\] |
 | Who can enforce the claim? | E1 \[SELF\_REPORTED\]; Security agent E3 enforces on default \[SELF\_REPORTED\] |
+| Is deployment verified? | DEPLOYED\_VERIFIED \[CONFIRMED\] |
 
 ### T2 Acme commodity trade finance
 
@@ -37,11 +40,16 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 | Who receives financing? | E9 (L3) \[SELF\_REPORTED\]; E9 (L3) \[SELF\_REPORTED; alt A1a\]; E9 (L3) \[SELF\_REPORTED; alt A1b\] |
 | Who must repay? | E9 (L3) \[SELF\_REPORTED\]; E9 (L3) \[SELF\_REPORTED; alt A1a\]; E9 (L3) \[SELF\_REPORTED; alt A1b\] |
 | Who can enforce the claim? | UNRESOLVED |
+| Is deployment verified? | DISCLOSED\_UNVERIFIED \[SELF\_REPORTED\] |
 
 ### Critical findings
 
-- **G1** [legal] [MATERIAL] [BLOCKING] Issuer financial statements and the custody agreement are not public. (S8)
-- **G3** [credit] [BLOCKING] Perfection of the security interest over the leased equipment is not evidenced. (S8)
+- [MATERIAL] [ownership] **R1** (UNRECONCILED_TRANSACTION) The memorandum reports the X13 loans as sold to E13; the independent review still lists them on the E6 balance sheet. (S5, S8)
+- [MATERIAL] [BLOCKING] [K1] [capital_control, ownership] **G1** Issuer financial statements and the custody agreement are not public. (S8)
+- [BLOCKING] [K4] [security] **G3** The security agreement over the leased equipment is not public. (S8)
+- [BLOCKING] [security] **U1** (SCOPE_UNRESOLVED) The memorandum and the independent review may describe different coverage periods of the credit insurance. (S5, S8)
+
+4 critical findings shown (target 5-8; all material items are always shown). 2 further open findings in section 6.
 
 ## 2. Framework completeness and portfolio
 
@@ -49,25 +57,40 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 | strategy | K1 L1 legal counterparty | K2 L1->L2 legal claim | K3 L2->L3 method | K4 L2->L3 security | K5 Loss waterfall | K6 Holder look-through | K7 L3 business |
 |---|---|---|---|---|---|---|---|
-| T1 Acme equipment credit | CONFIRMED | SELF_REPORTED | SELF_REPORTED | CONFLICTING | SELF_REPORTED | SELF_REPORTED | SELF_REPORTED |
+| T1 Acme equipment credit | CONFIRMED | SELF_REPORTED | SELF_REPORTED | UNRESOLVED | SELF_REPORTED | SELF_REPORTED | SELF_REPORTED |
 | T2 Acme commodity trade finance | CONFIRMED | UNRESOLVED | SELF_REPORTED | SELF_REPORTED | UNRESOLVED | INFERRED | SELF_REPORTED |
 
 ### Portfolio components
 
-| strategy | component | products | business type | counted total |
-|---|---|---|---|---|
-| T1 Acme equipment credit | CORE_CREDIT | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 n/d |
-| T2 Acme commodity trade finance | CORE_CREDIT | P2 | trade\_finance\_pt [INFERRED] (S7) -- Vault docs describe purchase and resale of goods. | -- |
-| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | P2 | -- [UNRESOLVED] | 5000000 USD |
+| strategy | component | deployment | products | business type | counted totals |
+|---|---|---|---|---|---|
+| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1 into the E5 pool observed on-chain. | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| T2 Acme commodity trade finance | CORE_CREDIT | DISCLOSED\_UNVERIFIED [SELF_REPORTED] (S7) -- The vault docs describe the trade finance path; no settlement is shown. | P2 | trade\_finance\_pt [INFERRED] (S7) -- Vault docs describe purchase and resale of goods. | -- |
+| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
 
 ### Allocation
 
-| strategy | interface | kind | amount | basis | counted | reason |
-|---|---|---|---|---|---|---|
-| T1 | X2 | L1_L2 | 25000000 | GROSS_FUNDED | yes | counted |
-| T1 | X13 | asset_sale | 3000000 USD | SALE_PROCEEDS | no | basis SALE_PROCEEDS |
-| T3 | X9 | sleeve_holding | 5000000 USD | GROSS_FUNDED | yes | counted |
-| T3 | X10 | reserve_lookthrough | 5000000 USD | LOOKTHROUGH | no | basis LOOKTHROUGH |
+| strategy | interface | entry | kind | value | unit | basis | as_of | scope | counted | reason |
+|---|---|---|---|---|---|---|---|---|---|---|
+| T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | USDC supplied by E1 to the E5 credit pool, read at the block | yes | counted |
+| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | yes | counted |
+| T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |
+| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale to E13 | no | not a funding edge |
+| T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | 2026-10-01 | Stablecoin held by E1 in the treasury sleeve | yes | counted |
+| T3 | X10 | 0 | reserve_lookthrough | 5000000 | USD | RESERVE_LOOKTHROUGH | 2026-09-30 | Reserve assets of E11 backing the sleeve stablecoin | no | not a funding edge |
+
+### Totals by strategy, component and product
+
+| level | name | counted totals |
+|---|---|---|
+| strategy | T1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| strategy | T3 | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
+| component | CORE_CREDIT | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| component | LIQUIDITY_SLEEVE | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
+| product | P1 | 25000000 USDC CURRENT\_BALANCE @2026-09-30; 25150000 USD POSITION\_VALUE @2026-09-30 |
+| product | P2 | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
+
+Totals add only amounts with the same basis, unit and observation date; see Appendix N for the checks.
 
 ## 3. Three-layer business model
 
@@ -80,7 +103,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 - Chains:
   - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[DL; secured\] -\> E7 Example Equipment Lessors Ltd (L3) -\> \[OTHER\] -\> E10 (L3-O)
   - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[AP; ?\] -\> E8 Example Receivables Originator (L3)
-  - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[sale; true sale\] -\> E13 Example Loan Buyer Fund (transferee)
+  - P1 holders -\> \[DI\] -\> E1 Acme Yield Issuer Ltd (L1) -\> \[FUND; FI\] -\> E5 Acme Credit Fund LP (L2) -\> \[DI\] -\> E6 Acme Warehouse SPV Ltd (L2) -\> \[sale; true sale; loan INFERRED\] -\> E13 Example Loan Buyer Fund (transferee)
 
 ### T2 Acme commodity trade finance
 
@@ -127,36 +150,57 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 ### L1 -> L2
 
-| id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | amount | basis | supply concentration | alternative | terms | governing law |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| X1 | T1 | P1 -\> E1 (holder\_L1) | -- [UNRESOLVED] | DI [SELF_REPORTED] (S8) | -- [UNRESOLVED] | Senior notes [SELF_REPORTED] (S8) | Noteholders [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | -- | Monthly redemption window [SELF_REPORTED] (S8) | Examplestan [SELF_REPORTED] (S8) |
-| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [SELF_REPORTED] (S8) | FI [SELF_REPORTED] (S8) | E5 [SELF_REPORTED] (S8) | Limited partnership interests [SELF_REPORTED] (S8) | E1 [SELF_REPORTED] (S8) | 25000000 [SELF_REPORTED] (S8) | GROSS_FUNDED | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | Examplestan [SELF_REPORTED] (S8) |
-| X6 | T2 | P2 -\> E1 (holder\_L1) | -- [UNRESOLVED] | OTHER [INFERRED] (S7) -- Vault share is a contractual claim. | -- [UNRESOLVED] | Vault shares [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | -- [UNRESOLVED] |
+| id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | amounts | supply concentration | alternative | terms | governing law |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| X1 | T1 | P1 -\> E1 (holder\_L1) | -- [UNRESOLVED] | DI [SELF_REPORTED] (S8) | -- [UNRESOLVED] | Senior notes [SELF_REPORTED] (S8) | Noteholders [SELF_REPORTED] (S8) | -- | -- [UNRESOLVED] | -- | Monthly redemption window [SELF_REPORTED] (S8) | Examplestan [SELF_REPORTED] (S8) |
+| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [SELF_REPORTED] (S8) | FI [SELF_REPORTED] (S8) | E5 [SELF_REPORTED] (S8) | Limited partnership interests [SELF_REPORTED] (S8) | E1 [SELF_REPORTED] (S8) | 25000000 USDC CURRENT_BALANCE @2026-09-30T12:00:00Z [CONFIRMED] (S4); 25150000 USD POSITION_VALUE @2026-09-30 [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED @2026-06-30 [SELF_REPORTED] (S9; origin issuer_management; assurance NOT_TESTED) | 0.5 [CONFIRMED] (Pool shares held by E1 / Total pool share supply @2026-09-30T12:00:00Z, 20871234, ethereum) (S4) | -- | -- [UNRESOLVED] | Examplestan [SELF_REPORTED] (S8) |
+| X6 | T2 | P2 -\> E1 (holder\_L1) | -- [UNRESOLVED] | OTHER [INFERRED] (S7) -- Vault share is a contractual claim. | -- [UNRESOLVED] | Vault shares [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | -- | No vault fee charged to P2 holders [CONFLICTING] (S1) | -- [UNRESOLVED] |
+
+Amount scopes:
+
+- X2[0]: USDC supplied by E1 to the E5 credit pool, read at the block
+- X2[1]: E1 units in Acme Credit Fund LP
+- X2[2]: AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested
 
 ### L2 -> L3
 
-| id | strategy | from -> to | method | legal class | counterparty | security | collateral | perfection | enforcement | recourse | amount | alternative | terms |
+| id | strategy | from -> to | method | legal class | counterparty | security | collateral | perfection | enforcement | recourse | amounts | alternative | terms |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| X3 | T1 | E5 -\> E6 (within\_L2) | -- [UNRESOLVED] | DI [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- [UNRESOLVED] |
-| X4 | T1 | E6 -\> E7 (L2\_L3) | DL [SELF_REPORTED] (S8) | DL [SELF_REPORTED] (S8) | -- [UNRESOLVED] | secured [CONFLICTING] (S8) | Leased equipment [SELF_REPORTED] (S8) | -- [UNRESOLVED] (S8) -- No lien filing cited. | Security agent E3 enforces on default [SELF_REPORTED] (S8) | Full recourse to the lessor [SELF_REPORTED] (S8) | 10000000 [SELF_REPORTED] (S8) | -- | 36-month amortising, 12 percent [SELF_REPORTED] (S8) |
-| X5 | T1 | E6 -\> E8 (L2\_L3) | AP [SELF_REPORTED] (S8) | AP [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S8) -- No collateral beyond the receivables described. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S5) -- Recourse to the seller not stated. | -- [UNRESOLVED] | -- | -- [UNRESOLVED] |
-| X7 | T2 | E1 -\> E9 (L2\_L3) | PT [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | unsecured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- [UNRESOLVED] (S7) -- Trade terms not published. |
-| X8 | T1 | E7 -\> E10 (L3\_L3O) | -- [UNRESOLVED] | OTHER [SELF_REPORTED] (S8) -- Equipment leases between the lessor and its lessees. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- [UNRESOLVED] |
-| X11 | T2 | E1 -\> E9 (L2\_L3) | REPO [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | secured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | 2000000 [SELF_REPORTED] (S7) | A1a | Historical repo terms [SELF_REPORTED] (S7) |
-| X12 | T2 | E1 -\> E9 (L2\_L3) | PT [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | unsecured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | A1b | Current live-rate terms [SELF_REPORTED] (S7) |
+| X3 | T1 | E5 -\> E6 (within\_L2) | -- [UNRESOLVED] | DI [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- | -- [UNRESOLVED] |
+| X4 | T1 | E6 -\> E7 (L2\_L3) | DL [SELF_REPORTED] (S8) | DL [SELF_REPORTED] (S8) | -- [UNRESOLVED] | secured [SELF_REPORTED] (S8) | Leased equipment [SELF_REPORTED] (S8) | -- [UNRESOLVED] (S8) -- No lien filing cited. | Security agent E3 enforces on default [SELF_REPORTED] (S8) | Full recourse to the lessor [SELF_REPORTED] (S8) | 10000000 USD FACILITY_COMMITMENT @2026-09-30 [SELF_REPORTED] (S8); 4000000 USD UNDRAWN_COMMITMENT @2026-09-30 [SELF_REPORTED] (S8) | -- | 36-month amortising, 12 percent [SELF_REPORTED] (S8) |
+| X5 | T1 | E6 -\> E8 (L2\_L3) | AP [SELF_REPORTED] (S8) | AP [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S8) -- No collateral beyond the receivables described. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] (S5) -- Recourse to the seller not stated. | -- | -- | -- [UNRESOLVED] |
+| X7 | T2 | E1 -\> E9 (L2\_L3) | PT [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | unsecured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- | -- [UNRESOLVED] (S7) -- Trade terms not published. |
+| X8 | T1 | E7 -\> E10 (L3\_L3O) | -- [UNRESOLVED] | OTHER [SELF_REPORTED] (S8) -- Equipment leases between the lessor and its lessees. | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | -- | -- [UNRESOLVED] |
+| X11 | T2 | E1 -\> E9 (L2\_L3) | REPO [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | secured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | 2000000 USDC CURRENT_BALANCE @2026-09-30 [SELF_REPORTED] (S7) | A1a | Historical repo terms [SELF_REPORTED] (S7) |
+| X12 | T2 | E1 -\> E9 (L2\_L3) | PT [SELF_REPORTED] (S7) | OTHER [SELF_REPORTED] (S7) | -- [UNRESOLVED] | unsecured [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- | A1b | Current live-rate terms [SELF_REPORTED] (S7) |
+
+Amount scopes:
+
+- X4[0]: Equipment loan facility from E6 to E7
+- X4[1]: Undrawn part of the E6 to E7 equipment loan facility
+- X11[0]: Principal under repo option A1a
 
 ### Liquidity sleeves
 
-| id | strategy | from -> to | legal class | instrument | amount | basis | terms |
-|---|---|---|---|---|---|---|---|
-| X9 | T3 | E1 -\> E11 (sleeve\_holding) | OTHER [SELF_REPORTED] (S7) | Stablecoin balances [SELF_REPORTED] (S7) | 5000000 [SELF_REPORTED] (S7) | GROSS_FUNDED | -- [UNRESOLVED] |
-| X10 | T3 | E11 -\> E12 (reserve\_lookthrough) | -- [UNRESOLVED] | Short-dated government bills [SELF_REPORTED] (S7) | 5000000 [SELF_REPORTED] (S7) | LOOKTHROUGH | -- [UNRESOLVED] |
+| id | strategy | from -> to | legal class | instrument | amounts | terms |
+|---|---|---|---|---|---|---|
+| X9 | T3 | E1 -\> E11 (sleeve\_holding) | OTHER [SELF_REPORTED] (S7) | Stablecoin balances [SELF_REPORTED] (S7) | 5000000 USDC CURRENT_BALANCE @2026-10-01 [SELF_REPORTED] (S7) | -- [UNRESOLVED] |
+| X10 | T3 | E11 -\> E12 (reserve\_lookthrough) | -- [UNRESOLVED] | Short-dated government bills [SELF_REPORTED] (S7) | 5000000 USD RESERVE_LOOKTHROUGH @2026-09-30 [SELF_REPORTED] (S7) | -- [UNRESOLVED] |
+
+Amount scopes:
+
+- X9[0]: Stablecoin held by E1 in the treasury sleeve
+- X10[0]: Reserve assets of E11 backing the sleeve stablecoin
 
 ### Asset sales
 
-| id | strategy | from -> to | title transfer | servicing | recourse | amount | basis | residual exposure |
-|---|---|---|---|---|---|---|---|---|
-| X13 | T1 | E6 -\> E13 (asset\_sale) | true sale [SELF_REPORTED] (S8) | Retained by E2 [SELF_REPORTED] (S8) | -- [UNRESOLVED] | 3000000 [SELF_REPORTED] (S8) | SALE_PROCEEDS | -- [UNRESOLVED] (S8) -- Not disclosed in the memorandum. |
+| id | strategy | from -> to | loan identity | seller of record | buyer of record | legal transfer (title_transfer) | repayment source | servicer after exit (servicing) | recourse | retained exposure (residual_exposure) | amounts |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| X13 | T1 | E6 -\> E13 (asset\_sale) | Equipment loan pool EQ-2026-A [INFERRED] (S8) -- Inferred from the sale schedule reference in the memorandum. | E6 Acme Warehouse SPV Ltd [SELF_REPORTED] (S8) | E13 Example Loan Buyer Fund [SELF_REPORTED] (S8) | true sale [SELF_REPORTED] (S8) | -- [UNRESOLVED] (S5) -- The independent review does not say who repays the buyer. | Retained by E2 [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] (S8) -- Not disclosed in the memorandum. | 3000000 USD SALE_PROCEEDS @2026-08-15 [SELF_REPORTED] (S8) |
+
+Amount scopes:
+
+- X13[0]: Proceeds of the X13 loan sale to E13
 
 ## 5. Holder rights, default and recovery
 
@@ -207,19 +251,37 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 ## 6. Material gaps and issuer requests
 
-### Material and blocking gaps
+### Material
 
-- **G1** [legal] [MATERIAL] [BLOCKING] Issuer financial statements and the custody agreement are not public. (S8)
-- **G3** [credit] [BLOCKING] Perfection of the security interest over the leased equipment is not evidenced. (S8)
+- none
+
+### Blocking
+
+- none
+
+### Conflicts
+
+- **D1** [yield] Archived docs state a 0.30 percent vault fee; the current site states no fee. (S1, S7)
+  - scope: Both state the vault fee charged to P2 holders; S7 is the March 2026 version.
+  - scope match: matched
+  - assertion S7 (2026-03-15): Vault fee: 0.30 percent of assets per year.
+  - assertion S1 (2026-10-01): No fees are charged to vault holders.
+  - subjects: X6.terms
+  - resolution: open
 
 ### Scope unresolved
 
-- **U1** [credit] The memorandum and the independent review may describe different coverage periods of the credit insurance. (S5, S8) -- subjects: Z1.coverage
+- none
 
-### Discrepancies
+### Unreconciled transactions
 
-- **D1** [yield] Archived docs state a 0.30 percent vault fee; the current site states no fee. (S1, S7) -- scope: Both state the vault fee charged to P2 holders; S7 is the March 2026 version.
-- **D2** [credit] The memorandum describes the equipment loans as secured; the independent review describes them as unsecured. (S5, S8) -- subjects: X4.security -- scope: Both describe the security of the X4 equipment loans as currently documented.
+- none
+
+### Other gaps
+
+- **G2** [yield] Gross yield of the Treasury Vault is not disclosed. (S1, S7)
+  - scope match: not_applicable
+  - resolution: open
 
 ### Issuer requests
 
@@ -260,7 +322,7 @@ Licences:
 - Cash generation: Lease collections paid to the warehouse SPV [SELF_REPORTED] (S8)
 - Collections control: Collection account controlled by the security agent [INFERRED] (S5) -- Review mentions a third-party custodian over the receivables.
 - Concentration: Top ten lessees about 40 percent of the book [THIRD_PARTY_REPORTED] (S5)
-- Performance: -- [UNRESOLVED] (S8) -- No delinquency or default data published.
+- Performance: No payment default in the 12 sampled loans to 2026-06-30 [CONFIRMED] (S9; origin auditor_procedure; assurance TESTED) -- AUP sample only, not the portfolio.
 - Operating history: Leasing since 2019 [SELF_REPORTED] (S1)
 
 ### T2 Acme commodity trade finance
@@ -280,9 +342,9 @@ Nodes:
 | id | label | lane | layer | kind | chain | ref |
 |---|---|---|---|---|---|---|
 | n1 | Investor wallet | onchain | -- | investor | ethereum | -- |
-| n2 | aSN token | onchain | L1 | contract | ethereum | 0x00000000000000000000000000000000000000a1 |
+| n2 | aSN token | onchain | L1 | contract | ethereum | 0x1111111111111111111111111111111111111111 |
 | n3 | Treasury vault | onchain | L1 | pool | ethereum | P2 |
-| n4 | Ops multisig | onchain | -- | multisig | ethereum | 0x00000000000000000000000000000000000000b2 |
+| n4 | Ops multisig | onchain | -- | multisig | ethereum | 0x2222222222222222222222222222222222222222 |
 | n5 | Off-ramp desk | boundary | -- | entity | -- | E4 |
 | n6 | Issuer bank account | offchain | L1 | bank_account | -- | E1 |
 | n7 | Custodian | offchain | L2 | entity | -- | E3 |
@@ -419,26 +481,43 @@ Fees:
 
 | chain | address | role | source verified | proxy | upgrade admin | role admins | timelock delay s | multisig | threshold | signers |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ethereum | 0x00000000000000000000000000000000000000a1 | aSN token [CONFIRMED] (S4) | true [CONFIRMED] (S4) | TransparentUpgradeableProxy [CONFIRMED] (S4) | 0x00000000000000000000000000000000000000b2 [CONFIRMED] (S4) | 0x00000000000000000000000000000000000000b2 [CONFIRMED] (S4) | 0 [CONFIRMED] (S4) -- No timelock between admin and proxy. | 0x00000000000000000000000000000000000000b2 [CONFIRMED] (S4) | 2 [CONFIRMED] (S4) | 3 [CONFIRMED] (S4) |
+| ethereum | 0x1111111111111111111111111111111111111111 | aSN token [CONFIRMED] (S4) | true [CONFIRMED] (S4) | TransparentUpgradeableProxy [CONFIRMED] (S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 0 [CONFIRMED] (S4) -- No timelock between admin and proxy. | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 2 [CONFIRMED] (S4) | 3 [CONFIRMED] (S4) |
 
 ## Appendix F. All findings
+
+### Finding register
+
+| id | type | scope match | resolution | k_checks | impact | priority | carried from |
+|---|---|---|---|---|---|---|---|
+| C1 | structural_change | not_applicable | not_applicable | -- | -- | 3 | C1 |
+| D1 | discrepancy | matched | open | -- | -- | 2 | D1 |
+| D2 | discrepancy | matched | resolved | -- | -- | 2 | D2 |
+| G1 | gap | not_applicable | open | K1 | capital_control, ownership | 1 | G1 |
+| G2 | gap | not_applicable | open | -- | -- | 3 | G2 |
+| G3 | gap | not_applicable | open | K4 | security | 1 | -- |
+| R1 | unreconciled_transaction | matched | open | -- | ownership | 1 | G3 |
+| U1 | scope_unresolved | not_matched | open | -- | security | 2 | U1 |
 
 ### Gaps
 
 - **G1** [legal] [MATERIAL] [BLOCKING] Issuer financial statements and the custody agreement are not public. (S8)
   - **N1** Custody agreement and issuer accounts -- Company registry filings -- Confirm custody and financials (resolves G1; est 6 calls)
 - **G2** [yield] Gross yield of the Treasury Vault is not disclosed. (S1, S7)
-- **G3** [credit] [BLOCKING] Perfection of the security interest over the leased equipment is not evidenced. (S8)
+- **G3** [credit] [BLOCKING] The security agreement over the leased equipment is not public. (S8)
   - **N3** Lien filings over the leased equipment -- Examplestan collateral registry -- Resolve the secured/unsecured discrepancy (resolves G3, D2; est 3 calls)
 
 ### Discrepancies
 
-- **D1** [yield] Archived docs state a 0.30 percent vault fee; the current site states no fee. (S1, S7) -- scope: Both state the vault fee charged to P2 holders; S7 is the March 2026 version.
+- **D1** [yield] Archived docs state a 0.30 percent vault fee; the current site states no fee. (S1, S7) -- subjects: X6.terms -- scope: Both state the vault fee charged to P2 holders; S7 is the March 2026 version.
 - **D2** [credit] The memorandum describes the equipment loans as secured; the independent review describes them as unsecured. (S5, S8) -- subjects: X4.security -- scope: Both describe the security of the X4 equipment loans as currently documented.
 
 ### Scope unresolved
 
-- **U1** [credit] The memorandum and the independent review may describe different coverage periods of the credit insurance. (S5, S8) -- subjects: Z1.coverage
+- **U1** [credit] The memorandum and the independent review may describe different coverage periods of the credit insurance. (S5, S8) -- subjects: Z1.coverage -- scope: The memorandum covers the 2026 policy year; the review may describe the 2025 policy.
+
+### Unreconciled transactions
+
+- **R1** [credit] The memorandum reports the X13 loans as sold to E13; the independent review still lists them on the E6 balance sheet. (S5, S8) -- subjects: X13 -- scope: Both accounts concern the X13 sale of the equipment loan pool in August 2026.
 
 ### Structural changes
 
@@ -484,6 +563,7 @@ Fees:
 | S6 | analyst_input | analyst | offline | -- | Analyst call with Acme team -- analyst-call-notes-r1 | Notes from a call; not independently checked. |
 | S7 | project_docs | first_party | archived (version 2026-03-01) | 2026-10-01T08:30:00Z | Acme Treasury Vault docs (archived) -- https://web.archive.example/2026-03-01/https://docs.acme-yield.example/vault |  |
 | S8 | legal_doc | first_party | pdf | 2026-10-01T08:40:00Z | Offering memorandum (Acme Senior Note) -- https://acme-yield.example/legal/offering-memorandum.pdf |  |
+| S9 | audit_report | auditor | pdf | 2026-10-01T09:00:00Z | Agreed-upon procedures report on the Acme Credit Fund loan sample -- https://auditor.example/acme-credit-fund-aup-2026.pdf |  |
 
 ## Appendix J. Analyst interventions
 
@@ -501,17 +581,63 @@ Fees:
 - THIRD_PARTY_REPORTED: reported by a third party; its scope and authority still need assessing.
 - INFERRED: the analyst's conclusion from cited facts; the note states the reasoning.
 - UNRESOLVED: not found in the cited sources, or not searched when no source is cited.
-- CONFLICTING: named by a discrepancy finding about the same fact, timeframe and scope (see Appendix F); scope-unresolved findings never make a claim CONFLICTING.
+- CONFLICTING: named by an open discrepancy finding whose scope was matched (same fact, timeframe and scope, with two recorded assertions; see Appendix F); scope-unresolved findings, unreconciled transactions and resolved discrepancies never make a claim CONFLICTING.
+- Conflict statuses of findings: CONFLICTING (open matched discrepancy), RESOLVED (resolved discrepancy), SCOPE_UNRESOLVED (statements may cover different scopes), UNRECONCILED_TRANSACTION (accounts of one transaction not reconciled).
+- Provenance (curator Q8): origin is who asserted the fact (issuer_management, issuer_documents, borrower, regulator, registry, onchain, independent_party, auditor_procedure, analyst); the cited sources are where it was published; assurance is what an auditor or reviewer tested for this precise claim (TESTED, NOT_TESTED, NOT_APPLICABLE). An issuer statement quoted in an auditor's publication stays SELF_REPORTED with assurance NOT_TESTED; a claim citing an auditor source is CONFIRMED only with assurance TESTED.
 - Layers are functions inside one strategy, by position in its financing chain: L1 on-chain capital vault; L2 credit financing layer; L3 underlying business layer.
 - L3-O: optional sub-layer of parties downstream of L3 whose payments repay it; roles contractual_obligor (a document shows they legally owe L3), cash_flow_source (business cash flows) and offtaker_customer (buyers of goods, services or compute); linked by L3_L3O interfaces.
 - Route (L1->L2): POOL supply to a shared lending pool; FUND subscription to a fund or vehicle; DIRECT financing of the credit counterparty itself; WRAPPER a position in another vault or token that holds the exposure.
 - Method (L2->L3): DL direct loan; DI debt instrument (note, bond); AP purchase of receivables or other assets; PI participation interest; REPO repurchase agreement; PT principal purchase and resale (trade finance); OTHER other method.
 - Legal class: DL loan claim; DI debt instrument claim; AP ownership of purchased assets; PI participation interest; FI fund interest; EI equity interest; PROTOCOL_ENTITLEMENT a pool receipt or other protocol-enforced entitlement; OTHER other or contractual claim.
 - Components: CORE_CREDIT an underlying real-world financing business; LIQUIDITY_SLEEVE undeployed cash or stablecoin (issuer and reserves, no L3); DEFI_LENDING lending-market supply with protocol-enforced entitlements.
-- Amount bases: GROSS_FUNDED funded principal; COMMITMENT committed, not necessarily funded; LOOKTHROUGH exposure seen through a held instrument; RESERVE reserve assets of an issuer; SALE_PROCEEDS proceeds of an asset sale.
-- Counting rule: only GROSS_FUNDED amounts on L1_L2 and sleeve_holding interfaces outside alternative groups are counted; everything else is linked, not summed.
+- Amount cell: `<value> <unit> <BASIS> @<observation time> [FLAG] (sources)`; the observation time is when the value was observed in the source, never the report date. Bases:
+  - CURRENT_BALANCE: token or asset holdings at the observation time.
+  - POSITION_VALUE: value of a position under a stated valuation basis.
+  - OUTSTANDING_PRINCIPAL: loan principal unpaid at the observation time (recorded unbilled principal goes here with the scope saying so).
+  - CUMULATIVE_FUNDED: actual disbursements over a stated period.
+  - FACILITY_COMMITMENT: contractual ceiling.
+  - UNDRAWN_COMMITMENT: unused part of a facility commitment.
+  - SALE_PROCEEDS: proceeds actually received from a disposal.
+  - RESERVE_LOOKTHROUGH: an issuer's reserve or collateral assets, never additive.
+  - OTHER: only with a scope of at least 20 characters defining it.
+- Counting rule: only CURRENT_BALANCE, POSITION_VALUE and OUTSTANDING_PRINCIPAL amounts on L1_L2 and sleeve_holding interfaces, with an observation time, outside alternative groups and not migration placeholders, are counted; totals add only amounts with the same basis, unit, valuation basis and observation date (label `<sum> <unit> <BASIS> @<date>`); everything else is linked, not summed.
+- Deployment of a credit strategy: DEPLOYED_VERIFIED (transfers into the credit arrangement verified), DISCLOSED_UNVERIFIED (path disclosed, settlement not shown), NOT_DEPLOYED, UNRESOLVED.
 - Alternative tag: `alt A1a` marks option a of alternative group A1, competing legal paths for one position; they are never parallel exposures and are not counted.
 - Flow views: settlement (capital and asset movement); claim (legal rights and collateral); repayment (cash back to L2 and L1, fees, enforcement path).
 - Lanes: offchain, boundary (conversion, bridge and custody hand-off points), onchain.
 - Diagram suffixes: [C] CONFIRMED, [S] SELF_REPORTED, [T] THIRD_PARTY_REPORTED, [I] INFERRED, [U] UNRESOLVED ([U?] not searched), [X] CONFLICTING.
-- Findings: G gap, D discrepancy, U scope unresolved, C structural change; issuer requests Q cite the research question codes they answer. No risk scores are given.
+- Findings: G gap, D discrepancy, U scope unresolved, R unreconciled transaction, C structural change; issuer requests Q cite the research question codes they answer. No risk scores are given.
+
+## Appendix N. Quantitative and provenance checks
+
+| id | rule | result | detail |
+|---|---|---|---|
+| QA1 | basis | pass | ok |
+| QA2 | lookthrough | pass | ok |
+| QA3 | alternative | pass | ok |
+| QA4 | proceeds | pass | ok; unverified: X13.amounts\[0\] |
+| QA5 | asof | pass | ok |
+| QA6 | stockflow | pass | ok |
+| QA7 | provenance | pass | ok |
+| QA8 | conflicts | pass | ok |
+| QA9 | placeholder | pass | ok |
+| QA10 | section1 | pass | ok |
+| QA11 | deployment | pass | ok |
+
+Rules:
+
+- QA1 basis: No total mixes amount bases, units, valuation bases or observation dates (each total recomputed from the allocation rows has one total key and the same sum).
+- QA2 lookthrough: No RESERVE_LOOKTHROUGH amount and no reserve_lookthrough interface is counted.
+- QA3 alternative: No amount on an interface with an alternative group is counted.
+- QA4 proceeds: No SALE_PROCEEDS amount is counted; SALE_PROCEEDS amounts whose value status is not verified are listed as unverified (informational).
+- QA5 asof: No amount with as_of null is counted.
+- QA6 stockflow: No CUMULATIVE_FUNDED, FACILITY_COMMITMENT or UNDRAWN_COMMITMENT amount is counted or labelled outstanding in totals.
+- QA7 provenance: No claim citing an auditor source (outside audits[]) has origin null; no claim with an issuer origin has status other than self_reported or not_found; no verified claim citing an auditor source lacks assurance TESTED.
+- QA8 conflicts: Every claim flagged CONFLICTING is a subject of an open discrepancy with scope_match matched and at least two assertions; no scope_unresolved or unreconciled_transaction subject is flagged CONFLICTING.
+- QA9 placeholder: No finding scope note and no amount scope is a migration placeholder.
+- QA10 section1: Every material finding and every blocking finding with k_checks is in section 1.
+- QA11 deployment: No CORE_CREDIT or DEFI_LENDING strategy has deployment DEPLOYED_VERIFIED without status verified.
+
+## Appendix O. Changes
+
+No earlier run.

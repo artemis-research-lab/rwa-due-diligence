@@ -3,7 +3,7 @@
 import datetime
 import re
 
-from lib import claims, schema
+from lib import claims, framework, schema
 from lib.textutil import has_control
 
 LEDGER_MSG = "sources must be added with add-source"
@@ -55,6 +55,11 @@ def _check_pattern(node, value, path, errors):
             datetime.date.fromisoformat(value)
         elif node.kind == "timestamp":
             datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+        elif node.kind == "date_or_timestamp":
+            if len(value) > 10:
+                datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+            else:
+                datetime.date.fromisoformat(value)
     except ValueError:
         errors.append("%s: not a real %s" % (path, node.kind))
 
@@ -79,6 +84,12 @@ def check_node(node, value, path, errors):
             check_node(schema.Ref("E", "P", nullable=True), value["subject"], _join(path, "subject"), errors)
         if "note" in value:
             check_node(schema.Str(schema.CLAIM_NOTE_MAX), value["note"], _join(path, "note"), errors)
+        if "origin" in value:
+            check_node(schema.Enum("assertion_origin", nullable=True), value["origin"], _join(path, "origin"),
+                       errors)
+        if "assurance" in value:
+            check_node(schema.Enum("assurance_scope", nullable=True), value["assurance"],
+                       _join(path, "assurance"), errors)
     elif isinstance(node, schema.Obj):
         if not isinstance(value, dict):
             errors.append("%s: must be an object" % (path or "(root)"))
@@ -164,20 +175,56 @@ def _coded_errors(path, value, enum, shape):
     elif shape == "number":
         if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
             return ["%s: value must be a number >= 0" % path]
+    elif shape == "ratio":
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1:
+            return ["%s: value must be a number 0..1" % path]
     elif not isinstance(value, list) or not value or any(not isinstance(v, str) for v in value):
         return ["%s: value must be a non-empty list of strings" % path]
     return []
 
 
-# Kind constraints (v0.6.0 2.2): claim field -> kinds where it may hold a value or evidence.
+# Kind constraints (v0.6.0 2.2, v0.7.0 2.2): claim field -> kinds where it may hold a value or evidence.
 KIND_FIELDS = (
     ("route", ("L1_L2",)),
     ("method", ("L2_L3", "L3_L3O")),
-    ("supply_concentration", ("L1_L2",)),
     ("title_transfer", ("asset_sale",)),
     ("servicing", ("asset_sale",)),
     ("residual_exposure", ("asset_sale",)),
+    ("loan_identity", ("asset_sale",)),
+    ("seller_of_record", ("asset_sale",)),
+    ("buyer_of_record", ("asset_sale",)),
+    ("repayment_source", ("asset_sale",)),
 )
+
+# Amounts (v0.7.0 2.2): kinds that may carry amounts, and bases limited to some kinds.
+AMOUNT_KINDS = ("L1_L2", "L2_L3", "within_L1", "within_L2", "sleeve_holding", "reserve_lookthrough", "asset_sale")
+BASIS_KINDS = {
+    "RESERVE_LOOKTHROUGH": ("reserve_lookthrough",),
+    "SALE_PROCEEDS": ("asset_sale",),
+    "FACILITY_COMMITMENT": ("L1_L2", "L2_L3", "within_L2"),
+    "UNDRAWN_COMMITMENT": ("L1_L2", "L2_L3", "within_L2"),
+}
+OTHER_SCOPE_MIN = 20
+
+# Strategy components that carry a deployment claim.
+DEPLOYMENT_COMPONENTS = ("CORE_CREDIT", "DEFI_LENDING")
+
+# Findings (v0.7.0 2.2): allowed scope_match and resolution status per type.
+SCOPE_MATCH = {
+    "gap": ("not_applicable",),
+    "structural_change": ("not_applicable",),
+    "discrepancy": ("matched",),
+    "scope_unresolved": ("not_matched", "unchecked"),
+    "unreconciled_transaction": ("matched", "not_matched", "unchecked"),
+}
+RESOLUTION = {
+    "gap": ("open", "resolved"),
+    "discrepancy": ("open", "resolved"),
+    "scope_unresolved": ("open", "resolved"),
+    "unreconciled_transaction": ("open", "resolved"),
+    "structural_change": ("not_applicable",),
+}
+ASSERTED_TYPES = ("discrepancy", "scope_unresolved", "unreconciled_transaction")
 
 # Roles whose function may have a null layer.
 LAYERLESS_ROLES = ("issuer", "loan_purchaser", "protection_provider", "reserve_assets", "auditor", "other")
@@ -201,9 +248,102 @@ def _alternative_errors(interfaces, errors):
             errors.append("alternative group %s spans strategies" % group)
 
 
+def _amount_errors(x, path, errors):
+    kind = x["kind"]
+    if x["amounts"] and kind not in AMOUNT_KINDS:
+        errors.append("%s.amounts: not allowed on %s" % (path, kind))
+    for j, a in enumerate(x["amounts"]):
+        where = "%s.amounts[%d]" % (path, j)
+        if a["value"]["status"] == "not_found":
+            errors.append("%s.value: an amount entry needs a value; remove the entry instead" % where)
+        if not a["unit"].strip():
+            errors.append("%s.unit: required" % where)
+        if not a["scope"].strip():
+            errors.append("%s.scope: required" % where)
+        elif a["basis"] == "OTHER" and len(a["scope"].strip()) < OTHER_SCOPE_MIN:
+            errors.append("%s.scope: OTHER needs an explicit definition (>= %d characters)" % (where, OTHER_SCOPE_MIN))
+        if a["basis"] == "POSITION_VALUE" and not (a["valuation_basis"] or "").strip():
+            errors.append("%s.valuation_basis: required for POSITION_VALUE" % where)
+        if a["block"] is not None and a["chain"] is None:
+            errors.append("%s.chain: required when block is set" % where)
+        kinds = BASIS_KINDS.get(a["basis"])
+        if kinds is not None and kind not in kinds:
+            errors.append("%s.basis: %s not allowed on %s" % (where, a["basis"], kind))
+
+
+def _supply_errors(x, path, errors):
+    sc = x["supply_concentration"]
+    ratio = sc["ratio"]
+    empty = (ratio["status"] == "not_found" and not ratio["evidence"] and not sc["numerator"]
+             and not sc["denominator"] and sc["as_of"] is None and sc["block"] is None and sc["chain"] is None)
+    if x["kind"] != "L1_L2" and not empty:
+        errors.append("%s.supply_concentration: must be not_found without evidence unless kind is L1_L2" % path)
+    if ratio["value"] is not None and (not sc["numerator"].strip() or not sc["denominator"].strip()
+                                       or sc["as_of"] is None):
+        errors.append("%s.supply_concentration: numerator, denominator and as_of are required with a ratio" % path)
+
+
+def _unique(values):
+    return len(set(values)) == len(values)
+
+
+def _finding_errors(doc, known, errors):
+    carried = {}
+    for i, f in enumerate(doc["findings"]):
+        path = "findings[%d]" % i
+        kind = f["type"]
+        placeholder = schema.is_placeholder(f["scope_note"])
+        allowed = SCOPE_MATCH[kind]
+        if kind == "discrepancy" and placeholder:
+            allowed = ("matched", "unchecked")
+        if f["scope_match"] not in allowed:
+            errors.append("%s.scope_match: %s not allowed for %s" % (path, f["scope_match"], kind))
+        if kind in ASSERTED_TYPES:
+            if not f["scope_note"].strip():
+                errors.append("%s.scope_note: required for a %s" % (path, kind))
+            if not placeholder and len(f["assertions"]) < 2:
+                errors.append("%s.assertions: at least two statements required for %s" % (path, kind))
+        elif f["assertions"]:
+            errors.append("%s.assertions: must be empty for %s" % (path, kind))
+        for j, a in enumerate(f["assertions"]):
+            if a["source"] not in f["evidence"]:
+                errors.append("%s.assertions[%d].source: not in evidence" % (path, j))
+        if kind == "discrepancy" and not f["subjects"] and not placeholder:
+            errors.append("%s.subjects: at least one claim required for a discrepancy" % path)
+        for j, subject in enumerate(f["subjects"]):
+            where = "%s.subjects[%d]" % (path, j)
+            lead = subject.split(".", 1)[0]
+            if lead not in known[lead[0]]:
+                _need(lead, known[lead[0]], where, errors, "id")
+                continue
+            try:
+                found, _ = framework.resolve(doc, subject)
+            except KeyError:
+                errors.append("%s: %s does not resolve" % (where, subject))
+                continue
+            if kind == "discrepancy" and found != "claim":
+                errors.append("%s: %s is not a claim" % (where, subject))
+            elif found not in ("claim", "object"):
+                errors.append("%s: %s is not a claim or object" % (where, subject))
+        status = f["resolution"]["status"]
+        if status not in RESOLUTION[kind]:
+            errors.append("%s.resolution.status: %s not allowed for %s" % (path, status, kind))
+        if status == "resolved" and not f["resolution"]["note"].strip():
+            errors.append("%s.resolution.note: required when resolved" % path)
+        if not _unique(f["k_checks"]):
+            errors.append("%s.k_checks: duplicate value" % path)
+        if not _unique(f["impact"]):
+            errors.append("%s.impact: duplicate value" % path)
+        if f["carried_from"] is not None:
+            if f["carried_from"] in carried:
+                errors.append("%s.carried_from: %s already carried by %s"
+                              % (path, f["carried_from"], carried[f["carried_from"]]))
+            carried.setdefault(f["carried_from"], f["id"])
+
+
 def _framework_errors(doc, ids, errors):
-    """Rules of schema rwa-dd/2.1: strategies, functions, interfaces, supports, holder rights, flow edges,
-    subjects, findings."""
+    """Rules of schema rwa-dd/2.2: strategies, functions, interfaces, amounts, supports, holder rights, flow
+    edges, subjects, findings."""
     sids, eids, pids, tids, xids = ids["S"], ids["E"], ids["P"], ids["T"], ids["X"]
     strategies = doc["strategies"]
     interfaces = doc["interfaces"]
@@ -235,9 +375,16 @@ def _framework_errors(doc, ids, errors):
             if x["kind"] not in kinds and (claim["status"] != "not_found" or claim["evidence"]):
                 errors.append("%s.%s: must be not_found without evidence unless kind is %s"
                               % (path, field, " or ".join(kinds)))
-        if x["amount"]["value"] is not None and x["amount_basis"] is None:
-            errors.append("%s.amount_basis: required when amount has a value" % path)
+        _amount_errors(x, path, errors)
+        _supply_errors(x, path, errors)
     _alternative_errors(interfaces, errors)
+    for i, t in enumerate(strategies):
+        claim = t["deployment"]
+        if t["component"] not in DEPLOYMENT_COMPONENTS and (claim["status"] != "not_found" or claim["evidence"]):
+            errors.append("strategies[%d].deployment: must be not_found without evidence unless component is %s"
+                          % (i, " or ".join(DEPLOYMENT_COMPONENTS)))
+        if claim["value"] == "DEPLOYED_VERIFIED" and claim["status"] != "verified":
+            errors.append("strategies[%d].deployment: DEPLOYED_VERIFIED requires status verified" % i)
     for i, z in enumerate(doc["supports"]):
         path = "supports[%d]" % i
         for j, t in enumerate(z["strategies"]):
@@ -251,12 +398,7 @@ def _framework_errors(doc, ids, errors):
             _need(t, tids, "flows.edges[%d].strategies[%d]" % (i, j), errors, "strategy")
         _need(e["interface"], xids, "flows.edges[%d].interface" % i, errors, "interface")
     known = {"E": eids, "P": pids, "T": tids, "X": xids, "Z": ids["Z"]}
-    for i, f in enumerate(doc["findings"]):
-        if f["type"] == "discrepancy" and not f["scope_note"].strip():
-            errors.append("findings[%d].scope_note: required for a discrepancy" % i)
-        for j, subject in enumerate(f["subjects"]):
-            lead = subject.split(".", 1)[0]
-            _need(lead, known[lead[0]], "findings[%d].subjects[%d]" % (i, j), errors, "id")
+    _finding_errors(doc, known, errors)
 
     for parts, claim in schema.iter_claims(doc):
         coded = schema.CODED_CLAIMS.get((parts[0], parts[-1]))
@@ -299,7 +441,7 @@ def semantic_errors(doc):
     _check_ids(nodes, "n", "flows.nodes", errors)
     _check_ids(searches, "N", "next_searches", errors)
     _check_ids(doc["issuer_requests"], "Q", "issuer_requests", errors)
-    for prefix in ("G", "D", "C", "U"):
+    for prefix in ("G", "D", "C", "U", "R"):
         _check_ids([f for f in findings if f["id"][0] == prefix], prefix, "findings", errors)
 
     sids = {s["id"] for s in sources}

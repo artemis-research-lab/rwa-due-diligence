@@ -1,6 +1,6 @@
-"""Review packet renderer (section 3.7, v0.5 section 5, v0.6.0 section 5); deterministic."""
+"""Review packet renderer (section 3.7, v0.5 section 5, v0.6.0 section 5, v0.7.0 section 5.1); deterministic."""
 
-from lib import framework, schema
+from lib import framework, qa, schema
 from lib.textutil import finding_line, id_key, md_text, number_text, request_line, search_line, totals_text
 
 FLAGS = framework.FLAGS
@@ -12,7 +12,7 @@ OTHER = ("project", "yield", "redemption", "eligibility", "audits", "size", "onc
 def _group(parts, doc):
     """Coverage group of the claim at parts, or None."""
     head = parts[0]
-    if head == "entities" or (head == "strategies" and parts[2] == "business_type"):
+    if head == "entities" or (head == "strategies" and parts[2] in ("business_type", "deployment")):
         return "A layers and entities"
     if head == "interfaces":
         kind = doc["interfaces"][parts[1]]["kind"]
@@ -38,8 +38,8 @@ GROUPS = ("A layers and entities", "B L1->L2", "C L2->L3 and default", "D holder
 TEMPLATE_COMMENTS = (
     "# reject N<k>",
     "# add-source <url-or-path> : <why>",
-    "# answer G<k>|D<k> : <text>",
-    "# drop G<k>|D<k> : <reason>",
+    "# answer G<k>|D<k>|U<k>|R<k> : <text>",
+    "# drop G<k>|D<k>|U<k>|R<k> : <reason>",
     "# note <text>",
     "# priority N<a>,N<b>,...",
     "# limit N<k> <calls 1..20>",
@@ -85,26 +85,82 @@ def _table(header, rows):
     return out + ["| %s |" % " | ".join(row) for row in rows]
 
 
-def amount_text(amount, currency):
-    """`25000000 USD`, `25000000` without a currency, `--` without an amount."""
-    if amount is None:
-        return "--"
-    text = number_text(amount)
-    return text if currency is None else "%s %s" % (text, md_text(framework.currency_key(currency)))
+def amount_text(value):
+    """`25000000`, `0.5`; `--` without a value."""
+    return "--" if value is None else number_text(value)
+
+
+def _cell(value, limit=None):
+    """Free text cell; `--` for null."""
+    return "--" if value is None else md_text(str(value), limit)
+
+
+def _code(value):
+    """Enum code cell (never escaped); `--` for null."""
+    return "--" if value is None else str(value)
 
 
 def components_table(doc):
     totals = framework.allocation_totals(doc)["strategies"]
-    return _table(("strategy", "component", "products", "counted total"),
-                  [[_title(t), t["component"], ", ".join(sorted(t["products"], key=id_key)),
-                    totals_text(totals.get(t["id"], {}))] for t in sorted(doc["strategies"], key=id_key)])
+    return _table(("strategy", "component", "deployment", "products", "counted totals"),
+                  [[_title(t), t["component"], _deployment(doc, t), ", ".join(sorted(t["products"], key=id_key)),
+                    totals_text(totals.get(t["id"], []))] for t in sorted(doc["strategies"], key=id_key)])
 
 
-def allocation_table(doc):
-    return _table(("strategy", "interface", "kind", "amount", "basis", "counted", "reason"),
-                  [[sid, xid, kind, amount_text(amount, currency), basis or "--", "yes" if counted else "no",
-                    reason] for sid, _, xid, kind, amount, currency, basis, counted, reason
-                   in framework.allocation(doc)])
+def _deployment(doc, t):
+    claim = t["deployment"]
+    flag = framework.flags(doc)[("strategies", doc["strategies"].index(t), "deployment")]
+    return "%s [%s]" % (_code(claim["value"]), flag)
+
+
+def amounts_table(doc):
+    return _table(("strategy", "interface", "entry", "kind", "value", "unit", "basis", "as_of", "scope", "counted",
+                   "reason"),
+                  [[row[0], row[2], _code(row[3]), row[4], amount_text(row[5]), _cell(row[6], 20), _code(row[7]),
+                    _code(row[8]), _cell(row[9], 200), "yes" if row[10] else "no", row[11]]
+                   for row in framework.allocation(doc)])
+
+
+def section1_preview(doc):
+    findings = {f["id"]: f for f in doc["findings"]}
+    selected, _, rest = framework.critical_counts(doc)
+    rows = [[f["id"], f["type"], "yes" if f["material"] else "no", "yes" if f["blocking"] else "no",
+             ", ".join(f["k_checks"]) or "--", ", ".join(f["impact"]) or "--", md_text(f["statement"], 280)]
+            for f in (findings[ident] for ident in framework.critical(doc))]
+    out = _table(("id", "type", "material", "blocking", "k_checks", "impact", "statement"), rows)
+    return out + ([""] if out else []) + ["%d shown; %d more open findings in section 6" % (selected, rest)]
+
+
+def conflicts_table(doc):
+    return _table(("finding", "conflict status", "scope match", "resolution", "subjects", "assertion sources"),
+                  [[ident, status or "--", match, resolution, md_text(", ".join(subjects)) or "--",
+                    ", ".join(sources) or "--"]
+                   for ident, status, match, resolution, subjects, sources in framework.conflicts(doc)])
+
+
+def provenance_table(doc):
+    rows = []
+    for parts, claim in schema.iter_claims(doc):
+        if claim["origin"] is not None or claim["assurance"] is not None:
+            rows.append([md_text(framework.claim_id(parts, doc)), claim["status"], _code(claim["origin"]),
+                         _code(claim["assurance"]), ", ".join(claim["evidence"]) or "--"])
+    return _table(("claim", "status", "origin", "assurance", "sources"), sorted(rows))
+
+
+def qa_table(results):
+    return _table(("id", "rule", "result", "detail"),
+                  [[r["id"], md_text(r["rule"], 120), r["result"], md_text(r["detail"])] for r in results])
+
+
+def migration_pending(doc):
+    out = [finding_line(f, scope=True) for f in sorted(doc["findings"], key=id_key)
+           if schema.is_placeholder(f["scope_note"])]
+    for x in sorted(doc["interfaces"], key=id_key):
+        out += ["- **%s.amounts[%d]** %s %s %s -- scope: %s"
+                % (x["id"], j, a["basis"], amount_text(a["value"]["value"]), md_text(a["unit"], 20),
+                   md_text(a["scope"], 200))
+                for j, a in enumerate(x["amounts"]) if a["scope"] == schema.MIGRATED_AMOUNT_SCOPE]
+    return out
 
 
 def alternative_lines(doc):
@@ -128,35 +184,40 @@ def _section(lines, title, body):
     lines += body or ["- none"]
 
 
-def render(doc, round_no):
+def render(doc, round_no, qa_results=None):
+    """Review packet of round round_no; qa_results defaults to qa.run(doc) without expectations."""
     slug = doc["run"]["slug"]
     findings = sorted(doc["findings"], key=id_key)
     searches = sorted(doc["next_searches"], key=id_key)
+    results = qa.run(doc) if qa_results is None else qa_results
+
+    def typed(kind, **kwargs):
+        return [finding_line(f, **kwargs) for f in findings if f["type"] == kind]
 
     lines = ["# Review packet %s round %d" % (slug, round_no)]
     table = ["| group | %s |" % " | ".join(FLAGS), "|---|" + "---|" * len(FLAGS)]
     for name, row in coverage(doc).items():
         table.append("| %s | %s |" % (name, " | ".join(str(row[f]) for f in FLAGS)))
     _section(lines, "Coverage", table)
+    _section(lines, "Section 1 preview", section1_preview(doc))
     _section(lines, "Portfolio components", components_table(doc))
     _section(lines, "Framework completeness", completeness_table(doc))
     _section(lines, "Three-layer chains", chain_lines(doc))
-    _section(lines, "Allocation", allocation_table(doc))
+    _section(lines, "Amounts", amounts_table(doc))
     _section(lines, "Alternative paths", alternative_lines(doc))
+    _section(lines, "Conflicts", conflicts_table(doc))
+    _section(lines, "Provenance", provenance_table(doc))
+    _section(lines, "QA", qa_table(results))
+    _section(lines, "Migration checks pending", migration_pending(doc))
     _section(lines, "Material findings", [finding_line(f) for f in findings if f["material"]])
-    _section(lines, "Scope checks pending",
-             [finding_line(f) for f in findings
-              if f["type"] == "discrepancy" and f["scope_note"] == schema.MIGRATED_SCOPE_NOTE])
     _section(lines, "Blocking gaps",
              [finding_line(f) for f in findings if f["type"] == "gap" and f["blocking"]])
     _section(lines, "Other gaps",
              [finding_line(f) for f in findings if f["type"] == "gap" and not f["blocking"]])
-    _section(lines, "Discrepancies",
-             [finding_line(f, subjects=True, scope=True) for f in findings if f["type"] == "discrepancy"])
-    _section(lines, "Scope unresolved",
-             [finding_line(f, subjects=True) for f in findings if f["type"] == "scope_unresolved"])
-    _section(lines, "Structural changes",
-             [finding_line(f) for f in findings if f["type"] == "structural_change"])
+    _section(lines, "Discrepancies", typed("discrepancy", subjects=True, scope=True))
+    _section(lines, "Scope unresolved", typed("scope_unresolved", subjects=True, scope=True))
+    _section(lines, "Unreconciled transactions", typed("unreconciled_transaction", subjects=True, scope=True))
+    _section(lines, "Structural changes", typed("structural_change"))
     _section(lines, "Issuer requests", [request_line(q) for q in sorted(doc["issuer_requests"], key=id_key)])
     _section(lines, "Proposed next searches", [search_line(n) for n in searches])
 

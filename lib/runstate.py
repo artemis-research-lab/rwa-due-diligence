@@ -3,10 +3,11 @@
 This module and lib/ledger.py are the only writers of <root>/<slug>/.
 """
 
+import hashlib
 import re
 from pathlib import Path
 
-from lib import directives, flow, ledger, migrate, render_md, review, schema, validate
+from lib import changes, directives, flow, ledger, migrate, qa, render_md, review, schema, validate
 from lib.textutil import dump_json, id_key, load_json_text
 
 PHASE_RESEARCH = "research"
@@ -29,8 +30,9 @@ class InvalidError(Exception):
         self.errors = list(errors)
 
 
-# Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=()) -> text);
-# figures maps "T<n>-<view>" -> sanitized SVG text and may be empty; rejected is a set of N ids.
+# Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=(), qa_results=None,
+# change_rows=None, today=None) -> text); figures maps "T<n>-<view>" -> sanitized SVG text and may be empty;
+# rejected is a set of N ids; today is the render clock date of a draft.
 RENDERERS = [("report.md", render_md.render)]
 
 FLOW_VIEWS = schema.ENUMS["flow_view"]
@@ -83,8 +85,8 @@ class Project:
         return [p for p in [self.output("report.html")] + flows if p.exists()]
 
     def outputs(self):
-        return ([self.output("dd.json")] + [self.output(suffix) for suffix, _ in RENDERERS]
-                + self.flow_outputs())
+        return ([self.output("dd.json"), self.output("derived.json")]
+                + [self.output(suffix) for suffix, _ in RENDERERS] + self.flow_outputs())
 
     def round_dir(self, k):
         return self.rounds / ("r%d" % k)
@@ -239,7 +241,7 @@ def _start_layout(project):
 
 
 def _seed_version(old):
-    """Schema version of the record to seed from; ContractError unless it is 1.0, 2.0 or 2.1."""
+    """Schema version of the record to seed from; ContractError unless it is 1.0, 2.0, 2.1 or 2.2."""
     version = old.get("schema_version") if isinstance(old, dict) else None
     if version not in migrate.SEEDABLE:
         raise ContractError("cannot seed from schema version %r (supported: %s)"
@@ -248,20 +250,69 @@ def _seed_version(old):
 
 
 def _seeded_doc(old, run):
-    """Working document of a seeded run (4.2 step 3), migrated to the current schema."""
+    """Working document of a seeded run (4.2 step 3), migrated to the current schema. Every carried-over finding
+    starts with carried_from = its own id: the id it had in the run this one is seeded from (change log)."""
     _seed_version(old)
-    return migrate.migrate_to_current(old, run)
+    doc = migrate.migrate_to_current(old, run)
+    for f in doc["findings"]:
+        f["carried_from"] = f["id"]
+    return doc
 
 
-def _unchecked_scope(doc):
-    """Id of the first discrepancy (id order) whose scope note is still the migration placeholder, or None."""
-    findings = doc.get("findings") if isinstance(doc, dict) else None
-    if not isinstance(findings, list):
+def _placeholder_refusal(doc):
+    """Finalize refusal for migration placeholders (v0.7.0 4.2), or None: the first finding (document order)
+    whose scope note is a placeholder, then the first amount (document order) with the placeholder scope."""
+    if not isinstance(doc, dict):
         return None
-    pending = sorted((f for f in findings if isinstance(f, dict) and f.get("type") == "discrepancy"
-                      and f.get("scope_note") == schema.MIGRATED_SCOPE_NOTE and isinstance(f.get("id"), str)),
-                     key=id_key)
-    return pending[0]["id"] if pending else None
+    findings = doc.get("findings") if isinstance(doc.get("findings"), list) else []
+    for f in findings:
+        if isinstance(f, dict) and schema.is_placeholder(f.get("scope_note")) and isinstance(f.get("id"), str):
+            return "%s: scope not checked (scope_note is a migration placeholder)" % f["id"]
+    interfaces = doc.get("interfaces") if isinstance(doc.get("interfaces"), list) else []
+    for x in interfaces:
+        amounts = x.get("amounts") if isinstance(x, dict) else None
+        for j, a in enumerate(amounts if isinstance(amounts, list) else []):
+            if isinstance(a, dict) and a.get("scope") == schema.MIGRATED_AMOUNT_SCOPE:
+                return "%s.amounts[%d]: amount scope not checked (migration placeholder)" % (x.get("id"), j)
+    return None
+
+
+EXPECT_FILE = "qa-expect.json"
+
+
+def load_expectations(project, path=None):
+    """Expectation entries from path, or from audit/qa-expect.json when it exists; [] otherwise."""
+    path = Path(path) if path is not None else project.audit / EXPECT_FILE
+    if not path.is_file():
+        if path == project.audit / EXPECT_FILE:
+            return []
+        raise ContractError("expectation file %s not found" % path)
+    try:
+        return qa.parse_expectations(path.read_bytes().decode("utf-8"), str(path.name))
+    except UnicodeDecodeError:
+        raise ContractError("%s: not UTF-8" % path.name)
+    except qa.ExpectationError as exc:
+        raise ContractError(str(exc))
+
+
+def change_log(project, doc):
+    """Change rows against archive/<seeded_from>/<slug>.dd.json migrated to the current schema; [] when the run
+    was not seeded or that record is missing."""
+    seeded_from = doc["run"]["seeded_from"]
+    if seeded_from is None:
+        return []
+    path = project.archive / seeded_from / ("%s.dd.json" % project.slug)
+    if not path.is_file():
+        return []
+    old = load_json_text(path.read_bytes().decode("utf-8"))
+    return changes.diff(migrate.migrate_to_current(old, doc["run"]), doc)
+
+
+def log_name(state, kind, n):
+    """Run-scoped log file name under the project directory (D76)."""
+    if kind == "directives":
+        return ".scratch/logs/%s-directives-r%d.txt" % (state["run_id"], n)
+    return ".scratch/logs/%s-amend-%d.txt" % (state["run_id"], n)
 
 
 def seed(root, slug, url, clock=ledger.system_clock):
@@ -358,7 +409,8 @@ def make_review(root, slug):
     if errors:
         raise InvalidError(errors)
     k = state["round"]
-    path = project.write_text(project.round_dir(k) / "review.md", review.render(doc, k))
+    results = qa.run(doc, load_expectations(project))
+    path = project.write_text(project.round_dir(k) / "review.md", review.render(doc, k, results))
     state["phase"] = PHASE_AWAITING
     save_state(project, state)
     return {"review": str(path), "round": k}
@@ -394,13 +446,16 @@ def apply_directives(root, slug, file_path):
     return {"round": state["round"], "phase": state["phase"], "commands": len(commands)}
 
 
-def render_draft(root, slug):
+def render_draft(root, slug, clock=ledger.system_clock):
     project = open_project(root, slug)
     state = load_state(project)
     doc = load_work(project)
     errors = validate.structural_errors(doc)
     if errors:
         raise InvalidError(sorted(set(errors)))
+    results = qa.run(doc, load_expectations(project))
+    rows = change_log(project, doc)
+    today = ledger.format_ts(clock())[:10]
     warnings = []
     try:
         figures = render_figures(doc)
@@ -411,7 +466,11 @@ def render_draft(root, slug):
     outputs = []
     for suffix, fn in RENDERERS:
         outputs.append(str(project.write_text(draft / ("%s.%s" % (slug, suffix)),
-                                              fn(doc, round_records(project, state["round"]), figures))))
+                                              fn(doc, round_records(project, state["round"]), figures,
+                                                 qa_results=results, change_rows=rows, today=today))))
+    record = dump_json(schema.order_like_schema(doc)).encode("utf-8")
+    outputs.append(str(project.write_json(draft / ("%s.derived.json" % slug), render_md.derived(
+        doc, hashlib.sha256(record).hexdigest(), results, rows))))
     for key, svg in figures.items():
         outputs.append(str(project.write_text(draft / project.flow_output(key).name, svg)))
     result = {"outputs": outputs}
@@ -437,7 +496,9 @@ def status(root, slug):
             counts[key] = len(value) if isinstance(value, list) else 0
     except InvalidError as exc:
         errors = exc.errors
-    return {"state": state, "counts": counts, "valid": not errors, "errors": len(errors)}
+    return {"state": state, "counts": counts, "valid": not errors, "errors": len(errors),
+            "next_directives_log": log_name(state, "directives", state["round"]),
+            "next_amend_log": log_name(state, "amend", state.get("amendment", 0) + 1)}
 
 
 def render_figures(doc):
@@ -455,9 +516,9 @@ def finalize(root, slug, clock=ledger.system_clock):
     if state["phase"] != PHASE_READY:
         raise ContractError("finalize requires a finalize directive (current phase: %s)" % state["phase"])
     doc = load_work(project)
-    pending = _unchecked_scope(doc)
-    if pending is not None:
-        raise ContractError("%s: scope not checked (scope_note is the migration placeholder)" % pending)
+    refusal = _placeholder_refusal(doc)
+    if refusal is not None:
+        raise ContractError(refusal)
     if isinstance(doc.get("run"), dict):
         doc["run"]["status"] = "final"
         doc["run"]["finalized_at"] = ledger.format_ts(clock())
@@ -466,12 +527,21 @@ def finalize(root, slug, clock=ledger.system_clock):
     if errors:
         raise InvalidError(errors)
     doc = schema.order_like_schema(doc)
+    results = qa.run(doc, load_expectations(project))
+    failed = qa.failed(results)
+    if failed:
+        raise ContractError("QA failed: %s" % ", ".join(failed))
+    rows = change_log(project, doc)
     rounds = round_records(project, state["round"])
     rejected = rejected_ids(project, state["round"])
     figures = render_figures(doc)  # d2 is mandatory here: fails before anything is written
-    outputs = [project.write_json(project.output("dd.json"), doc)]
+    record = dump_json(doc).encode("utf-8")
+    outputs = [project.write_bytes(project.output("dd.json"), record)]
+    outputs.append(project.write_json(project.output("derived.json"), render_md.derived(
+        doc, hashlib.sha256(record).hexdigest(), results, rows)))
     for suffix, fn in RENDERERS:
-        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected)))
+        outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected,
+                                                                     qa_results=results, change_rows=rows)))
     for key, svg in figures.items():
         outputs.append(project.write_text(project.flow_output(key), svg))
     save_work(project, doc)
@@ -522,3 +592,24 @@ def amend(root, slug, file_path):
     save_state(project, state)
     return {"amendment": n, "round": k + 1, "phase": PHASE_RESEARCH, "archived_to": str(project.safe(dest)),
             "commands": len(commands)}
+
+
+def qa_check(root, slug, expect=None):
+    """dd.py qa: {"results": [...], "failed": [ids]} for the working document."""
+    project = open_project(root, slug)
+    doc = load_work(project)
+    errors = validate.structural_errors(doc)
+    if errors:
+        raise InvalidError(sorted(set(errors)))
+    results = qa.run(doc, load_expectations(project, expect))
+    return {"results": results, "failed": qa.failed(results)}
+
+
+def change_rows(root, slug):
+    """dd.py changes: change rows of the working document against the run it was seeded from."""
+    project = open_project(root, slug)
+    doc = load_work(project)
+    errors = validate.structural_errors(doc)
+    if errors:
+        raise InvalidError(sorted(set(errors)))
+    return change_log(project, doc)

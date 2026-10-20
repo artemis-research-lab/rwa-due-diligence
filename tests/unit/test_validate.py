@@ -3,8 +3,8 @@
 import copy
 import json
 
-from test_support import build_run, fixture_sources, load_fixture, run_cli
-from lib import validate
+from test_support import build_run, claim, fixture_sources, load_fixture, run_cli
+from lib import schema, validate
 
 
 def errors_for(mutate):
@@ -105,12 +105,20 @@ def test_history_order():
 
 def test_other_references():
     def m(doc):
-        doc["audits"][0]["report_ref"] = "S9"
+        doc["audits"][0]["report_ref"] = "S19"
         doc["next_searches"][0]["resolves"] = ["G5"]
         doc["x_unmapped"][0]["evidence"] = ["S10"]
-    assert errors_for(m) == ["audits[0].report_ref: unknown source S9",
+    assert errors_for(m) == ["audits[0].report_ref: unknown source S19",
                              "next_searches[0].resolves[0]: unknown finding G5",
                              "x_unmapped[0].evidence[0]: unknown source S10"]
+
+    def resolves_u_and_r(doc):
+        doc["next_searches"][0]["resolves"] = ["U1", "R1"]
+    assert errors_for(resolves_u_and_r) == []
+
+    def resolves_c(doc):
+        doc["next_searches"][0]["resolves"] = ["C1"]
+    assert errors_for(resolves_c) == ["next_searches[0].resolves[0]: must be id G<n>|D<n>|U<n>|R<n>"]
 
 
 def test_errors_are_sorted_and_unique():
@@ -223,8 +231,9 @@ def test_edge_needs_strategy_and_view():
 def test_finding_subjects_leading_id_must_exist():
     def m(doc):
         doc["findings"][4]["subjects"] = ["X4.security", "X19.security", "T1.not_a_field", "E19", "Z2.coverage"]
-    assert errors_for(m) == ["findings[4].subjects[1]: unknown id X19", "findings[4].subjects[3]: unknown id E19",
-                             "findings[4].subjects[4]: unknown id Z2"]
+    assert errors_for(m) == ["findings[4].subjects[1]: unknown id X19",
+                             "findings[4].subjects[2]: T1.not_a_field does not resolve",
+                             "findings[4].subjects[3]: unknown id E19", "findings[4].subjects[4]: unknown id Z2"]
 
     def digits(doc):
         doc["findings"][4]["subjects"] = ["T2.l3_business.performance", "P1.holder_rights.look_through"]
@@ -232,7 +241,7 @@ def test_finding_subjects_leading_id_must_exist():
 
     def bad(doc):
         doc["findings"][4]["subjects"] = ["X4.Security"]
-    assert errors_for(bad) == ["findings[4].subjects[0]: must be subject path (E|P|T|X|Z)<n>[.field]{0,3}"]
+    assert errors_for(bad) == ["findings[4].subjects[0]: must be subject path (E|P|T|X|Z)<n>[.field[<i>]]{0,4}"]
 
 
 def test_coverage_product_in_strategy_and_holder_rights():
@@ -308,16 +317,14 @@ def test_coded_claim_loss_waterfall():
 
 def test_null_coded_claims_pass():
     def m(doc):
-        doc["interfaces"][3]["security"] = {"value": None, "status": "not_found", "evidence": [], "subject": None,
-                                            "note": ""}
+        doc["interfaces"][3]["security"] = claim()
     assert errors_for(m) == []
 
 
 def test_kind_constraints_route_and_method():
     def m(doc):
         doc["interfaces"][0]["route"] = copy.deepcopy(doc["interfaces"][1]["route"])
-        doc["interfaces"][1]["method"] = {"value": None, "status": "not_found", "evidence": ["S8"], "subject": None,
-                                          "note": "Not applicable."}
+        doc["interfaces"][1]["method"] = claim(None, "not_found", ["S8"], note="Not applicable.")
     assert errors_for(m) == [
         "interfaces[0].route: must be not_found without evidence unless kind is L1_L2",
         "interfaces[1].method: must be not_found without evidence unless kind is L2_L3 or L3_L3O"]
@@ -345,7 +352,7 @@ def test_issuer_request_rules():
 
 # --------------------------------------------------------------------------- v0.6.0 section 2.2
 
-NF = {"value": None, "status": "not_found", "evidence": [], "subject": None, "note": ""}
+NF = claim()
 
 
 def _x(doc, xid):
@@ -418,50 +425,29 @@ def test_alternative_patterns():
                              "interfaces[10].alternative.option: must be letter a-z"]
 
 
-def test_amount_is_a_number():
+def test_amount_value_is_a_number():
     for value in ("25m", True, -1, [1]):
         def m(doc):
-            _x(doc, "X2")["amount"]["value"] = value
-        assert errors_for(m) == ["interfaces[1].amount: value must be a number >= 0"], value
+            _x(doc, "X2")["amounts"][0]["value"]["value"] = value
+        assert errors_for(m) == ["interfaces[1].amounts[0].value: value must be a number >= 0"], value
 
     def ok(doc):
-        _x(doc, "X2")["amount"]["value"] = 0.5
+        _x(doc, "X2")["amounts"][0]["value"]["value"] = 0.5
     assert errors_for(ok) == []
-
-
-def test_amount_basis_required_with_amount():
-    def m(doc):
-        _x(doc, "X2")["amount_basis"] = None
-    assert errors_for(m) == ["interfaces[1].amount_basis: required when amount has a value"]
-
-    def ok(doc):
-        _x(doc, "X2")["amount"] = dict(NF)
-        _x(doc, "X2")["amount_basis"] = None
-    assert errors_for(ok) == []
-
-    def bad_enum(doc):
-        _x(doc, "X2")["amount_basis"] = "NET"
-    assert errors_for(bad_enum) == ["interfaces[1].amount_basis: not a valid amount_basis"]
 
 
 def test_kind_constraints_2_1():
     def m(doc):
-        _x(doc, "X4")["supply_concentration"] = copy.deepcopy(_x(doc, "X2")["amount"])
         _x(doc, "X2")["title_transfer"] = copy.deepcopy(_x(doc, "X13")["title_transfer"])
         _x(doc, "X4")["servicing"] = dict(NF, evidence=["S8"], note="n/a")
         _x(doc, "X4")["residual_exposure"] = dict(NF, evidence=["S8"], note="n/a")
     assert errors_for(m) == [
         "interfaces[1].title_transfer: must be not_found without evidence unless kind is asset_sale",
         "interfaces[3].residual_exposure: must be not_found without evidence unless kind is asset_sale",
-        "interfaces[3].servicing: must be not_found without evidence unless kind is asset_sale",
-        "interfaces[3].supply_concentration: must be not_found without evidence unless kind is L1_L2"]
+        "interfaces[3].servicing: must be not_found without evidence unless kind is asset_sale"]
 
     def ok(doc):
-        _x(doc, "X2")["supply_concentration"] = {"value": "E5 holds 60 percent of pool supply (block 1)",
-                                                 "status": "verified", "evidence": ["S4"], "subject": None,
-                                                 "note": ""}
-        _x(doc, "X8")["method"] = {"value": ["OTHER"], "status": "self_reported", "evidence": ["S8"],
-                                   "subject": None, "note": ""}
+        _x(doc, "X8")["method"] = claim(["OTHER"], "self_reported", ["S8"])
     assert errors_for(ok) == []
 
 
@@ -471,6 +457,12 @@ def test_discrepancy_needs_scope_note():
         doc["findings"][4]["scope_note"] = "  "
     assert errors_for(m) == ["findings[3].scope_note: required for a discrepancy",
                              "findings[4].scope_note: required for a discrepancy"]
+
+    def others(doc):
+        doc["findings"][6]["scope_note"] = ""
+        doc["findings"][7]["scope_note"] = ""
+    assert errors_for(others) == ["findings[6].scope_note: required for a scope_unresolved",
+                                  "findings[7].scope_note: required for a unreconciled_transaction"]
 
     def gap(doc):
         doc["findings"][0]["scope_note"] = ""
@@ -498,3 +490,246 @@ def test_sleeve_needs_no_settlement_edge_but_core_and_defi_do():
     def core(doc):
         doc["strategies"][2]["component"] = "CORE_CREDIT"
     assert errors_for(core) == ["strategies[2]: T3 has no flow edge with view settlement"]
+
+
+# --------------------------------------------------------------------------- v0.7.0 section 2.2
+
+def _f(doc, fid):
+    return next(f for f in doc["findings"] if f["id"] == fid)
+
+
+def test_fixture_findings_by_index():
+    assert [f["id"] for f in load_fixture()["findings"]] == ["G1", "G2", "G3", "D1", "D2", "C1", "U1", "R1"]
+
+
+def test_r_ids_dense_and_prefix():
+    def m(doc):
+        _f(doc, "R1")["id"] = "R2"
+    assert errors_for(m) == ["findings: R ids must be dense from R1"]
+
+    def wrong(doc):
+        _f(doc, "R1")["type"] = "scope_unresolved"
+    assert "findings[7].id: prefix of R1 does not match type scope_unresolved" in errors_for(wrong)
+
+
+def test_coded_ratio_and_deployment():
+    for value in (1.5, -0.1, True, "half"):
+        def m(doc):
+            _x(doc, "X2")["supply_concentration"]["ratio"]["value"] = value
+        assert errors_for(m) == ["interfaces[1].supply_concentration.ratio: value must be a number 0..1"], value
+    for value in (0, 1, 0.25):
+        def ok(doc):
+            _x(doc, "X2")["supply_concentration"]["ratio"]["value"] = value
+        assert errors_for(ok) == [], value
+
+    def deployment(doc):
+        doc["strategies"][1]["deployment"]["value"] = "DEPLOYED"
+    assert errors_for(deployment) == ["strategies[1].deployment: value must be one of deployment"]
+
+
+def _amount(doc, xid, j=0):
+    return _x(doc, xid)["amounts"][j]
+
+
+def test_amount_entry_rules():
+    def not_found(doc):
+        _amount(doc, "X9")["value"] = claim()
+    assert errors_for(not_found) == [
+        "interfaces[8].amounts[0].value: an amount entry needs a value; remove the entry instead"]
+
+    def blank(doc):
+        _amount(doc, "X9").update({"unit": " ", "scope": ""})
+    assert errors_for(blank) == ["interfaces[8].amounts[0].scope: required", "interfaces[8].amounts[0].unit: required"]
+
+    def position(doc):
+        _amount(doc, "X2", 1)["valuation_basis"] = None
+    assert errors_for(position) == ["interfaces[1].amounts[1].valuation_basis: required for POSITION_VALUE"]
+
+    def other(doc):
+        _amount(doc, "X9").update({"basis": "OTHER", "scope": "too short scope"})
+    assert errors_for(other) == [
+        "interfaces[8].amounts[0].scope: OTHER needs an explicit definition (>= 20 characters)"]
+
+    def other_ok(doc):
+        _amount(doc, "X9").update({"basis": "OTHER", "scope": "Stablecoin held on behalf of P2 holders"})
+    assert errors_for(other_ok) == []
+
+    def block(doc):
+        _amount(doc, "X2")["chain"] = None
+    assert errors_for(block) == ["interfaces[1].amounts[0].chain: required when block is set"]
+
+    def bad_time(doc):
+        _amount(doc, "X9")["as_of"] = "2026-02-30"
+    assert errors_for(bad_time) == ["interfaces[8].amounts[0].as_of: not a real date_or_timestamp"]
+
+    def bad_unit(doc):
+        _amount(doc, "X9")["unit"] = "U" * 21
+    assert errors_for(bad_unit) == ["interfaces[8].amounts[0].unit: longer than 20 characters"]
+
+
+def test_amount_kind_constraints():
+    def holder(doc):
+        _x(doc, "X1")["amounts"] = copy.deepcopy(_x(doc, "X9")["amounts"])
+    assert errors_for(holder) == ["interfaces[0].amounts: not allowed on holder_L1"]
+
+    def reserve(doc):
+        _amount(doc, "X9")["basis"] = "RESERVE_LOOKTHROUGH"
+    assert errors_for(reserve) == ["interfaces[8].amounts[0].basis: RESERVE_LOOKTHROUGH not allowed on sleeve_holding"]
+
+    def proceeds(doc):
+        _amount(doc, "X2")["basis"] = "SALE_PROCEEDS"
+    assert errors_for(proceeds) == ["interfaces[1].amounts[0].basis: SALE_PROCEEDS not allowed on L1_L2"]
+
+    def commitment(doc):
+        _amount(doc, "X9")["basis"] = "UNDRAWN_COMMITMENT"
+    assert errors_for(commitment) == ["interfaces[8].amounts[0].basis: UNDRAWN_COMMITMENT not allowed on "
+                                      "sleeve_holding"]
+
+    def ok(doc):
+        _amount(doc, "X2")["basis"] = "FACILITY_COMMITMENT"
+        _x(doc, "X3")["amounts"] = copy.deepcopy(_x(doc, "X4")["amounts"])
+    assert errors_for(ok) == []
+
+
+def test_supply_concentration_rules():
+    def elsewhere(doc):
+        _x(doc, "X4")["supply_concentration"] = copy.deepcopy(_x(doc, "X2")["supply_concentration"])
+    assert errors_for(elsewhere) == [
+        "interfaces[3].supply_concentration: must be not_found without evidence unless kind is L1_L2"]
+
+    def text_only(doc):
+        _x(doc, "X4")["supply_concentration"]["numerator"] = "x"
+    assert errors_for(text_only) == [
+        "interfaces[3].supply_concentration: must be not_found without evidence unless kind is L1_L2"]
+
+    def incomplete(doc):
+        _x(doc, "X2")["supply_concentration"].update({"denominator": "", "as_of": None})
+    assert errors_for(incomplete) == [
+        "interfaces[1].supply_concentration: numerator, denominator and as_of are required with a ratio"]
+
+
+def test_asset_sale_fields_kind_constraint():
+    for field in ("loan_identity", "seller_of_record", "buyer_of_record", "repayment_source"):
+        def m(doc):
+            _x(doc, "X4")[field] = copy.deepcopy(_x(doc, "X13")[field])
+        assert errors_for(m) == ["interfaces[3].%s: must be not_found without evidence unless kind is asset_sale"
+                                 % field], field
+
+
+def test_deployment_rules():
+    def sleeve(doc):
+        doc["strategies"][2]["deployment"] = copy.deepcopy(doc["strategies"][1]["deployment"])
+    assert errors_for(sleeve) == [
+        "strategies[2].deployment: must be not_found without evidence unless component is CORE_CREDIT or "
+        "DEFI_LENDING"]
+
+    def unverified(doc):
+        doc["strategies"][1]["deployment"]["value"] = "DEPLOYED_VERIFIED"
+    assert errors_for(unverified) == ["strategies[1].deployment: DEPLOYED_VERIFIED requires status verified"]
+
+    def defi(doc):
+        doc["strategies"][1]["component"] = "DEFI_LENDING"
+    assert errors_for(defi) == []
+
+
+def test_scope_match_by_type():
+    cases = [("G1", "matched", "gap"), ("C1", "unchecked", "structural_change"), ("D1", "not_matched", "discrepancy"),
+             ("D1", "unchecked", "discrepancy"), ("U1", "matched", "scope_unresolved"),
+             ("R1", "not_applicable", "unreconciled_transaction")]
+    for fid, value, kind in cases:
+        def m(doc):
+            _f(doc, fid)["scope_match"] = value
+        index = [f["id"] for f in load_fixture()["findings"]].index(fid)
+        assert errors_for(m) == ["findings[%d].scope_match: %s not allowed for %s" % (index, value, kind)], fid
+
+    def placeholder(doc):
+        _f(doc, "D1").update({"scope_note": schema.MIGRATED_NOTE_21 + " -- old", "scope_match": "unchecked"})
+        _f(doc, "U1")["scope_match"] = "unchecked"
+        _f(doc, "R1")["scope_match"] = "not_matched"
+    assert errors_for(placeholder) == []
+
+
+def test_assertion_rules():
+    def one(doc):
+        _f(doc, "D1")["assertions"] = _f(doc, "D1")["assertions"][:1]
+        _f(doc, "U1")["assertions"] = []
+        _f(doc, "R1")["assertions"] = []
+    assert errors_for(one) == ["findings[3].assertions: at least two statements required for discrepancy",
+                               "findings[6].assertions: at least two statements required for scope_unresolved",
+                               "findings[7].assertions: at least two statements required for "
+                               "unreconciled_transaction"]
+
+    def placeholder(doc):
+        _f(doc, "U1").update({"assertions": [], "scope_note": schema.MIGRATED_SCOPE_NOTE})
+    assert errors_for(placeholder) == []
+
+    def outside(doc):
+        _f(doc, "D1")["assertions"][1]["source"] = "S4"
+    assert errors_for(outside) == ["findings[3].assertions[1].source: not in evidence"]
+
+    def gap(doc):
+        _f(doc, "G2")["assertions"] = copy.deepcopy(_f(doc, "D1")["assertions"])
+        _f(doc, "C1")["assertions"] = copy.deepcopy(_f(doc, "D1")["assertions"])
+    errs = errors_for(gap)
+    assert "findings[1].assertions: must be empty for gap" in errs
+    assert "findings[5].assertions: must be empty for structural_change" in errs
+
+
+def test_discrepancy_subjects_are_claims():
+    def none(doc):
+        _f(doc, "D1")["subjects"] = []
+    assert errors_for(none) == ["findings[3].subjects: at least one claim required for a discrepancy"]
+
+    def placeholder(doc):
+        _f(doc, "D1").update({"subjects": [], "scope_note": schema.MIGRATED_NOTE_21, "scope_match": "unchecked",
+                              "assertions": []})
+    assert errors_for(placeholder) == []
+
+    def objects(doc):
+        _f(doc, "D1")["subjects"] = ["X6", "X2.amounts", "X2.amounts[0]", "X2.amounts[0].value"]
+    assert errors_for(objects) == ["findings[3].subjects[0]: X6 is not a claim",
+                                   "findings[3].subjects[1]: X2.amounts is not a claim",
+                                   "findings[3].subjects[2]: X2.amounts[0] is not a claim"]
+
+    def other_types(doc):
+        _f(doc, "G1")["subjects"] = ["X2.amounts[0]", "X2.supply_concentration.ratio", "P1.holder_rights"]
+        _f(doc, "U1")["subjects"] = ["X2.amounts"]
+        _f(doc, "R1")["subjects"] = ["X13.amounts[3]"]
+    assert errors_for(other_types) == ["findings[6].subjects[0]: X2.amounts is not a claim or object",
+                                       "findings[7].subjects[0]: X13.amounts[3] does not resolve"]
+
+
+def test_resolution_rules():
+    def structural(doc):
+        _f(doc, "C1")["resolution"]["status"] = "open"
+    assert errors_for(structural) == ["findings[5].resolution.status: open not allowed for structural_change"]
+
+    def gap(doc):
+        _f(doc, "G2")["resolution"]["status"] = "not_applicable"
+    assert errors_for(gap) == ["findings[1].resolution.status: not_applicable not allowed for gap"]
+
+    def no_note(doc):
+        _f(doc, "D2")["resolution"]["note"] = " "
+    assert errors_for(no_note) == ["findings[4].resolution.note: required when resolved"]
+
+    def resolved_gap(doc):
+        _f(doc, "G2")["resolution"] = {"status": "resolved", "note": "Yield disclosed in the October report."}
+    assert errors_for(resolved_gap) == []
+
+
+def test_k_checks_impact_priority_carried_from():
+    def dup(doc):
+        _f(doc, "G1")["k_checks"] = ["K1", "K1"]
+        _f(doc, "G1")["impact"] = ["ownership", "ownership"]
+    assert errors_for(dup) == ["findings[0].impact: duplicate value", "findings[0].k_checks: duplicate value"]
+
+    def bad(doc):
+        _f(doc, "G1").update({"k_checks": ["K8"], "impact": ["control"], "priority": 4, "carried_from": "N1"})
+    assert errors_for(bad) == ["findings[0].carried_from: must be finding id G|D|C|U|R<n>",
+                               "findings[0].impact[0]: not a valid impact",
+                               "findings[0].k_checks[0]: not a valid k_check",
+                               "findings[0].priority: out of range (integer 1..3)"]
+
+    def carried_twice(doc):
+        _f(doc, "G3")["carried_from"] = "G3"
+    assert errors_for(carried_twice) == ["findings[7].carried_from: G3 already carried by G3"]

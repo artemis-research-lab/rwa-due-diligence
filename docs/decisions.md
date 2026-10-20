@@ -65,6 +65,19 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D61 - Scope checks - 2026-10-20 - A discrepancy needs a same-scope note; scope_unresolved findings never flag claims; finalize refuses migrated placeholders.
 - D62 - Material findings - 2026-10-20 - Findings carry a material flag; material findings open the report.
 - D63 - Reader report - 2026-10-20 - The Markdown report has six reader sections (curator Q7) with detail in appendices A-M.
+- D64 - Schema 2.2 - 2026-10-20 - rwa-dd/2.2 implements the curator's minor revision (Q8-Q10, v2.2 acceptance); 2.1 records are migrated by init --seed-from, never patched.
+- D65 - Amount bases - 2026-10-20 - Interfaces carry typed amounts (nine bases, unit, observation time, block, chain, scope, valuation basis); GROSS_FUNDED is retired and migrates to OTHER with a placeholder scope that finalize refuses.
+- D66 - Counting - 2026-10-20 - Only CURRENT_BALANCE, POSITION_VALUE and OUTSTANDING_PRINCIPAL on L1_L2 and sleeve_holding edges, with an observation time and outside alternatives, are summed, and only within one basis, unit, valuation basis and date.
+- D67 - Provenance - 2026-10-20 - Claims carry origin and assurance; an issuer assertion is self_reported wherever it is published; verified via an auditor needs assurance TESTED (curator Q8).
+- D68 - Conflicts - 2026-10-20 - A discrepancy flags claims CONFLICTING only with scope_match matched, two assertions and an open resolution; scope_unresolved and unreconciled_transaction never flag.
+- D69 - Unreconciled transactions - 2026-10-20 - Finding type unreconciled_transaction (R) and asset_sale fields loan_identity, seller_of_record, buyer_of_record and repayment_source track unreconciled exits without conclusions.
+- D70 - Deployment - 2026-10-20 - Credit strategies carry a deployment claim; DEPLOYED_VERIFIED needs status verified; it is shown in section 1.
+- D71 - Observation times - 2026-10-20 - Amount observation time, interface legal as-of date and report generation time are separate fields and are never merged.
+- D72 - Section 1 - 2026-10-20 - Section 1 shows material findings, blocking findings with k_checks and blocking findings on control, ownership, redemption, enforcement or security; target 5-8 without a cap; the rest stay in section 6 (curator Q10).
+- D73 - QA - 2026-10-20 - lib/qa asserts the aggregation, provenance, conflict, placeholder, section 1 and deployment rules plus analyst expectations; finalize refuses on any failure.
+- D74 - Change log - 2026-10-20 - A seeded run's report lists changes against the migrated earlier record, linking re-typed findings through carried_from.
+- D75 - Derived output - 2026-10-20 - Finalize writes <slug>.derived.json with flags, conflicts, totals, the section 1 selection, QA results and changes, tied to the record by SHA-256.
+- D76 - Run-scoped logs - 2026-10-20 - Directive and amendment logs are named with the run id so seeded runs never overwrite earlier logs.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -74,6 +87,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-19 - Curator feedback on the usd-ai, huma and hastra reports: reports must follow the three-layer framework; HTML hard to read (deferred).
 - 2026-10-20 - Seeded re-maps of usd-ai, huma and hastra (rwa-dd/2.0): layer convention L1 vault and legal entity, L2 credit provider, L3 borrower running the business, L3-O its paying customers; renderer and validator gaps fixed in v0.5.1.
 - 2026-10-20 - Curator review of v2 samples: architecture accepted conditionally; revisions implemented in v0.6.0.
+- 2026-10-20 - Curator review of v2.1 samples: Q8-Q10 decided; minor data-model revision implemented in v0.7.0.
 
 ## Incidents
 

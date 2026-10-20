@@ -1,0 +1,69 @@
+[
+  {
+    "id": "x2-balance-basis",
+    "case": "X2 entry 0 is the on-chain balance",
+    "path": "X2.amounts[0].basis",
+    "op": "equals",
+    "value": "CURRENT_BALANCE"
+  },
+  {
+    "id": "x2-balance-counted",
+    "case": "The on-chain balance is counted",
+    "path": "X2.amounts[0]",
+    "op": "counted",
+    "value": true
+  },
+  {
+    "id": "aup-not-counted",
+    "case": "The AUP sample amount is never counted",
+    "path": "X2.amounts[2]",
+    "op": "counted",
+    "value": false
+  },
+  {
+    "id": "aup-q8-status",
+    "case": "The management figure quoted in the AUP stays self-reported (Q8)",
+    "path": "X2.amounts[2].value",
+    "op": "status",
+    "value": "self_reported"
+  },
+  {
+    "id": "fee-conflict",
+    "case": "The P2 vault fee terms are a same-scope conflict",
+    "path": "X6.terms",
+    "op": "flag",
+    "value": "CONFLICTING"
+  },
+  {
+    "id": "t2-not-verified",
+    "case": "T2 deployment is never shown as verified",
+    "path": "T2.deployment",
+    "op": "in",
+    "value": [
+      "DISCLOSED_UNVERIFIED",
+      "NOT_DEPLOYED",
+      "UNRESOLVED"
+    ]
+  },
+  {
+    "id": "g3-retyped",
+    "case": "The former G3 is tracked as an unreconciled transaction",
+    "path": "@G3.type",
+    "op": "equals",
+    "value": "unreconciled_transaction"
+  },
+  {
+    "id": "sale-no-misconduct",
+    "case": "The sale finding draws no misconduct conclusion",
+    "path": "@G3.statement",
+    "op": "not_contains",
+    "value": "fraud"
+  },
+  {
+    "id": "x13-buyer",
+    "case": "The buyer of record is recorded",
+    "path": "X13.buyer_of_record",
+    "op": "exists",
+    "value": true
+  }
+]

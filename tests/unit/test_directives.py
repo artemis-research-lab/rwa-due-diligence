@@ -129,3 +129,14 @@ def test_parse_amendment_requires_a_note():
 
 def test_parse_amendment_unknown_id():
     assert amend_errors("note x\nanswer G99 : y") == ["line 2: unknown id G99"]
+
+
+# v0.7.0 ----------------------------------------------------------------------------------------------------
+
+def test_answer_and_drop_accept_u_and_r_ids():
+    doc = dict(DOC, findings=DOC["findings"] + [dict(DOC["findings"][6], id="U3")])
+    assert directives.parse("answer U3 : covered by the 2026 policy\ndrop R1 : reconciled by the issuer\n", doc) == [
+        {"cmd": "answer", "id": "U3", "text": "covered by the 2026 policy", "line": 1},
+        {"cmd": "drop", "id": "R1", "reason": "reconciled by the issuer", "line": 2}]
+    assert errors("answer U9 : x") == ["line 1: unknown id U9"]
+    assert errors("drop C1 : x") == ["line 1: not a directive: drop C1 : x"]

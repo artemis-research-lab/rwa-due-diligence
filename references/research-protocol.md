@@ -44,10 +44,28 @@ thresholds, limits or loss estimates.
   exposure. A transferee is not a new L3. Do not assume every sale belongs to the live portfolio.
 - Competing legal paths for one position (for example historical repo terms and current live-rate terms) are
   alternatives: the same alternative group, different option letters. They are never parallel exposures.
-- Amounts: every funding edge records amount, currency and amount_basis (GROSS_FUNDED, COMMITMENT, LOOKTHROUGH,
-  RESERVE, SALE_PROCEEDS). Only GROSS_FUNDED amounts on L1_L2 and sleeve_holding edges outside alternative groups are
-  counted; everything else is linked, not summed. Pool supply concentration is recorded on the L1_L2 edge with chain,
-  block or time observed; it never changes the route from POOL to DIRECT.
+- Amounts (curator 4.1, Q9): record each number as an amounts entry with its measurement basis, unit, observation time
+  (as_of: the time the value was observed in the source, never the report date), block and chain for on-chain reads,
+  scope (population, period or account measured) and, for POSITION_VALUE, the valuation basis. Bases:
+  CURRENT_BALANCE (token or asset holdings at the observation time), POSITION_VALUE (value of a position under a
+  stated valuation basis), OUTSTANDING_PRINCIPAL (loan principal unpaid at the observation time; recorded unbilled
+  principal goes here with the scope saying so), CUMULATIVE_FUNDED (actual disbursements over a stated period),
+  FACILITY_COMMITMENT (contractual ceiling), UNDRAWN_COMMITMENT (unused part of it), SALE_PROCEEDS (proceeds actually
+  received from a disposal), RESERVE_LOOKTHROUGH (an issuer's reserve or collateral assets, never additive), OTHER
+  (only with a scope of at least 20 characters defining it). A sampled amount (for example an AUP loan sample) is
+  CUMULATIVE_FUNDED or OUTSTANDING_PRINCIPAL with the sample, its date and the procedure in the scope; it is never the
+  current portfolio. Keep token quantity and USD value as separate entries.
+- Counting: only CURRENT_BALANCE, POSITION_VALUE and OUTSTANDING_PRINCIPAL amounts on L1_L2 and sleeve_holding edges,
+  with an observation time and outside alternative groups, are counted, and totals add only amounts with the same
+  basis, unit, valuation basis and observation date. Stocks are never added to flows, commitments or proceeds;
+  look-through, alternatives and sale proceeds are never counted. An amount you cannot type is not counted.
+- Pool supply concentration is recorded on the L1_L2 edge as a ratio with its numerator, denominator, observation time,
+  block and chain; it never changes the route from POOL to DIRECT and is not borrower concentration.
+- Deployment (curator P1): set each credit strategy's deployment: DEPLOYED_VERIFIED only when transfers into the
+  credit arrangement are verified; DISCLOSED_UNVERIFIED when the issuer discloses the path but settlement is not shown;
+  NOT_DEPLOYED or UNRESOLVED otherwise. No observed transfer in a sampled window does not prove that no funding path
+  exists.
+- interfaces[].as_of is the date the legal terms were observed; amounts carry their own observation times.
 - A product may feed several strategies; a strategy may serve several products. Pure principal commodity purchase and
   resale (PT) is trade finance: business_type trade_finance_pt or mixed.
 
@@ -94,16 +112,20 @@ F Traces
 ## 3. Where answers go
 | Codes | Fields |
 |---|---|
-| A1, A6 | strategies[] (products, sublayers, business_type) |
-| A2-A5 | entities[] (functions with evidence, registry facts), onchain.contracts[] for L1 control |
-| B1-B3 | interfaces[] kind holder_L1, L1_L2, within_L1 (route, legal_class, instrument, claim_holder, governing_law) |
+| A1, A6 | strategies[] (component, products, sublayers, business_type, deployment) |
+| A2-A5 | entities[] (entity_class, functions with layer, role and evidence, registry facts), onchain.contracts[] for L1 control |
+| B1-B3 | interfaces[] kind holder_L1, L1_L2, within_L1, sleeve_holding (route, legal_class, instrument, claim_holder, governing_law, amounts, supply_concentration, alternative) |
 | B4 | redemption[], interfaces terms |
-| C1-C4 | interfaces[] kind L2_L3, within_L2, within_L3 (method, legal_class, security, collateral, perfection, terms) |
-| C5-C7 | strategies[].default_path, interfaces enforcement and recourse |
+| C1-C4 | interfaces[] kind L2_L3, within_L2, within_L3, L3_L3O (method, legal_class, security, collateral, perfection, terms, amounts) |
+| C5-C7 | strategies[].default_path, interfaces enforcement and recourse, supports[] (credit enhancement, yield support) |
+| C8 (sales) | interfaces[] kind asset_sale (loan_identity, seller_of_record, buyer_of_record, title_transfer, repayment_source, servicing, recourse, residual_exposure, amounts SALE_PROCEEDS) |
 | D1-D5 | holder_rights[] per product |
-| E1-E4 | strategies[].l3_business |
+| E1-E4 | strategies[].l3_business, L3-O entities and L3_L3O interfaces |
 | F1-F3 | flows (edges with view and interface) |
+| Reserves | interfaces[] kind reserve_lookthrough (amounts RESERVE_LOOKTHROUGH) |
+| Findings | findings[] (type, material, blocking, k_checks, impact, priority, scope_note, scope_match, assertions, subjects, resolution) |
 Questions only the issuer can answer go to issuer_requests with the codes they answer; never to next_searches.
+"C8 (sales)" and "Reserves" are table labels, not question codes; do not put them in issuer_requests answers.
 
 ## 4. Evidence rules
 - Register every fetch attempt with add-source, including failures. A checked-and-absent fact is not_found WITH that
@@ -122,6 +144,14 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
   confirms the receipt balances, not the off-chain lender of record or the holder's rights against a borrower; never
   upgrade a claim because an adjacent token transfer is confirmed. An analyst source never appears in the evidence of
   a verified claim.
+- Provenance (curator Q8): origin says who asserted the fact; the cited sources are where it was published; assurance
+  says what an auditor or reviewer tested for this precise claim. A management or issuer statement quoted in an AUP,
+  attestation or third-party article is self_reported with origin issuer_management (or issuer_documents, borrower)
+  and assurance NOT_TESTED when the publication is an auditor's. A fact the auditor itself inspected, reconciled or
+  recalculated gets origin auditor_procedure and assurance TESTED, and only within the procedure's stated scope and
+  date: an inspected security agreement confirms that the document was inspected, not that the security is perfected.
+  Auditor branding never upgrades surrounding claims. Every claim that cites an auditor source sets origin and
+  assurance.
 - Never assign an entity to a layer, or an interface to a route, method or legal class, without a source: leave the
   claim not_found with the sources checked, and add an issuer request.
 - Route and legal claim are separate questions (curator Constraint 1): a pool supply is not a loan to the pool
@@ -179,16 +209,32 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
 - gap: a field that matters and is not_found. Blocking when it concerns the holders' legal counterparty (A2), the
   L1->L2 legal claim (B2), the L2->L3 security (C2), the loss waterfall (C6), holder look-through (D2) or the reality
   of the L3 business (E1), or who controls the assets or contracts.
+- Every finding records k_checks (the K1-K7 framework checks it blocks), impact (credit_exposure, investor_rights,
+  governance, capital_control, ownership, redemption, enforcement, security, recovery, liquidity) and priority 1-3
+  (1 = decides the credit picture). Section 1 of the report shows material findings, blocking findings with k_checks
+  and blocking findings on capital control, ownership, redemption, enforcement or security (curator Q10); everything
+  else stays in section 6. Do not mark a finding material or blocking to move it into section 1.
 - material: set material true for a finding the curator must see first (for example an outstanding position with a
   stale payment history). State only what the evidence shows: no event observed does not mean a loan is current, and
   a stale payment does not prove legal default or loss. Do not attribute a position to a product unless provenance and
   portfolio membership are shown. Pair it with an issuer request for reconciliation.
-- discrepancy: two sources disagree about the same fact, timeframe and scope; cite both, name the subjects, write the
-  scope note. scope_unresolved: two documents appear to differ but may cover different scopes, dates or products;
-  cite both; it never makes a claim CONFLICTING. structural_change: the structure changed over time; record it also in
-  history.
+- discrepancy (CONFLICTING): two statements are shown to concern the same fact, date, parties and instrument and are
+  incompatible. Set scope_match matched, record both statements as assertions (source, statement, as_of), name the
+  conflicting claims as subjects (for example `X15.title_transfer`, `X2.amounts[0].value`) and write the scope note.
+  Different documents, reporting dates, definitions or instruments alone are not a conflict.
+- scope_unresolved: statements appear to differ but may cover different scopes, dates, products or contracts (for
+  example a protocol agreement versus website terms). scope_match not_matched or unchecked; never flags a claim.
+- unreconciled_transaction: accounts of one transaction (a sale, exit, refinancing, repayment) that are not reconciled.
+  Record each account as an assertion and track loan identity, seller and buyer of record, legal transfer method,
+  repayment source, servicer after exit and retained exposure on the asset_sale interface. Keep chain-of-funds
+  observations and address-linkage hypotheses separate from claims of control, intent or misconduct; never conclude
+  that a sale, assignment or misconduct occurred from on-chain observations alone. It never flags a claim.
+- resolution: open until the evidence settles it; resolved needs a note saying what settled it. A finding re-typed in a
+  seeded run keeps carried_from (the earlier id) so the change log links them.
+- structural_change: the structure changed over time; record it also in history.
 - A partnership announcement is not a deployed holding: keep it as a finding or issuer request until instruments and
-  amounts are shown.
+  amounts are shown. An unidentified token or issuer stays unidentified: record balances and transfers as observed,
+  not as a named instrument or as coupon income.
 - No risk scores, no recommendations, no adjectives about quality.
 
 ## 9. Budget and the review packet

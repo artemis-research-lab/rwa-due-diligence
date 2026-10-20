@@ -102,11 +102,12 @@ def number_text(value):
     return json.dumps(value)
 
 
-def totals_text(bucket):
-    """`<sum> <currency>` per currency, sorted by currency and joined by `; `; `--` when empty."""
-    if not bucket:
+def totals_text(totals):
+    """Total labels (`<sum> <unit> <BASIS> @<date>`, ` (shared)` after a shared product total) in the given
+    order joined by `; `; `--` when empty."""
+    if not totals:
         return "--"
-    return "; ".join("%s %s" % (number_text(bucket[key]), md_text(key)) for key in sorted(bucket))
+    return "; ".join(md_text(t["label"]) + (" (shared)" if t.get("shared") else "") for t in totals)
 
 
 def request_line(request):

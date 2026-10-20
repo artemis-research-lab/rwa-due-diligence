@@ -1,11 +1,14 @@
-"""v0.4.2 address lint and v0.6.0 layer, claim and path lint (lib/lint.py, dd.py lint)."""
+"""v0.4.2 address lint, v0.6.0 layer, claim and path lint and v0.7.0 amount and provenance lint (lib/lint.py,
+dd.py lint)."""
 
 import copy
 import json
 
-from test_support import build_run, load_fixture, run_cli
+from test_support import build_run, claim, load_fixture, run_cli
 from lib import lint
 
+KEYS = ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings", "amount_warnings",
+        "provenance_warnings"]
 LOWER = "0x" + "ab" * 20
 UPPER = "0x" + "AB" * 20
 MIXED = "0x" + "aB" * 20
@@ -60,9 +63,13 @@ def test_cli_lint(tmp_path):
     code, out, err = run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])
     assert (code, err) == (0, "")
     assert out == json.dumps(lint.lint(doc), indent=2) + "\n"
-    assert list(json.loads(out)) == ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings"]
-    assert {"path": "flows.nodes[1].ref", "address": "0x" + "0" * 38 + "a1"} in json.loads(out)["address_warnings"]
+    assert list(json.loads(out)) == KEYS
+    assert json.loads(out) == {key: [] for key in KEYS}  # the fixture uses digit-only fake addresses
     assert project.work_file.read_bytes() == before
+    doc["flows"]["nodes"][1]["ref"] = LOWER
+    project.work_file.write_bytes(json.dumps(doc).encode("utf-8"))
+    code, out, _ = run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])
+    assert {"path": "flows.nodes[1].ref", "address": LOWER} in json.loads(out)["address_warnings"]
     doc["onchain"]["contracts"][0]["address"] = MIXED
     project.work_file.write_bytes(json.dumps(doc).encode("utf-8"))
     code, out, _ = run_cli(["lint", "--slug", "acme", "--root", str(tmp_path)])
@@ -89,16 +96,14 @@ def _x(doc, xid):
     return next(x for x in doc["interfaces"] if x["id"] == xid)
 
 
-def test_fixture_has_no_layer_claim_or_path_warnings():
-    result = lint.lint(load_fixture())
-    assert (result["layer_warnings"], result["claim_warnings"], result["path_warnings"]) == ([], [], [])
+def test_fixture_has_no_warnings():
+    assert lint.lint(load_fixture()) == {key: [] for key in KEYS}
 
 
 def test_layer_warning_within_l2():
     doc = load_fixture()
     x7 = _x(doc, "X7")
-    x7.update({"kind": "within_L2", "method": {"value": None, "status": "not_found", "evidence": [],
-                                                "subject": None, "note": ""}})
+    x7.update({"kind": "within_L2", "method": claim()})
     x7["to"] = "E4"
     assert lint.layer_warnings(doc) == [
         {"path": "interfaces[6]", "message": "X7: within_L2 but E4 has no L2 function for T2"}]
@@ -182,5 +187,82 @@ def test_lint_is_sorted_and_deterministic():
         e["functions"] = []
     first = lint.lint(copy.deepcopy(doc))
     assert first == lint.lint(doc)
-    for key in ("layer_warnings", "claim_warnings", "path_warnings"):
+    for key in KEYS[1:]:
         assert first[key] == sorted(first[key], key=lambda w: (w["path"], w["message"]))
+
+
+# --------------------------------------------------------------------------- v0.7.0 section 2.3
+
+def _amount(doc, xid, j=0):
+    return _x(doc, xid)["amounts"][j]
+
+
+def test_amount_warning_onchain_without_block_or_chain():
+    doc = load_fixture()
+    _amount(doc, "X2")["block"] = None
+    assert lint.amount_warnings(doc) == [{"path": "interfaces[1].amounts[0]",
+                                          "message": "X2.amounts[0]: on-chain amount without block and chain"}]
+    _amount(doc, "X2").update({"block": 1, "chain": None})
+    assert len(lint.amount_warnings(doc)) == 1
+    _amount(doc, "X2")["value"]["evidence"] = ["S8"]
+    assert lint.amount_warnings(doc) == []
+
+
+def test_amount_warning_no_observation_time():
+    doc = load_fixture()  # test-local copy: the shared fixture lints clean
+    x2 = _x(doc, "X2")
+    x2["amounts"].append(dict(copy.deepcopy(x2["amounts"][1]), basis="CURRENT_BALANCE", as_of=None,
+                              valuation_basis=None))
+    assert lint.amount_warnings(doc) == [{"path": "interfaces[1].amounts[3]",
+                                          "message": "X2.amounts[3]: no observation time; it will not be counted"}]
+
+
+def test_amount_warning_no_countable_basis():
+    doc = load_fixture()
+    _amount(doc, "X9")["basis"] = "OTHER"
+    _amount(doc, "X9")["scope"] = "Stablecoin held by E1 in the treasury sleeve"
+    assert lint.amount_warnings(doc) == [{"path": "interfaces[8]", "message": "X9: no countable basis "
+                                                                             "(CURRENT_BALANCE, POSITION_VALUE, "
+                                                                             "OUTSTANDING_PRINCIPAL)"}]
+    _x(doc, "X9")["amounts"] = []
+    assert lint.amount_warnings(doc) == []
+
+
+def test_amount_warning_cumulative_period():
+    doc = load_fixture()
+    _amount(doc, "X2", 2)["scope"] = "AUP loan sample of twelve loans"
+    assert lint.amount_warnings(doc) == [{"path": "interfaces[1].amounts[2]",
+                                          "message": "X2.amounts[2]: CUMULATIVE_FUNDED scope should state the period"}]
+    _amount(doc, "X2", 2)["scope"] = "AUP loan sample, first half 12026"
+    assert len(lint.amount_warnings(doc)) == 1  # a five-digit run is not a year
+
+
+def test_provenance_warning():
+    doc = load_fixture()
+    _amount(doc, "X2", 2)["value"].update({"origin": None, "assurance": None, "evidence": ["S8", "S9"]})
+    assert lint.provenance_warnings(doc) == [{
+        "path": "interfaces[1].amounts[2].value",
+        "message": "X2.amounts[2].value: cites an auditor source; set origin and assurance (curator Q8)"}]
+    doc["entities"][2]["jurisdiction"]["evidence"] = ["S8", "S9"]  # not_found: no warning
+    assert len(lint.provenance_warnings(doc)) == 1
+
+
+def test_claim_warning_deployment_not_set():
+    doc = load_fixture()
+    doc["strategies"][1]["deployment"] = claim()
+    assert lint.claim_warnings(doc) == [{"path": "strategies[1].deployment",
+                                         "message": "T2.deployment: not set for a credit strategy"}]
+    doc["strategies"][1]["deployment"] = claim(None, "not_found", ["S7"], note="Not disclosed.")
+    assert lint.claim_warnings(doc) == []
+    doc["strategies"][2]["deployment"] = claim()  # LIQUIDITY_SLEEVE: no warning
+    assert lint.claim_warnings(doc) == []
+
+
+def test_path_warning_blocking_finding_unplaced():
+    doc = load_fixture()
+    doc["findings"][2].update({"k_checks": [], "impact": []})
+    assert lint.path_warnings(doc) == [{
+        "path": "findings[2]", "message": "G3: blocking finding without k_checks or impact (section 1 cannot "
+                                          "place it)"}]
+    doc["findings"][2]["material"] = True
+    assert lint.path_warnings(doc) == []

@@ -1,7 +1,8 @@
 """rwa-due-diligence CLI: run directory, source ledger, validation, review loop and reports.
 
-Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state),
-4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.
+Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state; also a
+malformed expectation file), 4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download
+failed, 5 quality check failed (qa only).
 """
 
 import argparse
@@ -19,6 +20,7 @@ EXIT_OK = 0
 EXIT_INVALID = 2
 EXIT_CONTRACT = 3
 EXIT_DEPENDENCY = 4
+EXIT_QA = 5
 
 
 def _out(text):
@@ -32,10 +34,12 @@ def _json(value):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="dd.py",
-        description="Read-only RWA due diligence (three-layer model, schema rwa-dd/2.1): run directory, source "
-                    "ledger, validation, review loop, Markdown report and flow diagrams.",
-        epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state), "
-               "4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download failed.")
+        description="Read-only RWA due diligence (three-layer model, schema rwa-dd/2.2): run directory, source "
+                    "ledger, validation, quality checks, review loop, Markdown report, derived data and flow "
+                    "diagrams.",
+        epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state; "
+               "malformed expectation file), 4 diagram renderer d2 missing, wrong version or failed; pypdf "
+               "missing; download failed, 5 quality check failed (qa only).")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     def with_slug(name, help_text):
@@ -50,7 +54,7 @@ def build_parser():
     group.add_argument("--new-run", action="store_true", help="archive the previous run and start a new one")
     group.add_argument("--seed-from", action="store_true",
                        help="archive the previous run and start a new one from its record and its source ledger; "
-                            "accepts records of schema rwa-dd/1.0, 2.0 and 2.1 (earlier ones are migrated)")
+                            "accepts records of schema rwa-dd/1.0, 2.0, 2.1 and 2.2 (earlier ones are migrated)")
 
     p = with_slug("add-source", "append a source to the ledger and the working document")
     p.add_argument("--url", required=True, help="source URL or local path (<=500)")
@@ -71,13 +75,18 @@ def build_parser():
     p.add_argument("--offline", action="store_true", help="no retrieval time: retrieved_at null, fetch offline")
 
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
-    with_slug("lint", "print address, layer, claim and path warnings for audit/dd.work.json as JSON "
-                      "(read-only, any phase; needs a structurally valid document)")
+    with_slug("lint", "print address, layer, claim, path, amount and provenance warnings for audit/dd.work.json "
+                      "as JSON (read-only, any phase; needs a structurally valid document)")
+    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA11 and the analyst expectations on "
+                        "audit/dd.work.json; prints results and failed ids as JSON; exit 5 when any check fails")
+    p.add_argument("--expect", default=None,
+                   help="expectation file (default: audit/qa-expect.json when it exists)")
+    with_slug("changes", "print the change log of audit/dd.work.json against the run it was seeded from as JSON")
     with_slug("review", "write the review packet of the current round")
     p = with_slug("directives", "record and parse the analyst directives of the current round")
     p.add_argument("--file", required=True, help="file holding the analyst reply verbatim")
     with_slug("render", "draft render into .scratch/draft/ (any phase)")
-    with_slug("status", "print run state and counts as JSON")
+    with_slug("status", "print run state, counts and the next run-scoped log names as JSON")
     with_slug("finalize", "write the final outputs (after a finalize directive)")
     p = with_slug("amend", "reopen a final run for one more research round (moves outputs to archive/)")
     p.add_argument("--file", required=True, help="file holding the amendment verbatim (note, add-source, answer, drop)")
@@ -129,6 +138,13 @@ def run(args):
         if errors:
             raise runstate.InvalidError(sorted(set(errors)))
         _json(lint.lint(doc))
+    elif cmd == "qa":
+        result = runstate.qa_check(args.root, args.slug, args.expect)
+        _json(result)
+        if result["failed"]:
+            return EXIT_QA
+    elif cmd == "changes":
+        _json(runstate.change_rows(args.root, args.slug))
     elif cmd == "review":
         _json(runstate.make_review(args.root, args.slug))
     elif cmd == "directives":

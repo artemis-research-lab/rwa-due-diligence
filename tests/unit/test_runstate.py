@@ -4,9 +4,10 @@ import os
 
 import pytest
 
+import hashlib
 import json
 
-from test_support import FIXTURES, GOLDEN, build_run, clock_at, load_v1, walk
+from test_support import FIXTURES, GOLDEN, build_run, clock_at, load_v1, load_v21, walk
 from lib import flow, migrate, runstate, schema
 from lib.textutil import dump_json
 
@@ -184,7 +185,7 @@ def test_finalized_document_is_schema_ordered(tmp_path):
     runstate.finalize(tmp_path, "acme", clock=clock_at())
     text = project.output("dd.json").read_bytes().decode("utf-8")
     assert text.endswith("}\n") and not text.endswith("\n\n")
-    assert text.startswith('{\n  "schema_version": "rwa-dd/2.1",\n  "run": {\n    "run_id"')
+    assert text.startswith('{\n  "schema_version": "rwa-dd/2.2",\n  "run": {\n    "run_id"')
     assert '"finalized_at": "2026-10-01T08:00:00Z"' in text
 
 
@@ -235,7 +236,7 @@ def test_render_draft_without_d2_warns_and_omits_figures(tmp_path, monkeypatch):
     monkeypatch.setattr(flow, "find_d2", lambda: None)
     out = runstate.render_draft(tmp_path, "acme")
     assert out["warnings"] == ["d2 v0.9.0 not found: diagrams omitted"]
-    assert [os.path.basename(p) for p in out["outputs"]] == ["acme.report.md"]
+    assert [os.path.basename(p) for p in out["outputs"]] == ["acme.report.md", "acme.derived.json"]
     assert "![Fund flow" not in open(out["outputs"][0], encoding="utf-8").read()
 
 
@@ -246,7 +247,7 @@ def test_render_draft_with_d2_writes_svgs(tmp_path):
     out = runstate.render_draft(tmp_path, "acme")
     assert "warnings" not in out
     names = [os.path.basename(p) for p in out["outputs"]]
-    assert names == ["acme.report.md"] + ["acme.flow-%s.svg" % k for k in FLOW_KEYS]
+    assert names == ["acme.report.md", "acme.derived.json"] + ["acme.flow-%s.svg" % k for k in FLOW_KEYS]
     assert all(os.path.dirname(p) == str(project.scratch / "draft") for p in out["outputs"])
     assert "![Fund flow T1 claim](acme.flow-T1-claim.svg)" in open(out["outputs"][0], encoding="utf-8").read()
 
@@ -257,7 +258,8 @@ def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
     project = _ready(tmp_path)
     result = runstate.finalize(tmp_path, "acme", clock=clock_at())
     names = [os.path.basename(p) for p in result["outputs"]]
-    assert names == ["acme.dd.json", "acme.report.md"] + ["acme.flow-%s.svg" % k for k in FLOW_KEYS]
+    assert names == ["acme.dd.json", "acme.derived.json", "acme.report.md"] + [
+        "acme.flow-%s.svg" % k for k in FLOW_KEYS]
     for key in FLOW_KEYS:
         assert project.flow_output(key).read_bytes() == (GOLDEN / ("acme.flow-%s.svg" % key)).read_bytes()
     md = project.output("report.md").read_bytes().decode("utf-8")
@@ -448,6 +450,7 @@ def _final_v1(tmp_path):
     old = load_v1()
     old["run"] = {k: work["run"][k] for k in old["run"]}
     old["run"]["skill_version"] = "0.4.2"
+    old["sources"] = work["sources"]  # the ledger now also holds S9
     project.work_file.write_bytes(dump_json(old).encode("utf-8"))
     project.output("dd.json").write_bytes(dump_json(old).encode("utf-8"))
     for key in FLOW_KEYS:
@@ -464,15 +467,16 @@ def test_seed_from_final_v1_run(tmp_path):
     ledger_before = project.ledger_file.read_bytes()
     out = runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
     assert out == {"project_dir": str(project.dir), "run_id": "acme-20261101T000000Z",
-                   "work_file": str(project.work_file), "seeded_from": old_id, "sources": 8}
+                   "work_file": str(project.work_file), "seeded_from": old_id, "sources": 9}
     archive = project.archive / old_id
     assert sorted(p.name for p in archive.iterdir()) == [
-        "acme.dd.json", "acme.flow-P1.svg", "acme.flow-P2.svg", "acme.report.html", "acme.report.md", "audit"]
+        "acme.dd.json", "acme.derived.json", "acme.flow-P1.svg", "acme.flow-P2.svg", "acme.report.html",
+        "acme.report.md", "audit"]
     assert (archive / "audit" / "state.json").is_file()
     assert project.ledger_file.read_bytes() == ledger_before == (archive / "audit" / "sources.jsonl").read_bytes()
     assert not any(p.exists() for p in project.outputs()) and project.legacy_outputs() == []
     doc = runstate.load_work(project)
-    assert doc["schema_version"] == "rwa-dd/2.1"
+    assert doc["schema_version"] == "rwa-dd/2.2"
     assert (doc["run"]["seeded_from"], doc["run"]["round"], doc["run"]["status"], doc["run"]["finalized_at"],
             doc["run"]["skill_version"]) == (old_id, 1, "draft", None, schema.SKILL_VERSION)
     assert runstate.check(tmp_path, "acme") == []
@@ -481,15 +485,18 @@ def test_seed_from_final_v1_run(tmp_path):
     assert (project.scratch / "raw").is_dir()
 
 
-def test_seed_from_2_1_run_empties_next_searches(tmp_path):
+def test_seed_from_2_2_run_empties_next_searches(tmp_path):
     project = build_run(tmp_path)
     old_id = runstate.load_state(project)["run_id"]
     before = runstate.load_work(project)
     out = runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
-    assert out["seeded_from"] == old_id and out["sources"] == 8
+    assert out["seeded_from"] == old_id and out["sources"] == 9
     doc = runstate.load_work(project)
     assert doc["next_searches"] == [] and before["next_searches"]
-    assert doc["findings"] == before["findings"] and doc["interfaces"] == before["interfaces"]
+    assert doc["interfaces"] == before["interfaces"]
+    assert [dict(f, carried_from=None) for f in doc["findings"]] == \
+        [dict(f, carried_from=None) for f in before["findings"]]
+    assert [f["carried_from"] for f in doc["findings"]] == [f["id"] for f in doc["findings"]]
     assert doc["run"]["seeded_from"] == old_id and doc["run"]["started_at"] == "2026-11-01T00:00:00Z"
     assert runstate.check(tmp_path, "acme") == []
     assert (project.archive / old_id / "audit" / "dd.work.json").is_file()
@@ -517,6 +524,7 @@ def test_seed_invalid_result_restores_archive(tmp_path, monkeypatch):
     doc = runstate.load_work(project)
     old = load_v1()
     old["run"] = {k: doc["run"][k] for k in old["run"]}
+    old["sources"] = doc["sources"]
     project.work_file.write_bytes(dump_json(old).encode("utf-8"))
     (project.dir / "acme.report.html").write_bytes(b"legacy\n")
     before = _snapshot(project)
@@ -538,6 +546,7 @@ def _final_v2(tmp_path):
     work = runstate.load_work(project)
     old = json.loads((FIXTURES / "acme_v2.dd.json").read_bytes().decode("utf-8"))
     old["run"] = dict(work["run"], skill_version="0.5.0")
+    old["sources"] = work["sources"]
     project.work_file.write_bytes(dump_json(old).encode("utf-8"))
     project.output("dd.json").write_bytes(dump_json(old).encode("utf-8"))
     return project, state["run_id"], old
@@ -551,16 +560,16 @@ def test_seed_from_final_v2_run(tmp_path):
     outputs_before = sorted(p.name for p in project.outputs())
     out = runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
     assert out == {"project_dir": str(project.dir), "run_id": "acme-20261101T000000Z",
-                   "work_file": str(project.work_file), "seeded_from": old_id, "sources": 8}
+                   "work_file": str(project.work_file), "seeded_from": old_id, "sources": 9}
     archive = project.archive / old_id
     assert sorted(p.name for p in archive.iterdir()) == sorted(outputs_before + ["audit"])
     assert project.ledger_file.read_bytes() == ledger_before == (archive / "audit" / "sources.jsonl").read_bytes()
     doc = runstate.load_work(project)
-    assert doc == migrate.convert_20(old, doc["run"])
+    assert doc == migrate.migrate_to_current(old, doc["run"])
     assert (doc["schema_version"], doc["run"]["seeded_from"], doc["run"]["skill_version"]) == \
-        ("rwa-dd/2.1", old_id, schema.SKILL_VERSION)
+        ("rwa-dd/2.2", old_id, schema.SKILL_VERSION)
     assert [f["scope_note"] for f in doc["findings"] if f["type"] == "discrepancy"] == \
-        [schema.MIGRATED_SCOPE_NOTE] * 2
+        [schema.MIGRATED_NOTE_21] * 2
     assert runstate.check(tmp_path, "acme") == []
 
 
@@ -569,7 +578,7 @@ def _seeded_v2_ready(tmp_path):
     runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
     runstate.make_review(tmp_path, "acme")
     review = (project.round_dir(1) / "review.md").read_bytes().decode("utf-8")
-    pending = review[review.index("## Scope checks pending"):review.index("## Blocking gaps")]
+    pending = review[review.index("## Migration checks pending"):review.index("## Material findings")]
     assert "**D1**" in pending and "**D2**" in pending
     _directives(tmp_path, project, "finalize\n", name="seeded.txt")
     return project
@@ -582,14 +591,19 @@ def test_finalize_refuses_migration_placeholder_then_succeeds(tmp_path):
     before = _snapshot(project)
     with pytest.raises(runstate.ContractError) as exc:
         runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
-    assert str(exc.value) == "D1: scope not checked (scope_note is the migration placeholder)"
+    assert str(exc.value) == "D1: scope not checked (scope_note is a migration placeholder)"
     assert _snapshot(project) == before
     doc = runstate.load_work(project)
-    doc["findings"][3]["scope_note"] = "Both state the P2 vault fee."
+    doc["findings"][3].update({"scope_note": "Both state the P2 vault fee.", "scope_match": "matched",
+                               "subjects": ["X6.terms"], "assertions": [
+                                   {"source": "S7", "statement": "Fee 0.30 percent.", "as_of": "2026-03-15"},
+                                   {"source": "S1", "statement": "No fee.", "as_of": None}]})
     runstate.save_work(project, doc)
     with pytest.raises(runstate.ContractError, match="^D2: scope not checked"):
         runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
-    doc["findings"][4]["scope_note"] = "Both describe the X4 security."
+    doc["findings"][4].update({"scope_note": "Both describe the X4 security.", "scope_match": "matched",
+                               "assertions": [{"source": "S8", "statement": "Secured.", "as_of": None},
+                                              {"source": "S5", "statement": "Unsecured.", "as_of": None}]})
     runstate.save_work(project, doc)
     result = runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
     assert all(os.path.isfile(p) for p in result["outputs"])
@@ -623,9 +637,158 @@ def test_finalize_refusal_needs_no_d2(tmp_path, monkeypatch):
     assert runstate.load_state(project)["phase"] == "ready_to_finalize"
 
 
-def test_seed_version_accepts_three_versions():
-    for version in ("rwa-dd/1.0", "rwa-dd/2.0", "rwa-dd/2.1"):
+def test_seed_version_accepts_four_versions():
+    for version in ("rwa-dd/1.0", "rwa-dd/2.0", "rwa-dd/2.1", "rwa-dd/2.2"):
         assert runstate._seed_version({"schema_version": version}) == version
     with pytest.raises(runstate.ContractError) as exc:
         runstate._seed_version({"schema_version": "rwa-dd/0.9"})
-    assert "supported: rwa-dd/1.0, rwa-dd/2.0, rwa-dd/2.1" in str(exc.value)
+    assert "supported: rwa-dd/1.0, rwa-dd/2.0, rwa-dd/2.1, rwa-dd/2.2" in str(exc.value)
+
+
+# --------------------------------------------------------------------------- v0.7.0 section 4.2
+
+def _final_v21(tmp_path):
+    """A final run whose record is the rwa-dd/2.1 fixture (same ledger), with v0.6.0 outputs in place."""
+    project = _final(tmp_path)
+    state = runstate.load_state(project)
+    work = runstate.load_work(project)
+    old = load_v21()
+    old["run"] = dict(work["run"], skill_version="0.6.0")
+    old["sources"] = work["sources"]
+    project.work_file.write_bytes(dump_json(old).encode("utf-8"))
+    project.output("dd.json").write_bytes(dump_json(old).encode("utf-8"))
+    return project, state["run_id"], old
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_seed_from_final_v21_run(tmp_path):
+    project, old_id, old = _final_v21(tmp_path)
+    runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
+    doc = runstate.load_work(project)
+    assert doc == migrate.convert_21(old, doc["run"])
+    assert runstate.check(tmp_path, "acme") == []
+    assert (project.archive / old_id / "acme.derived.json").is_file()
+    assert [f["scope_note"] for f in doc["findings"] if f["type"] in ("discrepancy", "scope_unresolved")][2] == \
+        schema.MIGRATED_NOTE_21
+    runstate.make_review(tmp_path, "acme")
+    review = (project.round_dir(1) / "review.md").read_bytes().decode("utf-8")
+    assert "| QA9 | placeholder | fail | D1, D2, U1, X2.amounts\\[0\\], X4.amounts\\[0\\]," in review
+    _directives(tmp_path, project, "finalize\n", name="seeded.txt")
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
+    assert str(exc.value) == "D1: scope not checked (scope_note is a migration placeholder)"
+    # The change log of the seeded run compares with the migrated earlier record: nothing changed yet.
+    assert runstate.change_rows(tmp_path, "acme") == []
+
+
+def _ready_fixture(tmp_path, mutate):
+    project = _to_awaiting(tmp_path)
+    doc = runstate.load_work(project)
+    mutate(doc)
+    runstate.save_work(project, doc)
+    _directives(tmp_path, project, "finalize\n")
+    return project
+
+
+@pytest.mark.parametrize("mutate, message", [
+    (lambda d: d["findings"][4].update({"scope_note": schema.MIGRATED_NOTE_21 + " -- old"}),
+     "D2: scope not checked (scope_note is a migration placeholder)"),
+    (lambda d: d["findings"][6].update({"scope_note": schema.MIGRATED_SCOPE_NOTE}),
+     "U1: scope not checked (scope_note is a migration placeholder)"),
+    (lambda d: d["interfaces"][8]["amounts"][0].update({"scope": schema.MIGRATED_AMOUNT_SCOPE}),
+     "X9.amounts[0]: amount scope not checked (migration placeholder)"),
+    (lambda d: d["interfaces"][1]["amounts"][1]["value"].update({"evidence": ["S8", "S9"]}),
+     "QA failed: QA7"),
+])
+def test_finalize_refusals(tmp_path, monkeypatch, mutate, message):
+    project = _ready_fixture(tmp_path, mutate)
+    assert runstate.check(tmp_path, "acme") == []
+    before = _snapshot(project)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)  # refusals come before the d2 check
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert str(exc.value) == message
+    assert _snapshot(project) == before
+
+
+def test_finalize_refuses_failing_expectation(tmp_path, monkeypatch):
+    project = _ready_fixture(tmp_path, lambda d: None)
+    expect = [{"id": "x2-basis", "case": "X2 entry 0 is a balance", "path": "X2.amounts[0].basis", "op": "equals",
+               "value": "POSITION_VALUE"}]
+    (project.audit / "qa-expect.json").write_bytes(json.dumps(expect).encode("utf-8"))
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert str(exc.value) == "QA failed: E:x2-basis"
+    (project.audit / "qa-expect.json").write_bytes(b"[{}]")
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert str(exc.value) == "expectations[0]: keys must be id, case, path, op, value"
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_finalize_writes_derived_json(tmp_path):
+    project = _final(tmp_path)
+    record = project.output("dd.json").read_bytes()
+    derived = json.loads(project.output("derived.json").read_bytes().decode("utf-8"))
+    assert derived["record_sha256"] == hashlib.sha256(record).hexdigest()
+    assert list(derived) == sorted(derived)
+    assert (derived["derived_version"], derived["slug"], derived["schema_version"], derived["skill_version"]) == \
+        ("rwa-dd-derived/1", "acme", "rwa-dd/2.2", schema.SKILL_VERSION)
+    assert derived["flags"]["X6.terms"] == "CONFLICTING" and derived["critical"] == ["R1", "G1", "G3", "U1"]
+    assert derived["critical_counts"] == {"open_not_selected": 2, "selected": 4, "total": 8}
+    assert derived["conflicts"][0] == {"assertion_sources": ["S7", "S1"], "conflict_status": "CONFLICTING",
+                                       "finding": "D1", "resolution": "open", "scope_match": "matched",
+                                       "subjects": ["X6.terms"]}
+    assert [q for q, _ in derived["five_questions"]["T1"]][-1] == "Is deployment verified?"
+    assert sorted(derived["five_questions"]) == ["T1", "T2"]
+    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 12)] and derived["changes"] == []
+    assert derived["allocation"][0]["valuation_basis"] is None and derived["allocation"][1]["counted"] is True
+    text = project.output("derived.json").read_bytes()
+    assert text.endswith(b"}\n") and b"\r" not in text
+
+
+def test_render_draft_writes_derived_copy(tmp_path, monkeypatch):
+    project = build_run(tmp_path)
+    monkeypatch.setattr(flow, "find_d2", lambda: None)
+    runstate.render_draft(tmp_path, "acme", clock=clock_at())
+    derived = json.loads((project.scratch / "draft" / "acme.derived.json").read_bytes().decode("utf-8"))
+    assert derived["run_id"] == "acme-20261001T080000Z" and derived["qa"][8]["id"] == "QA9"
+    report = (project.scratch / "draft" / "acme.report.md").read_bytes().decode("utf-8")
+    assert "| Report generated | draft 2026-10-01 |" in report
+    assert not any(p.exists() for p in project.outputs())
+
+
+def test_status_prints_run_scoped_log_names(tmp_path):
+    project = _to_awaiting(tmp_path)
+    run_id = runstate.load_state(project)["run_id"]
+    out = runstate.status(tmp_path, "acme")
+    assert out["next_directives_log"] == ".scratch/logs/%s-directives-r1.txt" % run_id
+    assert out["next_amend_log"] == ".scratch/logs/%s-amend-1.txt" % run_id
+    _directives(tmp_path, project, "accept N1\n")
+    assert runstate.status(tmp_path, "acme")["next_directives_log"] == \
+        ".scratch/logs/%s-directives-r2.txt" % run_id
+    state = dict(runstate.load_state(project), amendment=2)
+    assert runstate.log_name(state, "amend", state["amendment"] + 1) == ".scratch/logs/%s-amend-3.txt" % run_id
+
+
+def test_change_log_of_seeded_run(tmp_path):
+    project = build_run(tmp_path)
+    old_id = runstate.load_state(project)["run_id"]
+    old = load_v21()
+    old["run"] = runstate.load_work(project)["run"]
+    old["sources"] = runstate.load_work(project)["sources"][:8]
+    fixture_findings = runstate.load_work(project)["findings"]
+    runstate.seed(tmp_path, "acme", "https://acme-yield.example/", clock=clock_at(LATER))
+    assert runstate.change_rows(tmp_path, "acme") == []  # no earlier final record in the archive
+    doc = runstate.load_work(project)
+    doc["findings"] = fixture_findings  # re-typed in this run: R1 carried from G3
+    runstate.save_work(project, doc)
+    archive = project.archive / old_id
+    (archive / "acme.dd.json").write_bytes(dump_json(old).encode("utf-8"))
+    rows = runstate.change_rows(tmp_path, "acme")
+    assert {"ref": "G3 -> R1", "path": "type", "change": "changed", "before": "gap",
+            "after": "unreconciled_transaction", "evidence_added": []} in rows
+    assert any(r["ref"] == "S9" and r["change"] == "added" for r in rows)

@@ -59,7 +59,7 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert result["rounds"] == 2
     base = (tmp_path / "acme").resolve()
     assert Path(result["project_dir"]) == base
-    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.report.md",
+    assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.derived.json", "acme.report.md",
                                                          "acme.flow-T1-settlement.svg", "acme.flow-T1-claim.svg",
                                                          "acme.flow-T1-repayment.svg", "acme.flow-T2-settlement.svg"]
     for p in result["outputs"] + [result["audit_dir"], result["scratch_dir"]]:
@@ -67,7 +67,7 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
 
     final = json.loads(Path(result["outputs"][0]).read_bytes().decode("utf-8"))
     assert final["run"]["status"] == "final" and final["run"]["round"] == 2
-    report = Path(result["outputs"][1]).read_bytes().decode("utf-8")
+    report = Path(result["outputs"][2]).read_bytes().decode("utf-8")
     assert "### Round 1\n\n```text\naccept N1\n```" in report
     assert "### Round 2\n\n```text\nnote good enough\nfinalize\n```" in report
     assert "DRAFT" not in report
@@ -106,7 +106,7 @@ def test_init_seed_from_cli(tmp_path):
     assert (code, err) == (0, "")
     result = json.loads(out)
     assert list(result) == ["project_dir", "run_id", "work_file", "seeded_from", "sources"]
-    assert result["seeded_from"] == old_id and result["sources"] == 8 and result["run_id"] != old_id
+    assert result["seeded_from"] == old_id and result["sources"] == 9 and result["run_id"] != old_id
     assert cli(tmp_path, "validate")[:2] == (0, "valid\n")
 
 
@@ -133,8 +133,8 @@ def test_help_lists_all_commands():
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
         load_cli().main(["--help"])
-    for name in ("init", "add-source", "validate", "lint", "review", "directives", "render", "status", "finalize",
-                 "schema-doc"):
+    for name in ("init", "add-source", "validate", "lint", "qa", "changes", "review", "directives", "render", "status",
+                 "finalize", "schema-doc"):
         assert name in buf.getvalue()
 
 
@@ -283,15 +283,65 @@ def _help(*argv):
 
 
 def test_init_help_names_seedable_schemas():
-    assert "accepts records of schema rwa-dd/1.0, 2.0 and 2.1" in _help("init")
-    assert "schema rwa-dd/2.1" in _help()
-    assert "address, layer, claim and path warnings" in _help()
+    assert "accepts records of schema rwa-dd/1.0, 2.0, 2.1 and 2.2" in _help("init")
+    assert "schema rwa-dd/2.2" in _help()
+    assert "address, layer, claim, path, amount and provenance warnings" in _help()
+    assert "5 quality check failed (qa only)" in _help()
 
 
-def test_lint_prints_four_keys(tmp_path):
+LINT_KEYS = ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings", "amount_warnings",
+             "provenance_warnings"]
+
+
+def test_lint_prints_six_keys(tmp_path):
     build_run(tmp_path)
     code, out, err = cli(tmp_path, "lint")
     assert (code, err) == (0, "")
     result = json.loads(out)
-    assert list(result) == ["address_warnings", "layer_warnings", "claim_warnings", "path_warnings"]
-    assert (result["layer_warnings"], result["claim_warnings"], result["path_warnings"]) == ([], [], [])
+    assert list(result) == LINT_KEYS
+    assert result == {key: [] for key in LINT_KEYS}
+
+
+# v0.7.0 ----------------------------------------------------------------------------------------------------
+
+def test_qa_exit_codes(tmp_path):
+    project = build_run(tmp_path)
+    code, out, err = cli(tmp_path, "qa")
+    assert (code, err) == (0, "")
+    result = json.loads(out)
+    assert list(result) == ["results", "failed"] and result["failed"] == []
+    assert [r["id"] for r in result["results"]] == ["QA%d" % i for i in range(1, 12)]
+    doc = runstate.load_work(project)
+    doc["interfaces"][8]["amounts"][0]["scope"] = "unchecked (migrated from rwa-dd/2.1)"
+    runstate.save_work(project, doc)
+    code, out, _ = cli(tmp_path, "qa")
+    assert code == 5 and json.loads(out)["failed"] == ["QA9"]
+
+
+def test_qa_expectations_cli(tmp_path):
+    project = build_run(tmp_path)
+    from test_support import FIXTURES
+    expect = FIXTURES / "acme.qa-expect.json"
+    code, out, _ = cli(tmp_path, "qa", "--expect", str(expect))
+    result = json.loads(out)
+    assert code == 0 and result["failed"] == [] and len(result["results"]) > 11
+    bad = project.scratch / "logs" / "bad-expect.json"
+    bad.write_bytes(b'[{"id": "a", "case": "c", "path": "X2", "op": "near", "value": 1}]')
+    code, out, err = cli(tmp_path, "qa", "--expect", str(bad))
+    assert (code, out) == (3, "") and "expectations[0].op: must be one of" in err
+    bad.write_bytes(b"{not json")
+    assert cli(tmp_path, "qa", "--expect", str(bad))[0] == 3
+    assert cli(tmp_path, "qa", "--expect", str(project.scratch / "logs" / "missing.json"))[0] == 3
+    failing = project.audit / "qa-expect.json"
+    failing.write_bytes(b'[{"id": "x", "case": "c", "path": "X2.kind", "op": "equals", "value": "L2_L3"}]')
+    code, out, _ = cli(tmp_path, "qa")
+    assert code == 5 and json.loads(out)["failed"] == ["E:x"]
+
+
+def test_changes_cli(tmp_path):
+    build_run(tmp_path)
+    code, out, err = cli(tmp_path, "changes")
+    assert (code, out, err) == (0, "[]\n", "")
+    code, out, _ = cli(tmp_path, "status")
+    status = json.loads(out)
+    assert status["next_directives_log"].startswith(".scratch/logs/acme-") and "next_amend_log" in status
