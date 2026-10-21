@@ -640,7 +640,7 @@ def test_resolve_carried_from():
 
 
 @pytest.mark.parametrize("path", ["X99", "X2.nope", "X2.amounts[9]", "X2.amounts[0].value.value", "x2", "X2.",
-                                  "N1", "X2.amounts.0", "P9.holder_rights", "@G9", "S1"])
+                                  "N1", "X2.amounts.0", "P9.holder_rights", "@G9", "S99"])
 def test_resolve_missing(path):
     with pytest.raises(KeyError):
         framework.resolve(load_fixture(), path)

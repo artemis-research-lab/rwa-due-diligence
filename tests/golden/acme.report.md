@@ -65,7 +65,7 @@ Acme Yield offers two products: a note (P1) financing equipment leases through a
 
 | strategy | component | deployment | products | business type | counted totals |
 |---|---|---|---|---|---|
-| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1 into the E5 pool observed on-chain. | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
+| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\_VERIFIED [CONFIRMED] (S4; basis S4) -- Transfers from E1 into the E5 pool observed on-chain. | P1 | private\_credit [SELF_REPORTED] (S8) | 25000000 USDC CURRENT\_BALANCE @2026-09-30 |
 | T2 Acme commodity trade finance | CORE_CREDIT | DISCLOSED\_UNVERIFIED [SELF_REPORTED] (S7) -- The vault docs describe the trade finance path; no settlement is shown. | P2 | trade\_finance\_pt [INFERRED] (S7) -- Vault docs describe purchase and resale of goods. | -- |
 | T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] | 5000000 USDC CURRENT\_BALANCE @2026-10-01 |
 
@@ -154,7 +154,7 @@ Totals add only amounts with the same basis, unit and data date; see Appendix N 
 | id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | amounts | supply concentration | alternative | terms | governing law |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | X1 | T1 | P1 -\> E1 (holder\_L1) | -- [UNRESOLVED] | DI [SELF_REPORTED] (S8) | -- [UNRESOLVED] | Senior notes [SELF_REPORTED] (S8) | Noteholders [SELF_REPORTED] (S8) | -- | -- [UNRESOLVED] | -- | Monthly redemption window [SELF_REPORTED] (S8) | Examplestan [SELF_REPORTED] (S8) |
-| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [SELF_REPORTED] (S8) | FI [SELF_REPORTED] (S8) | E5 [SELF_REPORTED] (S8) | Limited partnership interests [SELF_REPORTED] (S8) | E1 [SELF_REPORTED] (S8) | 25000000 USDC CURRENT_BALANCE data 2026-09-30T12:00:00Z (block) [CONFIRMED] (S4); 25150000 USD POSITION_VALUE data 2026-09-30 (source) [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED data 2026-06-30 (source) [SELF_REPORTED] (S9; origin issuer_management; assurance NOT_TESTED) | 0.5 [CONFIRMED] (Pool shares held by E1 / Total pool share supply @2026-09-30T12:00:00Z, 20871234, ethereum) (S4) | -- | -- [UNRESOLVED] | Examplestan [SELF_REPORTED] (S8) |
+| X2 | T1 | E1 -\> E5 (L1\_L2) | FUND [SELF_REPORTED] (S8) | FI [SELF_REPORTED] (S8) | E5 [SELF_REPORTED] (S8) | Limited partnership interests [SELF_REPORTED] (S8) | E1 [SELF_REPORTED] (S8) | 25000000 USDC CURRENT_BALANCE data 2026-09-30T12:00:00Z (block) [CONFIRMED] (S4; basis S4); 25150000 USD POSITION_VALUE data 2026-09-30 (source) [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED data 2026-06-30 (source) [SELF_REPORTED] (S9; origin issuer_management; assurance NOT_TESTED) | 0.5 [CONFIRMED] (Pool shares held by E1 / Total pool share supply @2026-09-30T12:00:00Z, 20871234, ethereum) (S4; basis S4) | -- | -- [UNRESOLVED] | Examplestan [SELF_REPORTED] (S8) |
 | X6 | T2 | P2 -\> E1 (holder\_L1) | -- [UNRESOLVED] | OTHER [INFERRED] (S7) -- Vault share is a contractual claim. | -- [UNRESOLVED] | Vault shares [SELF_REPORTED] (S7) | -- [UNRESOLVED] | -- | -- [UNRESOLVED] | -- | No vault fee charged to P2 holders [CONFLICTING] (S1) | -- [UNRESOLVED] |
 
 Amount scopes:
@@ -293,8 +293,8 @@ Amount scopes:
 
 | entity | class | legal name | jurisdiction | type | registration | licence status |
 |---|---|---|---|---|---|---|
-| E1 | legal_person | Acme Yield Issuer Ltd [CONFIRMED] (S3) | Examplestan [CONFIRMED] (S3) | private limited company [CONFIRMED] (S3) | 100200 [CONFIRMED] (S3) | -- [UNRESOLVED] (S2) -- No licence entry found for the issuer. |
-| E2 | legal_person | Acme Asset Management LLC [CONFIRMED] (S2) | Examplestan [INFERRED] (S2) -- Regulator only licenses local entities. | limited liability company [SELF_REPORTED] (S8) | -- [UNRESOLVED] | active [CONFIRMED] (S2) |
+| E1 | legal_person | Acme Yield Issuer Ltd [CONFIRMED] (S3; basis S3) | Examplestan [CONFIRMED] (S3; basis S3) | private limited company [CONFIRMED] (S3; basis S3) | 100200 [CONFIRMED] (S3; basis S3) | -- [UNRESOLVED] (S2) -- No licence entry found for the issuer. |
+| E2 | legal_person | Acme Asset Management LLC [CONFIRMED] (S2; basis S2) | Examplestan [INFERRED] (S2) -- Regulator only licenses local entities. | limited liability company [SELF_REPORTED] (S8) | -- [UNRESOLVED] | active [CONFIRMED] (S2; basis S2) |
 | E3 | legal_person | Example Custody Trust Co [SELF_REPORTED] (S8) | -- [UNRESOLVED] (S8) -- Memorandum names the custodian but not its jurisdiction. | trust company [INFERRED] (S5) -- Name suggests a trust company. | -- [UNRESOLVED] | -- [UNRESOLVED] |
 | E4 | legal_person | Acme Labs Inc [SELF_REPORTED] (S1) | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] | -- [UNRESOLVED] |
 | E5 | legal_person | Acme Credit Fund LP [SELF_REPORTED] (S8) | Examplestan [SELF_REPORTED] (S8) | limited partnership [SELF_REPORTED] (S8) | -- [UNRESOLVED] | -- [UNRESOLVED] |
@@ -312,7 +312,7 @@ Licences:
 
 | entity | regulator | licence type | licence id | licence status |
 |---|---|---|---|---|
-| E2 | Examplestan Financial Authority [CONFIRMED] (S2) | fund manager [CONFIRMED] (S2) | AAM-0042 [CONFIRMED] (S2) | active [CONFIRMED] (S2) |
+| E2 | Examplestan Financial Authority [CONFIRMED] (S2; basis S2) | fund manager [CONFIRMED] (S2; basis S2) | AAM-0042 [CONFIRMED] (S2; basis S2) | active [CONFIRMED] (S2; basis S2) |
 
 ## Appendix B. L3 business
 
@@ -323,7 +323,7 @@ Licences:
 - Cash generation: Lease collections paid to the warehouse SPV [SELF_REPORTED] (S8)
 - Collections control: Collection account controlled by the security agent [INFERRED] (S5) -- Review mentions a third-party custodian over the receivables.
 - Concentration: Top ten lessees about 40 percent of the book [THIRD_PARTY_REPORTED] (S5)
-- Performance: No payment default in the 12 sampled loans to 2026-06-30 [CONFIRMED] (S9; origin auditor_procedure; assurance TESTED) -- AUP sample only, not the portfolio.
+- Performance: No payment default in the 12 sampled loans to 2026-06-30 [CONFIRMED] (S9; origin auditor_procedure; assurance TESTED; basis S9) -- AUP sample only, not the portfolio.
 - Operating history: Leasing since 2019 [SELF_REPORTED] (S1)
 
 ### T2 Acme commodity trade finance
@@ -362,7 +362,7 @@ Nodes:
 
 | from | to | kind | mechanism | rail | interface | label | claim |
 |---|---|---|---|---|---|---|---|
-| n1 Investor wallet | n2 aSN token | subscription | deposit | stablecoin | X1 | USDC in, aSN minted | true [CONFIRMED] (S4) |
+| n1 Investor wallet | n2 aSN token | subscription | deposit | stablecoin | X1 | USDC in, aSN minted | true [CONFIRMED] (S4; basis S4) |
 | n5 Off-ramp desk | n6 Issuer bank account | conversion | conversion | fiat_wire | -- | stablecoin to fiat | true [SELF_REPORTED] (S1) |
 | n6 Issuer bank account | n10 Credit fund | subscription | purchase | fiat_wire | X2 | fund subscription | true [SELF_REPORTED] (S8) |
 | n10 Credit fund | n11 Warehouse SPV | subscription | drawdown | fiat_wire | X3 | warehouse notes | true [SELF_REPORTED] (S8) |
@@ -388,7 +388,7 @@ Nodes:
 | n11 Warehouse SPV | n10 Credit fund | yield | repayment | fiat_wire | X3 | note repayments | -- [UNRESOLVED] (S8) -- Memorandum does not describe this hop. |
 | n10 Credit fund | n6 Issuer bank account | yield | distribution | fiat_wire | X2 | fund distributions | true [SELF_REPORTED] (S8) |
 | n6 Issuer bank account | n9 Manager | fee | fee_payment | fiat_wire | -- | management fee | true [SELF_REPORTED] (S8) |
-| n2 aSN token | n1 Investor wallet | redemption | burn | burn | X1 | aSN burned on redemption | true [CONFIRMED] (S4) |
+| n2 aSN token | n1 Investor wallet | redemption | burn | burn | X1 | aSN burned on redemption | true [CONFIRMED] (S4; basis S4) |
 
 ### T2 Acme commodity trade finance -- settlement
 
@@ -429,7 +429,7 @@ Nodes:
 - Mechanism: Interest on receivables purchased at a discount [SELF_REPORTED] (S8)
 - Gross yield: 11.0 percent [SELF_REPORTED] (S1)
 - Net yield to holder: 9.5 percent [SELF_REPORTED] (S1)
-- Distribution method: rebasing [CONFIRMED] (S4)
+- Distribution method: rebasing [CONFIRMED] (S4; basis S4)
 - Distribution frequency: monthly [SELF_REPORTED] (S8)
 
 Underlying:
@@ -482,7 +482,7 @@ Fees:
 
 | chain | address | role | source verified | proxy | upgrade admin | role admins | timelock delay s | multisig | threshold | signers |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ethereum | 0x1111111111111111111111111111111111111111 | aSN token [CONFIRMED] (S4) | true [CONFIRMED] (S4) | TransparentUpgradeableProxy [CONFIRMED] (S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 0 [CONFIRMED] (S4) -- No timelock between admin and proxy. | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4) | 2 [CONFIRMED] (S4) | 3 [CONFIRMED] (S4) |
+| ethereum | 0x1111111111111111111111111111111111111111 | aSN token [CONFIRMED] (S4; basis S4) | true [CONFIRMED] (S4; basis S4) | TransparentUpgradeableProxy [CONFIRMED] (S4; basis S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4; basis S4) | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4; basis S4) | 0 [CONFIRMED] (S4; basis S4) -- No timelock between admin and proxy. | 0x2222222222222222222222222222222222222222 [CONFIRMED] (S4; basis S4) | 2 [CONFIRMED] (S4; basis S4) | 3 [CONFIRMED] (S4; basis S4) |
 
 ## Appendix F. All findings
 
@@ -548,23 +548,23 @@ Fees:
 
 | product | metric | value | as of |
 |---|---|---|---|
-| P1 | supply | 12500000 [CONFIRMED] (S4) | 2026-10-01 |
+| P1 | supply | 12500000 [CONFIRMED] (S4; basis S4) | 2026-10-01 |
 | P2 | tvl | 3400000 [SELF_REPORTED] (S1) | 2026-10-01 |
 | -- | originated | 48000000 [SELF_REPORTED] (S1) | -- |
 
 ## Appendix I. Sources
 
-| id | type | origin | fetch | retrieved | title/url | note |
-|---|---|---|---|---|---|---|
-| S1 | project_site | first_party | ok | 2026-10-01T08:00:00Z | Acme Yield - Home -- https://acme-yield.example/ |  |
-| S2 | regulator_registry | regulator | ok | 2026-10-01T08:05:00Z | Register entry: Acme Asset Management LLC -- https://regulator.example/register/AAM-0042 |  |
-| S3 | company_registry | registry | ok | 2026-10-01T08:10:00Z | Company record: Acme Yield Issuer Ltd -- https://companies.example/entity/ACME-SPV-1 |  |
-| S4 | onchain_explorer | onchain | ok | 2026-10-01T08:15:00Z | Explorer: aSN token contract -- https://explorer.example/address/0x00000000000000000000000000000000000000a1 |  |
-| S5 | third_party_research | third_party | ok | 2026-10-01T08:20:00Z | Independent review of Acme Yield -- https://research.example/acme-yield-review |  |
-| S6 | analyst_input | analyst | offline | -- | Analyst call with Acme team -- analyst-call-notes-r1 | Notes from a call; not independently checked. |
-| S7 | project_docs | first_party | archived (version 2026-03-01) | 2026-10-01T08:30:00Z | Acme Treasury Vault docs (archived) -- https://web.archive.example/2026-03-01/https://docs.acme-yield.example/vault |  |
-| S8 | legal_doc | first_party | pdf | 2026-10-01T08:40:00Z | Offering memorandum (Acme Senior Note) -- https://acme-yield.example/legal/offering-memorandum.pdf |  |
-| S9 | audit_report | auditor | pdf | 2026-10-01T09:00:00Z | Agreed-upon procedures report on the Acme Credit Fund loan sample -- https://auditor.example/acme-credit-fund-aup-2026.pdf |  |
+| id | type | origin | publication | fetch | retrieved | title/url | note |
+|---|---|---|---|---|---|---|---|
+| S1 | project_site | first_party | publication: acme-yield.example (project_site) | ok | 2026-10-01T08:00:00Z | Acme Yield - Home -- https://acme-yield.example/ |  |
+| S2 | regulator_registry | regulator | publication: regulator.example (regulator_registry) | ok | 2026-10-01T08:05:00Z | Register entry: Acme Asset Management LLC -- https://regulator.example/register/AAM-0042 |  |
+| S3 | company_registry | registry | publication: companies.example (company_registry) | ok | 2026-10-01T08:10:00Z | Company record: Acme Yield Issuer Ltd -- https://companies.example/entity/ACME-SPV-1 |  |
+| S4 | onchain_explorer | onchain | publication: explorer.example (onchain_explorer) | ok | 2026-10-01T08:15:00Z | Explorer: aSN token contract -- https://explorer.example/address/0x00000000000000000000000000000000000000a1 |  |
+| S5 | third_party_research | third_party | publication: research.example (third_party_research) | ok | 2026-10-01T08:20:00Z | Independent review of Acme Yield -- https://research.example/acme-yield-review |  |
+| S6 | analyst_input | analyst | publication: -- (analyst_input) | offline | -- | Analyst call with Acme team -- analyst-call-notes-r1 | Notes from a call; not independently checked. |
+| S7 | project_docs | first_party | publication: web.archive.example (project_docs) | archived (version 2026-03-01) | 2026-10-01T08:30:00Z | Acme Treasury Vault docs (archived) -- https://web.archive.example/2026-03-01/https://docs.acme-yield.example/vault |  |
+| S8 | legal_doc | first_party | publication: acme-yield.example (legal_doc) | pdf | 2026-10-01T08:40:00Z | Offering memorandum (Acme Senior Note) -- https://acme-yield.example/legal/offering-memorandum.pdf |  |
+| S9 | audit_report | auditor | publication: auditor.example (audit_report) | pdf | 2026-10-01T09:00:00Z | Agreed-upon procedures report on the Acme Credit Fund loan sample -- https://auditor.example/acme-credit-fund-aup-2026.pdf |  |
 
 ## Appendix J. Analyst interventions
 
@@ -577,7 +577,8 @@ Fees:
 ## Appendix L. Legend
 
 - Claim cell: `value [FLAG] (evidence) -- note`; `--` means no value.
-- CONFIRMED: direct, sufficient evidence for the precise claim within its stated scope (legal facts: regulator, registry, auditor or on-chain sources only).
+- CONFIRMED: direct, sufficient evidence for the precise claim within its stated scope (legal facts: regulator, registry, auditor or on-chain sources only). The cell names its verification basis (`basis S<n>`): a regulator record, registry entry, on-chain read, tested auditor procedure, or for non-legal facts an independent third party; a filer's disclosure is never one (curator AC-05).
+- Attribution (curator AC-05): a company filing (10-K, 10-Q, 8-K, prospectus, exhibit) has origin filer (first_party when the filer is the project): the regulator only hosts it; origin regulator is limited to records the regulator issues or keeps. Appendix I shows where each source was published (`publication: <host> (<type>)`) and every append-only ledger correction. Enforcement, perfection, enforceability and insolvency protection are never CONFIRMED or INFERRED from disclosures alone.
 - SELF_REPORTED: stated by the issuer, protocol, borrower or another interested party.
 - THIRD_PARTY_REPORTED: reported by a third party; its scope and authority still need assessing.
 - INFERRED: the analyst's conclusion from cited facts; the note states the reasoning.
@@ -626,6 +627,7 @@ Fees:
 | QA11 | deployment | pass | -- | -- | ok |
 | QA12 | onemeasure | pass | -- | -- | ok |
 | QA13 | timebasis | pass | -- | -- | ok |
+| QA14 | attribution | pass | -- | -- | ok |
 
 Rules:
 
@@ -642,6 +644,7 @@ Rules:
 - QA11 deployment: No CORE_CREDIT or DEFI_LENDING strategy has deployment DEPLOYED_VERIFIED without status verified.
 - QA12 onemeasure: No interface has more than one counted amount (entry 0 or the first countable entry is the position measure; later entries are other measures of the same position).
 - QA13 timebasis: No counted amount lacks an established data time, and no data time is a source retrieval time (curator AC-03).
+- QA14 attribution: No filing is attributed to a regulator, no regulator or registry origin lacks such a source, every verified claim has a verification basis that excludes filer disclosures, and no enforceability claim rests only on a disclosure (curator AC-05).
 
 ## Appendix O. Changes
 

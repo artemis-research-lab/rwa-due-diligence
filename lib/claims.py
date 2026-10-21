@@ -6,11 +6,22 @@ Provenance (curator Q8): origin is who asserted the fact, the evidence sources a
 assurance is what an auditor or reviewer tested for this precise claim. The Q8 auditor-source rules apply only once
 origin is set: a null origin means unstated (lint warning, QA7 failure, finalize refuses). Claims under audits[]
 describe the audit itself and are exempt from them (D77).
+Attribution (curator AC-05, v0.7.4): a verified claim needs a verification basis (D86), a regulator or registry
+origin needs such a source, and enforceability is never verified or inferred from disclosures alone (D87); these
+rules also apply under audits[].
 """
 
 from lib import schema
 
 LEGAL_VERIFIERS = ("regulator", "registry", "auditor", "onchain")
+# Source origins that verify any claim; auditor and third_party verify only under conditions (v0.7.4 section 3).
+BASIS_ORIGINS = ("regulator", "registry", "onchain")
+# Claim origins that need a cited source of the same origin (A4).
+SOURCED_CLAIM_ORIGINS = ("regulator", "registry")
+# Claims stating enforceability, never established by a disclosure alone (A6): section -> fields.
+ENFORCEABILITY_FIELDS = {"interfaces": ("enforcement", "perfection"), "supports": ("enforceability",),
+                         "holder_rights": ("insolvency_protection",)}
+DISCLOSURE_ORIGINS = ("filer", "first_party")
 
 
 def is_legal_path(parts):
@@ -74,6 +85,48 @@ def provenance_errors(parts, claim, source_origins):
     return errors
 
 
+def verification_basis(parts, claim, sources_by_id):
+    """Sorted ids of the cited sources that can verify this claim (v0.7.4 section 3): origin regulator, registry
+    or onchain; auditor only for a tested auditor procedure (Q8); third_party only outside legal paths. Never
+    filer, first_party or analyst, and never a source whose publisher is the claim subject."""
+    tested = claim["origin"] == "auditor_procedure" and claim["assurance"] == "TESTED"
+    basis = set()
+    for sid in claim["evidence"]:
+        source = sources_by_id.get(sid)
+        if source is None or evidence_role(source, claim) != "independent:%s" % source.get("origin"):
+            continue
+        origin = source.get("origin")
+        if (origin in BASIS_ORIGINS or (origin == "auditor" and tested)
+                or (origin == "third_party" and not is_legal_path(parts))):
+            basis.add(sid)
+    return sorted(basis, key=lambda sid: int(sid[1:]))
+
+
+def _is_disclosure(source):
+    return source.get("origin") in DISCLOSURE_ORIGINS or source.get("source_type") == "legal_doc"
+
+
+def attribution_errors(parts, claim, sources_by_id):
+    """Curator AC-05 claim errors A4, A6 and V1 of one claim (claims under audits[] included). Shared by
+    validation and QA14."""
+    path = schema.format_path(parts)
+    status, origin = claim["status"], claim["origin"]
+    cited = [sources_by_id[sid] for sid in claim["evidence"] if sid in sources_by_id]
+    errors = []
+    if origin in SOURCED_CLAIM_ORIGINS and not any(s.get("origin") == origin for s in cited):
+        errors.append("%s: origin %s requires a %s source in evidence (curator AC-05)" % (path, origin, origin))
+    enforceability = (len(parts) == 3 and parts[2] in ENFORCEABILITY_FIELDS.get(parts[0], ()))
+    if enforceability and status in ("verified", "inferred") and cited and all(_is_disclosure(s) for s in cited):
+        errors.append("%s: enforceability is not established by a disclosure of an agreement's existence or terms; "
+                      "use self_reported, third_party_reported (for example a legal opinion) or not_found (curator "
+                      "AC-05)" % path)
+    if status == "verified" and not verification_basis(parts, claim, sources_by_id):
+        errors.append("%s: verified needs a verification basis (regulator record, registry, on-chain read, tested "
+                      "auditor procedure, or for non-legal facts an independent third party); a filer's disclosure "
+                      "is not one (curator AC-05)" % path)
+    return errors
+
+
 def check_claim(parts, claim, sources_by_id, subject_ids):
     """Return error strings for one claim."""
     path = schema.format_path(parts)
@@ -106,15 +159,8 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
         errors.append("%s: %s requires a non-null value" % (path, status))
 
     if status == "verified":
-        # An auditor source verifies a legal field only through a tested auditor procedure (P5).
-        audited_ok = not q8 or (origin == "auditor_procedure" and assurance == "TESTED")
-        if is_legal_path(parts):
-            verifiers = [o for o in independent if o in LEGAL_VERIFIERS and (o != "auditor" or audited_ok)]
-            if not verifiers:
-                errors.append("%s: verified requires a regulator/registry/auditor/onchain source for legal fields"
-                              % path)
-        elif not independent:
-            errors.append("%s: verified requires an independent source" % path)
+        # The verification basis (V1, in attribution_errors) replaces the v0.6.0 independent-source and legal
+        # verifier tests.
         if "analyst" in roles:
             errors.append("%s: verified must not cite an analyst source" % path)
     elif status == "self_reported":
@@ -153,6 +199,7 @@ def check_claim(parts, claim, sources_by_id, subject_ids):
     if q8_exempt(parts) and assurance is not None and not independent:
         errors.append("%s: assurance requires an auditor or independent source" % path)
     errors.extend(provenance_errors(parts, claim, source_origins))
+    errors.extend(attribution_errors(parts, claim, sources_by_id))
     return errors
 
 

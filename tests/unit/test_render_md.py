@@ -79,7 +79,8 @@ def test_claim_cell_flags():
     v = claim({"a": [1, "x"], "b": None}, "verified", ["S1", "S4"])
     assert render_md.claim_cell(v) == "a=1; x; b=-- [CONFIRMED] (S1, S4)"
     assert render_md.claim_cell(dict(v, status="inferred", note="n")) == "a=1; x; b=-- [INFERRED] (S1, S4) -- n"
-    assert render_md.claim_cell(dict(v, status="third_party_reported")) == "a=1; x; b=-- [THIRD_PARTY_REPORTED] (S1, S4)"
+    assert render_md.claim_cell(dict(v, status="third_party_reported")) == \
+        "a=1; x; b=-- [THIRD_PARTY_REPORTED] (S1, S4)"
     assert render_md.claim_cell(dict(v, status="self_reported")) == "a=1; x; b=-- [SELF_REPORTED] (S1, S4)"
     assert render_md.claim_cell(v, "CONFLICTING") == "a=1; x; b=-- [CONFLICTING] (S1, S4)"
     q8 = claim(18000000, "self_reported", ["S9"], note="n", origin="issuer_management", assurance="NOT_TESTED")
@@ -260,8 +261,8 @@ def test_metadata_generated_and_observed_rows():
 
 def test_portfolio_allocation_and_totals():
     s2 = _section(render_md.render(load_fixture()), "2. Framework completeness and portfolio")
-    assert ("| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1"
-            " into the E5 pool observed on-chain. | P1 |") in s2
+    assert ("| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\\_VERIFIED [CONFIRMED] (S4; basis S4) -- Transfers"
+            " from E1 into the E5 pool observed on-chain. | P1 |") in s2
     assert "| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] |" in s2
     assert ("| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | source | 2026-10-01T08:40:00Z"
             " | Proceeds of the X13 loan sale to E13 | no | not a funding edge |") in s2
@@ -284,11 +285,11 @@ def test_deployment_tables():
         "### L1 -> L2", "### L2 -> L3", "### Liquidity sleeves", "### Asset sales"]
     assert ("| id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | amounts |"
             " supply concentration | alternative | terms | governing law |") in s4
-    assert ("| 25000000 USDC CURRENT_BALANCE data 2026-09-30T12:00:00Z (block) [CONFIRMED] (S4); 25150000 USD"
+    assert ("| 25000000 USDC CURRENT_BALANCE data 2026-09-30T12:00:00Z (block) [CONFIRMED] (S4; basis S4); 25150000 USD"
             " POSITION_VALUE data 2026-09-30 (source) [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED data"
             " 2026-06-30 (source) [SELF_REPORTED] (S9; origin issuer_management; assurance NOT_TESTED) | 0.5"
             " [CONFIRMED] (Pool shares held by E1 / Total pool share supply @2026-09-30T12:00:00Z, 20871234,"
-            " ethereum) (S4) |") in s4
+            " ethereum) (S4; basis S4) |") in s4
     assert "\nAmount scopes:\n\n- X2[0]: USDC supplied by E1 to the E5 credit pool, read at the block\n" in s4
     assert "- X4[1]: Undrawn part of the E6 to E7 equipment loan facility\n" in s4
     assert "| X11 | T2 | E1 -\\> E9 (L2\\_L3) | REPO [SELF_REPORTED] (S7) |" in s4 and "| A1a |" in s4

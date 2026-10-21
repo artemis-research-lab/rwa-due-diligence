@@ -34,7 +34,8 @@ Never write anywhere else. Run the scripts from the skill directory: `python <sk
    Budget: 60 fetch/search calls in round 1 (30 in a seeded run), 20 in each later round, 10 in an amendment round.
    One JSON-RPC batch counts as one call; reading files already in .scratch costs nothing. Register every fetch
    attempt, failed ones included, with `dd.py add-source`; never type a timestamp. Use `dd.py fetch-file` and
-   `dd.py pdf-text` for PDFs. Edit `audit/dd.work.json` only; run `dd.py validate` until it exits 0, then
+   `dd.py pdf-text` for PDFs. Correct a wrongly attributed source only with `dd.py correct-source` (append-only).
+   Edit `audit/dd.work.json` only; run `dd.py validate` until it exits 0, then
    `dd.py lint` and fix every warning (address, layer, claim, path, amount and provenance warnings), then `dd.py qa`
    (exit 5 lists failed checks; `dd.py verify` exit 6 after finalize means the package does not reproduce). In a run
    seeded from an earlier schema, re-check every carried-over amount (basis,

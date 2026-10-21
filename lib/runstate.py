@@ -18,8 +18,8 @@ PHASE_FINAL = "final"
 SCRATCH_DIRS = ("raw", "text", "draft", "logs")
 
 
-class ContractError(Exception):
-    """Path or state contract violation (CLI exit 3)."""
+# Path, state or ledger contract violation (CLI exit 3); defined in lib/ledger.py, which reads the ledger.
+ContractError = ledger.ContractError
 
 
 class InvalidError(Exception):
@@ -31,8 +31,9 @@ class InvalidError(Exception):
 
 
 # Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=(), qa_results=None,
-# change_rows=None, today=None) -> text); figures maps "T<n>-<view>" -> sanitized SVG text and may be empty;
-# rejected is a set of N ids; today is the render clock date of a draft.
+# change_rows=None, today=None, corrections=(), amendment=0, amendment_rows=()) -> text); figures maps
+# "T<n>-<view>" -> sanitized SVG text and may be empty; rejected is a set of N ids; today is the render clock date
+# of a draft; corrections are the ledger correction lines; amendment_rows the change rows of amendment <amendment>.
 RENDERERS = [("report.md", render_md.render)]
 
 FLOW_VIEWS = schema.ENUMS["flow_view"]
@@ -117,6 +118,9 @@ class Project:
 
     def append_source(self, source):
         ledger.append_line(self.safe(self.ledger_file), source)
+
+    def append_correction(self, correction):
+        ledger.append_line(self.safe(self.ledger_file), correction)
 
     def move(self, src, dst):
         self.safe(dst.parent).mkdir(parents=True, exist_ok=True)
@@ -309,6 +313,26 @@ def change_log(project, doc):
     return changes.diff(migrate.migrate_to_current(old, doc["run"]), doc)
 
 
+def amendment_log(project, state, doc):
+    """Change rows between the previous final version of an amended run (archive/<run_id>.v<m-1>/, m = the
+    current amendment) and doc; [] before any amendment or when that record is missing (v0.7.4 section 4)."""
+    m = state.get("amendment", 0)
+    if m < 1:
+        return []
+    path = project.archive / ("%s.v%d" % (state["run_id"], m - 1)) / ("%s.dd.json" % project.slug)
+    if not path.is_file():
+        return []
+    old = load_json_text(path.read_bytes().decode("utf-8"))
+    return changes.diff(migrate.migrate_to_current(old, doc["run"]), doc)
+
+
+def _attribution_inputs(project, state, doc):
+    """Renderer keyword arguments of v0.7.4: ledger corrections (Appendix I) and the amendment change rows
+    (Appendix O)."""
+    return {"corrections": ledger.read_corrections(project.ledger_file), "amendment": state.get("amendment", 0),
+            "amendment_rows": amendment_log(project, state, doc)}
+
+
 def log_name(state, kind, n):
     """Run-scoped log file name under the project directory (D76)."""
     if kind == "directives":
@@ -388,10 +412,49 @@ def add_source(root, slug, clock=ledger.system_clock, **fields):
         source = ledger.make_source(len(existing) + 1, clock=clock, **fields)
     except ValueError as exc:
         raise InvalidError(exc.args[0])
+    errors = validate.source_attribution_errors(len(existing), source)
+    if errors:
+        raise InvalidError(errors)
     project.append_source(source)
     doc["sources"].append(source)
     save_work(project, doc)
     return source
+
+
+def correct_source(root, slug, source_id, fields, reason, clock=ledger.system_clock):
+    """dd.py correct-source (v0.7.4 section 4): append a correction line to the ledger and apply it to the
+    working document's sources; allowed while the run is open (any phase but final)."""
+    project = open_project(root, slug)
+    state = load_state(project)
+    if state["phase"] == PHASE_FINAL:
+        raise ContractError("correct-source requires an open run (current phase: %s; amend it first)"
+                            % state["phase"])
+    doc = load_work(project)
+    if not isinstance(doc.get("sources"), list):
+        raise InvalidError(["sources: must be an array"])
+    existing = ledger.read_ledger(project.ledger_file)
+    index = next((i for i, s in enumerate(existing) if s.get("id") == source_id), None)
+    if index is None:
+        raise ContractError("correct-source: unknown source %s" % source_id)
+    if doc["sources"][index:index + 1] != [existing[index]]:
+        raise InvalidError(["sources[%d]: differs from ledger entry %d (%s)" % (index, index + 1,
+                                                                                validate.LEDGER_MSG)])
+    publisher = fields.get("publisher")
+    entities = {e.get("id") for e in doc.get("entities") or [] if isinstance(e, dict)}
+    if publisher is not None and publisher not in entities:
+        raise InvalidError(["sources[%d].publisher: unknown entity %s" % (index, publisher)])
+    try:
+        correction = ledger.make_correction(existing[index], fields, reason, clock)
+    except ValueError as exc:
+        raise InvalidError(["correct-source: %s" % e for e in exc.args[0]])
+    corrected = dict(existing[index], **correction["fields"])
+    errors = validate.source_attribution_errors(index, corrected)
+    if errors:
+        raise InvalidError(errors)
+    project.append_correction(correction)
+    doc["sources"][index] = corrected
+    save_work(project, doc)
+    return correction
 
 
 def check(root, slug):
@@ -456,6 +519,7 @@ def render_draft(root, slug, clock=ledger.system_clock):
         raise InvalidError(sorted(set(errors)))
     results = qa.run(doc, load_expectations(project))
     rows = change_log(project, doc)
+    extra = _attribution_inputs(project, state, doc)
     today = ledger.format_ts(clock())[:10]
     warnings = []
     try:
@@ -468,10 +532,10 @@ def render_draft(root, slug, clock=ledger.system_clock):
     for suffix, fn in RENDERERS:
         outputs.append(str(project.write_text(draft / ("%s.%s" % (slug, suffix)),
                                               fn(doc, round_records(project, state["round"]), figures,
-                                                 qa_results=results, change_rows=rows, today=today))))
+                                                 qa_results=results, change_rows=rows, today=today, **extra))))
     record = dump_json(schema.order_like_schema(doc)).encode("utf-8")
     outputs.append(str(project.write_json(draft / ("%s.derived.json" % slug), render_md.derived(
-        doc, hashlib.sha256(record).hexdigest(), results, rows))))
+        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendment_rows"]))))
     for key, svg in figures.items():
         outputs.append(str(project.write_text(draft / project.flow_output(key).name, svg)))
     result = {"outputs": outputs}
@@ -533,16 +597,18 @@ def finalize(root, slug, clock=ledger.system_clock):
     if failed:
         raise ContractError("QA failed: %s" % ", ".join(failed))
     rows = change_log(project, doc)
+    extra = _attribution_inputs(project, state, doc)
     rounds = round_records(project, state["round"])
     rejected = rejected_ids(project, state["round"])
     figures = render_figures(doc)  # d2 is mandatory here: fails before anything is written
     record = dump_json(doc).encode("utf-8")
     outputs = [project.write_bytes(project.output("dd.json"), record)]
     outputs.append(project.write_json(project.output("derived.json"), render_md.derived(
-        doc, hashlib.sha256(record).hexdigest(), results, rows)))
+        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendment_rows"])))
     for suffix, fn in RENDERERS:
         outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected,
-                                                                     qa_results=results, change_rows=rows)))
+                                                                     qa_results=results, change_rows=rows,
+                                                                     **extra)))
     for key, svg in figures.items():
         outputs.append(project.write_text(project.flow_output(key), svg))
     save_work(project, doc)

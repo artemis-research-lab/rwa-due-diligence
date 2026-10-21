@@ -3,8 +3,9 @@ appendices A-O) and the derived data file (v0.7.0 7.3, v0.7.2 sections 1 and 2);
 headings, labels and the legend."""
 
 import json
+import re
 
-from lib import flow, framework, qa, review, schema
+from lib import claims, flow, framework, qa, review, schema
 from lib.textutil import finding_line, id_key, md_text, not_run_suffix, request_line, search_line, totals_text
 
 NONE = "- none"
@@ -28,27 +29,30 @@ def fmt_value(value):
     return md_text(str(value))
 
 
-def _sources(claim):
-    """`(S1, S2)`, `(S1; origin issuer_management; assurance NOT_TESTED)`; empty without any of them."""
+def _sources(claim, basis=()):
+    """`(S1, S2)`, `(S1; origin issuer_management; assurance NOT_TESTED)`, `(S2, S4; origin registry; basis S2)`;
+    empty without any of them. basis is the verification basis of a verified claim (v0.7.4 section 3)."""
     parts = [", ".join(claim["evidence"])] if claim["evidence"] else []
     if claim["origin"] is not None:
         parts.append("origin " + claim["origin"])
     if claim["assurance"] is not None:
         parts.append("assurance " + claim["assurance"])
+    if basis:
+        parts.append("basis " + ", ".join(basis))
     return " (%s)" % "; ".join(parts) if parts else ""
 
 
-def _tail(claim, flag):
-    cell = "[%s]%s" % (flag, _sources(claim))
+def _tail(claim, flag, basis=()):
+    cell = "[%s]%s" % (flag, _sources(claim, basis))
     if claim["note"]:
         cell += " -- " + md_text(claim["note"], schema.CLAIM_NOTE_MAX)
     return cell
 
 
-def claim_cell(claim, flag=None):
-    """`<value> [FLAG] (S1, S4) -- note`; flag defaults to the one derived from the status alone."""
+def claim_cell(claim, flag=None, basis=()):
+    """`<value> [FLAG] (S1, S4; basis S4) -- note`; flag defaults to the one derived from the status alone."""
     flag = framework.flag(claim, False) if flag is None else flag
-    return "%s %s" % (fmt_value(claim["value"]), _tail(claim, flag))
+    return "%s %s" % (fmt_value(claim["value"]), _tail(claim, flag, basis))
 
 
 def text(value, limit=None):
@@ -72,7 +76,7 @@ def strategy_title(strategy):
     return "%s %s" % (strategy["id"], md_text(strategy["name"], 80)) if strategy["name"] else strategy["id"]
 
 
-def amount_cell(amount, flag=None):
+def amount_cell(amount, flag=None, basis=()):
     """`<value> <unit> <BASIS> data <as_of or not established> (<time basis>) [FLAG] (sources)` for one amount
     entry (v0.7.2 section 2)."""
     claim = amount["value"]
@@ -80,7 +84,7 @@ def amount_cell(amount, flag=None):
     data = "not established" if amount["as_of"] is None else md_text(amount["as_of"])
     return "%s %s %s data %s (%s) [%s]%s" % (fmt_value(claim["value"]), md_text(amount["unit"], 20),
                                              amount["basis"], data, framework.time_basis(amount), flag,
-                                             _sources(claim))
+                                             _sources(claim, basis))
 
 
 def _amount_scopes(interfaces):
@@ -91,20 +95,30 @@ def _amount_scopes(interfaces):
 
 
 class _Cells:
-    """claim_cell with the document's derived flags (conflicts included)."""
+    """claim_cell with the document's derived flags (conflicts included) and verification bases."""
 
     def __init__(self, doc):
         by_parts = framework.flags(doc)
-        self.by_id = {id(claim): by_parts[parts] for parts, claim in schema.iter_claims(doc)}
+        sources_by_id = {s["id"]: s for s in doc["sources"]}
+        self.by_id = {}
+        self.basis_by_id = {}
+        for parts, claim in schema.iter_claims(doc):
+            self.by_id[id(claim)] = by_parts[parts]
+            if claim["status"] == "verified":
+                self.basis_by_id[id(claim)] = claims.verification_basis(parts, claim, sources_by_id)
 
     def flag(self, claim):
         return self.by_id.get(id(claim))
 
+    def basis(self, claim):
+        return self.basis_by_id.get(id(claim), ())
+
     def __call__(self, claim):
-        return claim_cell(claim, self.flag(claim))
+        return claim_cell(claim, self.flag(claim), self.basis(claim))
 
     def amounts(self, x):
-        return "; ".join(amount_cell(a, self.flag(a["value"])) for a in x["amounts"]) or "--"
+        return "; ".join(amount_cell(a, self.flag(a["value"]), self.basis(a["value"]))
+                         for a in x["amounts"]) or "--"
 
     def supply(self, x):
         """`ratio [FLAG] (numerator / denominator @as_of, block, chain) (sources) -- note`."""
@@ -115,7 +129,7 @@ class _Cells:
             cell += " (%s / %s @%s, %s, %s)" % (md_text(sc["numerator"] or "n/d", 160),
                                                 md_text(sc["denominator"] or "n/d", 160), text(sc["as_of"]),
                                                 "--" if sc["block"] is None else str(sc["block"]), text(sc["chain"]))
-        cell += _sources(ratio)
+        cell += _sources(ratio, self.basis(ratio))
         if ratio["note"]:
             cell += " -- " + md_text(ratio["note"], schema.CLAIM_NOTE_MAX)
         return cell
@@ -356,7 +370,7 @@ def _waterfall(claim, cell):
     label = "- Loss waterfall (1 absorbs first): "
     value = claim["value"]
     if isinstance(value, list) and value:
-        return [label + _tail(claim, cell.flag(claim))] + [
+        return [label + _tail(claim, cell.flag(claim), cell.basis(claim))] + [
             "  %d. %s" % (i, fmt_value(item)) for i, item in enumerate(value, start=1)]
     return [label + cell(claim)]
 
@@ -579,7 +593,24 @@ def _history(doc):
                  [[text(h["date"]), md_text(h["change"], 200), ", ".join(h["evidence"])] for h in doc["history"]])
 
 
-def _sources_table(doc):
+URL_HOST = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*://(?:[^/?#@]*@)?([^/?#:]+)")
+
+
+def publication(source):
+    """`<host> (<source_type>)`: where a source was published (curator AC-05); `--` for a URL without a host."""
+    match = URL_HOST.match(source["url"])
+    host = match.group(1).lower() if match else None
+    return "%s (%s)" % (md_text(host) if host else "--", source["source_type"])
+
+
+def _correction_line(c):
+    changed = "; ".join("%s %s -> %s" % (md_text(key), text(c["previous"][key]), text(c["fields"][key]))
+                        for key in sorted(c["fields"]))
+    return "- %s: %s (corrected %s) -- %s" % (c["correction"], changed, text(c["corrected_at"]),
+                                              md_text(c["reason"], schema.CORRECTION_REASON_MAX))
+
+
+def _sources_table(doc, corrections=()):
     rows = []
     for s in sorted(doc["sources"], key=id_key):
         fetch = s["fetch"]
@@ -587,9 +618,14 @@ def _sources_table(doc):
             if fetch != "archived":
                 fetch += ", archived"
             fetch += " (version %s)" % text(s["version_date"])
-        rows.append([s["id"], s["source_type"], s["origin"], fetch, text(s["retrieved_at"]),
-                     "%s -- %s" % (md_text(s["title"], 200), md_text(s["url"], 500)), md_text(s["note"], 200)])
-    return table(("id", "type", "origin", "fetch", "retrieved", "title/url", "note"), rows)
+        rows.append([s["id"], s["source_type"], s["origin"], "publication: " + publication(s), fetch,
+                     text(s["retrieved_at"]), "%s -- %s" % (md_text(s["title"], 200), md_text(s["url"], 500)),
+                     md_text(s["note"], 200)])
+    out = table(("id", "type", "origin", "publication", "fetch", "retrieved", "title/url", "note"), rows)
+    if corrections:
+        out += ["", "Ledger corrections (append-only; previous -> revised):", ""]
+        out += [_correction_line(c) for c in corrections]
+    return out
 
 
 def _fence(body):
@@ -622,7 +658,14 @@ def _unmapped(doc):
 LEGEND = [
     "- Claim cell: `value [FLAG] (evidence) -- note`; `--` means no value.",
     "- CONFIRMED: direct, sufficient evidence for the precise claim within its stated scope (legal facts:"
-    " regulator, registry, auditor or on-chain sources only).",
+    " regulator, registry, auditor or on-chain sources only). The cell names its verification basis (`basis"
+    " S<n>`): a regulator record, registry entry, on-chain read, tested auditor procedure, or for non-legal facts"
+    " an independent third party; a filer's disclosure is never one (curator AC-05).",
+    "- Attribution (curator AC-05): a company filing (10-K, 10-Q, 8-K, prospectus, exhibit) has origin filer"
+    " (first_party when the filer is the project): the regulator only hosts it; origin regulator is limited to"
+    " records the regulator issues or keeps. Appendix I shows where each source was published"
+    " (`publication: <host> (<type>)`) and every append-only ledger correction. Enforcement, perfection,"
+    " enforceability and insolvency protection are never CONFIRMED or INFERRED from disclosures alone.",
     "- SELF_REPORTED: stated by the issuer, protocol, borrower or another interested party.",
     "- THIRD_PARTY_REPORTED: reported by a third party; its scope and authority still need assessing.",
     "- INFERRED: the analyst's conclusion from cited facts; the note states the reasoning.",
@@ -689,20 +732,28 @@ def _checks(results):
     return out + ["", "Rules:", ""] + ["- %s %s: %s" % rule for rule in schema.QA_RULES]
 
 
-def _changes(doc, rows):
-    if doc["run"]["seeded_from"] is None:
-        return ["No earlier run."]
+def _change_table(rows):
     return table(("ref", "path", "change", "before", "after", "evidence added"),
                  [[md_text(r["ref"]), md_text(r["path"]) or "--", r["change"], text(r["before"]),
                    text(r["after"]), ", ".join(r["evidence_added"]) or "--"] for r in rows])
 
 
-def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_rows=None, today=None):
+def _changes(doc, rows, amendment=0, amendment_rows=()):
+    out = ["No earlier run."] if doc["run"]["seeded_from"] is None else _change_table(rows)
+    if amendment >= 1:
+        out += ["", "### Changes in amendment %d" % amendment, ""] + _change_table(amendment_rows)
+    return out
+
+
+def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_rows=None, today=None,
+           corrections=(), amendment=0, amendment_rows=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
     figures = {"T<n>-<view>": SVG text}: a figure gets an image link to <slug>.flow-T<n>-<view>.svg;
     rejected = N ids the analyst rejected, marked in Appendix M (final reports only);
     qa_results = qa.run output (computed without expectations when None); change_rows = changes.diff rows;
-    today = the render clock date shown for a draft in the Report generated row."""
+    today = the render clock date shown for a draft in the Report generated row; corrections = ledger correction
+    lines (Appendix I); amendment_rows = change rows against the previous final version of amendment
+    <amendment> (Appendix O)."""
     figures = figures or {}
     results = qa.run(doc) if qa_results is None else qa_results
     cell = _Cells(doc)
@@ -728,7 +779,7 @@ def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_ro
         ("Appendix F. All findings", _findings(doc)),
         ("Appendix G. History", _history(doc)),
         ("Appendix H. Audits and size", _audits_size(doc, cell)),
-        ("Appendix I. Sources", _sources_table(doc)),
+        ("Appendix I. Sources", _sources_table(doc, corrections)),
         ("Appendix J. Analyst interventions", _interventions(rounds)),
         ("Appendix K. Unmapped facts", _unmapped(doc)),
         ("Appendix L. Legend", LEGEND),
@@ -738,7 +789,7 @@ def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_ro
     seeded_from = doc["run"]["seeded_from"]
     sections += (("Appendix N. Quantitative and provenance checks", _checks(results)),
                  ("Appendix O. Changes since %s" % text(seeded_from, 64) if seeded_from else "Appendix O. Changes",
-                  _changes(doc, change_rows or [])))
+                  _changes(doc, change_rows or [], amendment, amendment_rows)))
     for heading, body in sections:
         while body and body[-1] == "":
             body = body[:-1]
@@ -760,9 +811,17 @@ def _sorted_keys(value):
     return value
 
 
-def derived(doc, record_sha256, qa_results, change_rows):
+def verification_bases(doc):
+    """{claim id: sorted source ids} for every verified claim, sorted by claim id (v0.7.4 section 3)."""
+    sources_by_id = {s["id"]: s for s in doc["sources"]}
+    return {framework.claim_id(parts, doc): claims.verification_basis(parts, claim, sources_by_id)
+            for parts, claim in schema.iter_claims(doc) if claim["status"] == "verified"}
+
+
+def derived(doc, record_sha256, qa_results, change_rows, amendment_rows=()):
     """The <slug>.derived.json object: flags, conflicts, section 1 selection, allocation, totals, six questions,
-    QA results and changes, tied to the record by its SHA-256; keys sorted."""
+    QA results, changes, verification bases and amendment changes, tied to the record by its SHA-256; keys
+    sorted."""
     run = doc["run"]
     selected, total, rest = framework.critical_counts(doc)
     conflicts = [{"finding": ident, "conflict_status": status, "scope_match": match, "resolution": resolution,
@@ -782,4 +841,6 @@ def derived(doc, record_sha256, qa_results, change_rows):
                            for t in credit_strategies(doc)},
         "qa": list(qa_results),
         "changes": list(change_rows),
+        "verification_basis": verification_bases(doc),
+        "amendment_changes": list(amendment_rows),
     })

@@ -578,10 +578,10 @@ def critical_counts(doc):
 
 # --------------------------------------------------------------------------- 3.6 resolve
 
-RESOLVE_PATTERN = re.compile(r"^(@?(E|P|T|X|Z|G|D|C|U|R)[1-9][0-9]*)((\.[a-z][a-z0-9_]*)|(\[[0-9]+\]))*$")
+RESOLVE_PATTERN = re.compile(r"^(@?(S|E|P|T|X|Z|G|D|C|U|R)[1-9][0-9]*)((\.[a-z][a-z0-9_]*)|(\[[0-9]+\]))*$")
 _PART = re.compile(r"\.([a-z][a-z0-9_]*)|\[([0-9]+)\]")
-_COLLECTIONS = {"E": ("entities",), "T": ("strategies",), "X": ("interfaces",), "Z": ("supports",),
-                "P": ("project", "products")}
+_COLLECTIONS = {"S": ("sources",), "E": ("entities",), "T": ("strategies",), "X": ("interfaces",),
+                "Z": ("supports",), "P": ("project", "products")}
 
 
 def _is_claim(node):
@@ -591,7 +591,8 @@ def _is_claim(node):
 def resolve(doc, path):
     """(kind, node) at a subject or expectation path, kind claim, object, list or scalar; KeyError when the path
     does not match the grammar or names nothing. `P<n>.holder_rights` is that product's holder_rights entry;
-    `@<id>` is the finding carried from <id>, or the finding with that id when none carries from it."""
+    `S<n>` is a source object (v0.7.4); `@<id>` is the finding carried from <id>, or the finding with that id
+    when none carries from it."""
     match = RESOLVE_PATTERN.match(path) if isinstance(path, str) else None
     if match is None:
         raise KeyError(path)

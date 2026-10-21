@@ -1,4 +1,4 @@
-"""v0.7.0 section 6, v0.7.1, v0.7.2: quantitative and provenance checks QA1-QA13 and analyst expectations
+"""v0.7.0 section 6, v0.7.1, v0.7.2, v0.7.4: quantitative and provenance checks QA1-QA14 and analyst expectations
 (lib/qa.py)."""
 
 import json
@@ -8,7 +8,7 @@ import pytest
 from test_support import FIXTURES, load_fixture
 from lib import claims, framework, qa, schema
 
-IDS = ["QA%d" % i for i in range(1, 14)]
+IDS = ["QA%d" % i for i in range(1, 15)]
 RESULT_KEYS = {"id", "rule", "result", "detail", "target", "legacy", "mapping"}
 
 

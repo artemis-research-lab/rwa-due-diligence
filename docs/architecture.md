@@ -22,7 +22,9 @@ data. It does not score risk and never transacts.
 - Support (Z): credit enhancement or yield support as a cross-layer relationship.
 - Holder rights per product; flows in three views (settlement, claim, repayment).
 - Evidence: each claim has a status (six derived flags), the asserting origin, the publication sources and the
-  assurance scope, so a statement quoted by an auditor is not mistaken for audited fact.
+  assurance scope, so a statement quoted by an auditor is not mistaken for audited fact. A company filing is
+  attributed to its filer, not to the regulator that hosts it; every verified claim has a derived verification basis
+  of sources able to verify it; source attribution is corrected by append-only ledger corrections.
 - Findings: gaps, discrepancies (same-scope conflicts that flag claims CONFLICTING), scope-unresolved items,
   unreconciled transactions and structural changes, each with scope match, assertions, resolution, framework checks,
   impact and priority; findings carried from an earlier run keep their earlier id.

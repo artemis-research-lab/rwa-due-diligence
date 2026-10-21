@@ -311,7 +311,7 @@ def test_qa_exit_codes(tmp_path):
     assert (code, err) == (0, "")
     result = json.loads(out)
     assert list(result) == ["results", "failed"] and result["failed"] == []
-    assert [r["id"] for r in result["results"]] == ["QA%d" % i for i in range(1, 14)]
+    assert [r["id"] for r in result["results"]] == ["QA%d" % i for i in range(1, 15)]
     doc = runstate.load_work(project)
     doc["interfaces"][8]["amounts"][0]["scope"] = "unchecked (migrated from rwa-dd/2.1)"
     runstate.save_work(project, doc)

@@ -76,10 +76,21 @@ def build_parser():
     p.add_argument("--note", default="", help="note (<=200)")
     p.add_argument("--offline", action="store_true", help="no retrieval time: retrieved_at null, fetch offline")
 
+    p = with_slug("correct-source", "append a correction of a source's attribution to the ledger and apply it to "
+                                    "the working document (append-only; any phase but final)")
+    p.add_argument("--id", required=True, help="source id S<n> to correct")
+    p.add_argument("--source-type", default=None, choices=schema.ENUMS["source_type"], metavar="TYPE",
+                   help="new source type, one of: " + ", ".join(schema.ENUMS["source_type"]))
+    p.add_argument("--origin", default=None, choices=schema.ENUMS["origin"], metavar="ORIGIN",
+                   help="new origin, one of: " + ", ".join(schema.ENUMS["origin"]))
+    p.add_argument("--publisher", default=None, help="new publisher: entity id E<n>, or none")
+    p.add_argument("--reason", required=True, help="why the attribution is corrected (%d..%d characters)"
+                   % (schema.CORRECTION_REASON_MIN, schema.CORRECTION_REASON_MAX))
+
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
     with_slug("lint", "print address, layer, claim, path, amount and provenance warnings for audit/dd.work.json "
                       "as JSON (read-only, any phase; needs a structurally valid document)")
-    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA13 and the analyst expectations on "
+    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA14 and the analyst expectations on "
                         "audit/dd.work.json; prints results and failed ids as JSON; exit 5 when any check fails")
     p.add_argument("--expect", default=None,
                    help="expectation file (default: audit/qa-expect.json when it exists)")
@@ -116,6 +127,20 @@ def _excerpt(args):
     return " ".join(text.split())
 
 
+def _correction_fields(args):
+    """Fields given to correct-source; --publisher none clears the publisher."""
+    fields = {}
+    if args.source_type is not None:
+        fields["source_type"] = args.source_type
+    if args.origin is not None:
+        fields["origin"] = args.origin
+    if args.publisher is not None:
+        fields["publisher"] = None if args.publisher == "none" else args.publisher
+    if not fields:
+        raise runstate.InvalidError(["correct-source: give at least one of --source-type, --origin, --publisher"])
+    return fields
+
+
 def run(args):
     cmd = args.command
     if cmd == "schema-doc":
@@ -131,6 +156,8 @@ def run(args):
             origin=args.origin, fetch=args.fetch, excerpt=_excerpt(args), publisher=args.publisher,
             archived=args.archived, version_date=args.version_date, note=args.note, offline=args.offline)
         _json(source)
+    elif cmd == "correct-source":
+        _json(runstate.correct_source(args.root, args.slug, args.id, _correction_fields(args), args.reason))
     elif cmd == "validate":
         errors = runstate.check(args.root, args.slug)
         if errors:

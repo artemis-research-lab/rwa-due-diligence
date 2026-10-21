@@ -97,6 +97,7 @@
 | QA11 | deployment | pass | -- | -- | ok |
 | QA12 | onemeasure | pass | -- | -- | ok |
 | QA13 | timebasis | pass | -- | -- | ok |
+| QA14 | attribution | pass | -- | -- | ok |
 
 ## Migration checks pending
 

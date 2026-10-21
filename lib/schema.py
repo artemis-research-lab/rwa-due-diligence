@@ -4,7 +4,7 @@ references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
 SCHEMA_VERSION = "rwa-dd/2.2"
-SKILL_VERSION = "0.7.3"
+SKILL_VERSION = "0.7.4"
 
 ENUMS = {
     "source_type": (
@@ -12,7 +12,7 @@ ENUMS = {
         "company_registry", "audit_report", "attestation", "proof_of_reserves", "onchain_explorer",
         "rpc_api", "archive", "third_party_research", "news", "web_search", "analyst_input", "other",
     ),
-    "origin": ("first_party", "regulator", "registry", "auditor", "onchain", "third_party", "analyst"),
+    "origin": ("first_party", "regulator", "filer", "registry", "auditor", "onchain", "third_party", "analyst"),
     "fetch": (
         "ok", "js_blocked", "browser_rendered", "pdf", "archived", "http_error", "auth_required",
         "dns_error", "cloudflare", "captcha", "form_required", "timeout", "tool_refused", "offline",
@@ -706,10 +706,18 @@ QA_RULES = (
                            " the position measure; later entries are other measures of the same position)."),
     ("QA13", "timebasis", "No counted amount lacks an established data time, and no data time is a source retrieval"
                           " time (curator AC-03)."),
+    ("QA14", "attribution", "No filing is attributed to a regulator, no regulator or registry origin lacks such a"
+                            " source, every verified claim has a verification basis that excludes filer disclosures,"
+                            " and no enforceability claim rests only on a disclosure (curator AC-05)."),
 )
 
-# Expectation operators (v0.7.0 6.2).
-EXPECT_OPS = ("equals", "in", "status", "flag", "counted", "exists", "not_contains")
+# Expectation operators (v0.7.0 6.2, v0.7.4 status_in).
+EXPECT_OPS = ("equals", "in", "status", "flag", "counted", "exists", "not_contains", "status_in")
+
+# Correctable source fields of a ledger correction line (v0.7.4 section 4).
+CORRECTABLE = ("source_type", "origin", "publisher")
+CORRECTION_REASON_MIN = 20
+CORRECTION_REASON_MAX = 300
 
 
 def schema_doc():
@@ -747,7 +755,8 @@ def schema_doc():
         "- `supports[]`: `strategies` are T ids, `provider` an E id, `beneficiary` an E or P id or null.",
         "- `findings[].subjects` name claims or objects by claim id (see Evidence flags); the path must resolve.",
         "- `history` is sorted by date, nulls last.",
-        "- `sources` must equal the source ledger `audit/sources.jsonl`; add sources only with `dd.py add-source`.",
+        "- `sources` must equal the source ledger `audit/sources.jsonl` with its correction lines applied (see",
+        "  Ledger corrections); add sources only with `dd.py add-source`.",
         "- A date-or-timestamp is a real calendar date `YYYY-MM-DD`, optionally with a valid time",
         "  `THH:MM:SSZ`.",
         "",
@@ -769,11 +778,10 @@ def schema_doc():
         "c.subject; `analyst` if s.origin is analyst; otherwise `independent:<origin>`.",
         "Legal paths: %s. Issuer origins: %s." % (", ".join(LEGAL_SECTIONS), ", ".join(ISSUER_ORIGINS)),
         "",
-        "- verified: at least one independent evidence and no analyst evidence; on legal paths its origin must be",
-        "  regulator, registry, auditor or onchain. When any cited source has origin auditor: origin",
-        "  auditor_procedure with assurance TESTED, or origin regulator, registry or onchain with a source of that",
-        "  same origin in evidence and assurance TESTED or NOT_TESTED; any other origin is an error. An auditor",
-        "  source counts for the legal rule only with origin auditor_procedure and assurance TESTED.",
+        "- verified: a non-empty verification basis (see Attribution) and no analyst evidence. When any cited",
+        "  source has origin auditor: origin auditor_procedure with assurance TESTED, or origin regulator,",
+        "  registry or onchain with a source of that same origin in evidence and assurance TESTED or NOT_TESTED;",
+        "  any other origin is an error.",
         "- The auditor-source rules (curator Q8) apply once origin is set; a null origin is unstated: valid, but",
         "  lint warns, QA7 fails and finalize refuses. Claims under audits[] describe the audit itself and are",
         "  exempt from them.",
@@ -791,6 +799,41 @@ def schema_doc():
         "- assurance non-null needs an auditor source in evidence (under audits[]: an auditor or other",
         "  independent source).",
         "- subject references an existing entity or product, or is null.",
+        "",
+        "### Attribution (curator AC-05)",
+        "",
+        "Concept map (no field renamed):",
+        "",
+        "- document_type = `sources[].source_type` (regulator_filing: a document a reporting entity filed with a",
+        "  regulator; regulator_registry: a record issued or kept by a regulator: register entry, licence,",
+        "  decision, order, filing index).",
+        "- assertion_origin = `claims[].origin` (a filer's statement is issuer_documents, borrower or",
+        "  independent_party, never regulator).",
+        "- publication_source = `sources[].url` host and source_type (derived, for example `sec.gov",
+        "  (regulator_filing)`).",
+        "- verification_basis = derived per claim (below): the cited sources that can verify it.",
+        "- verification_status = `claims[].status` and the derived flag.",
+        "",
+        "Source origin `filer`: a reporting entity's own document filed with or furnished to a regulator; the",
+        "regulator is only the repository.",
+        "",
+        "- A1: source_type regulator_filing requires origin filer or first_party.",
+        "- A2: origin regulator requires source_type regulator_registry.",
+        "- A3: origin filer requires source_type regulator_filing.",
+        "- A4: claim origin regulator requires a cited source with origin regulator; claim origin registry a cited",
+        "  source with origin registry.",
+        "- A5: a filer source is never a verifier (evidence role `independent:filer`, or `self` when its",
+        "  publisher is the claim subject).",
+        "- A6: claims at `interfaces[].enforcement`, `interfaces[].perfection`, `supports[].enforceability` and",
+        "  `holder_rights[].insolvency_protection` may not be verified or inferred when every cited source is a",
+        "  disclosure (origin filer or first_party, or source_type legal_doc). A claim citing at least one",
+        "  regulator, registry, onchain or tested-auditor source is not caught.",
+        "- Verification basis (derived): the sorted cited source ids with origin regulator, registry or onchain;",
+        "  origin auditor only when the claim has origin auditor_procedure and assurance TESTED; origin",
+        "  third_party only outside legal paths. Never filer, first_party or analyst, and never a source whose",
+        "  publisher is the claim subject.",
+        "- V1: status verified requires a non-empty verification basis.",
+        "- A4, A6 and V1 also apply to claims under audits[].",
         "",
         "### Coded claims",
         "",
@@ -897,11 +940,12 @@ def schema_doc():
         "",
         "Expectations (`--expect <file>`, default `audit/qa-expect.json` when it exists; written by the analyst and",
         'never edited by the agent): a JSON array of `{"id": <1..20 chars>, "case": <<=120 chars>, "path": <path>,',
-        '"op": <op>, "value": <json>}`, optionally with `"target": <id>` (`(E|P|T|X|Z|G|D|C|U|R)<n>`, the',
-        "canonical id the path must resolve to). Paths: `(@?)(E|P|T|X|Z|G|D|C|U|R)<n>` followed by `.field` and",
-        "`[i]` parts; `@<id>` selects the finding carried from that id and needs `target` (curator AC-01).",
-        "Ops: %s." % ", ".join(EXPECT_OPS),
-        "Each gives a result `E:<id>` after QA13. Every result has `id`, `rule`, `result`, `detail`, `target`",
+        '"op": <op>, "value": <json>}`, optionally with `"target": <id>` (`(S|E|P|T|X|Z|G|D|C|U|R)<n>`, the',
+        "canonical id the path must resolve to). Paths: `(@?)(S|E|P|T|X|Z|G|D|C|U|R)<n>` followed by `.field` and",
+        "`[i]` parts (`S<n>` is a source object, for example `S3.origin`); `@<id>` selects the finding carried",
+        "from that id and needs `target` (curator AC-01).",
+        "Ops: %s; `status_in` takes a non-empty list of claim statuses." % ", ".join(EXPECT_OPS),
+        "Each gives a result `E:<id>` after QA14. Every result has `id`, `rule`, `result`, `detail`, `target`",
         "(canonical id, null when unresolved or for QA rules), `legacy` (the `@` id or null) and `mapping` (legacy",
         "or carried_from mapping text, empty when none); an expectation detail starts with `<canonical id>: `, and",
         "a `target` that differs from the resolved id fails with `target mismatch: expected <a>, resolved <b>`.",
@@ -912,8 +956,23 @@ def schema_doc():
         "Finalize writes `<slug>.derived.json` (`derived_version` `rwa-dd-derived/1`) next to `<slug>.dd.json`:",
         "slug, run_id, schema_version, skill_version, `record_sha256` (SHA-256 of the written dd.json bytes),",
         "`flags` (claim id -> flag for every claim), `conflicts`, `critical`, `critical_counts`, `allocation`,",
-        "`totals`, `five_questions`, `qa` and `changes`. Flags and totals are derived, never stored in the record.",
-        "Allocation rows carry `observed_at` and `time_basis`.",
+        "`totals`, `five_questions`, `qa`, `changes`, `verification_basis` (claim id -> sorted source ids for",
+        "every verified claim) and `amendment_changes` (the change rows between the previous final version of an",
+        "amended run, `archive/<run_id>.v<m-1>/<slug>.dd.json`, and the current record; `[]` before any",
+        "amendment). Flags and totals are derived, never stored in the record. Allocation rows carry",
+        "`observed_at` and `time_basis`.",
+        "",
+        "## Ledger corrections",
+        "",
+        "The ledger is append-only. A source's attribution is corrected by appending a correction line (`dd.py",
+        'correct-source`, phase not final): `{"correction": "<S id>", "fields": {<field>: <new>}, "previous":',
+        '{<field>: <old>}, "reason": "<%d..%d chars>", "corrected_at": "<script clock timestamp>"}`.'
+        % (CORRECTION_REASON_MIN, CORRECTION_REASON_MAX),
+        "Correctable fields: %s (at least one; each new value differs from the current one and passes the" %
+        ", ".join(CORRECTABLE),
+        "source schema; the result must satisfy A1-A3). Reading the ledger applies the corrections in file",
+        "order; a correction of an unknown id or a malformed line is a contract violation. The change log shows",
+        "each corrected field as a `changed` row on the source id.",
         "",
         "## Package manifest",
         "",

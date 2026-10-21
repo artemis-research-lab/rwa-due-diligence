@@ -460,6 +460,7 @@ def semantic_errors(doc):
 
     for i, s in enumerate(sources):
         _need(s["publisher"], eids, "sources[%d].publisher" % i, errors, "entity")
+        errors.extend(source_attribution_errors(i, s))
     for section in ("yield", "redemption", "eligibility", "size"):
         for i, item in enumerate(doc[section]):
             _need(item["product"], pids, "%s[%d].product" % (section, i), errors, "product")
@@ -494,6 +495,22 @@ def semantic_errors(doc):
         errors.append("run.finalized_at: must be set exactly when status is final")
 
     errors.extend(claims.check_all(doc))
+    return errors
+
+
+def source_attribution_errors(i, source):
+    """Curator AC-05 source errors A1-A3 of sources[i] (v0.7.4 section 2); shared by add-source, correct-source
+    and QA14."""
+    errors = []
+    sid, source_type, origin = source.get("id"), source.get("source_type"), source.get("origin")
+    if source_type == "regulator_filing" and origin not in ("filer", "first_party"):
+        errors.append("sources[%d].origin: %s is a filing made to a regulator; its origin is the filer (filer or "
+                      "first_party), not regulator (curator AC-05)" % (i, sid))
+    if origin == "regulator" and source_type != "regulator_registry":
+        errors.append("sources[%d].source_type: origin regulator is only for records a regulator issues or keeps "
+                      "(regulator_registry) (curator AC-05)" % i)
+    if origin == "filer" and source_type != "regulator_filing":
+        errors.append("sources[%d].source_type: origin filer is only for filings (regulator_filing)" % i)
     return errors
 
 

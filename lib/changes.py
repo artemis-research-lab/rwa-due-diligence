@@ -2,7 +2,8 @@
 
 The earlier record is first migrated to the current schema (the caller passes migrate_to_current output), so a
 change that is exactly the migration itself never shows. Claims are matched by claim id, objects by their ids
-and findings by carried_from. Pure and deterministic.
+and findings by carried_from; sources give an added row, or one changed row per corrected attribution field
+(source_type, origin, publisher; v0.7.4). Pure and deterministic.
 """
 
 import json
@@ -125,10 +126,15 @@ def diff(old_doc, new_doc):
         if ident not in matched:
             rows.append(_row(ident, "", "removed", _json(f["statement"]), None))
 
-    old_sources = {s["id"] for s in old_doc["sources"]}
+    old_sources = {s["id"]: s for s in old_doc["sources"]}
     for s in new_doc["sources"]:
-        if s["id"] not in old_sources:
+        old = old_sources.get(s["id"])
+        if old is None:
             rows.append(_row(s["id"], "", "added", None, _json(s["title"])))
+            continue
+        for key in schema.CORRECTABLE:  # ledger corrections (v0.7.4 section 4)
+            if old.get(key) != s[key]:
+                rows.append(_row(s["id"], key, "changed", _json(old.get(key)), _json(s[key])))
 
     old_claims = _claims(old_doc)
     new_claims = _claims(new_doc)

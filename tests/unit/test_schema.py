@@ -42,12 +42,13 @@ def test_skeleton_is_structurally_valid_once_run_is_filled():
 
 
 def test_version_constants():
-    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.3")
+    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.4")
     assert schema.MIGRATED_SCOPE_NOTE == "unchecked (migrated from rwa-dd/2.0)"
     assert schema.MIGRATED_NOTE_21 == schema.MIGRATED_AMOUNT_SCOPE == "unchecked (migrated from rwa-dd/2.1)"
-    assert [rule[0] for rule in schema.QA_RULES] == ["QA%d" % i for i in range(1, 14)]
-    assert schema.QA_RULES[-1][:2] == ("QA13", "timebasis")
-    assert schema.QA_RULES[-1][2] == ("No counted amount lacks an established data time, and no data time is a source"
+    assert [rule[0] for rule in schema.QA_RULES] == ["QA%d" % i for i in range(1, 15)]
+    assert schema.QA_RULES[-2][:2] == ("QA13", "timebasis")
+    assert schema.QA_RULES[-1][:2] == ("QA14", "attribution")
+    assert schema.QA_RULES[-2][2] == ("No counted amount lacks an established data time, and no data time is a source"
                                       " retrieval time (curator AC-03).")
     assert schema.MIGRATION_PLACEHOLDERS == (schema.MIGRATED_SCOPE_NOTE, schema.MIGRATED_NOTE_21)
     assert schema.ISSUER_ORIGINS == ("issuer_management", "issuer_documents", "borrower")
@@ -186,12 +187,14 @@ def test_schema_doc_documents_2_2():
                    "`supports`: array of object", "`interfaces[].amounts[].value`: a number >= 0",
                    "`interfaces[].supply_concentration.ratio`: a number 0..1", "SCOPE_UNRESOLVED",
                    "UNRECONCILED_TRANSACTION", "## Quality checks (dd.py qa)", "QA11 deployment", "QA12 onemeasure",
-                   "QA13 timebasis",
-                   'optionally with `"target": <id>`', "needs `target` (curator AC-01)", "after QA13",
+                   "QA13 timebasis", "QA14 attribution", "### Attribution (curator AC-05)", "## Ledger corrections",
+                   "`verification_basis`", "`amendment_changes`", "`status_in` takes a non-empty list",
+                   'optionally with `"target": <id>`', "needs `target` (curator AC-01)", "after QA14",
                    "`target mismatch: expected <a>, resolved <b>`", "Time basis (curator AC-03):",
                    "observed_at (derived, never stored)", "`data time not established`", "## Package manifest",
                    "rwa-dd-manifest/1", "exits 6",
-                   "other measure of X<n>[<k>]", "## Derived output", "rwa-dd-derived/1", "`record_sha256`", "not_contains",
+                   "other measure of X<n>[<k>]", "## Derived output", "rwa-dd-derived/1", "`record_sha256`",
+                   "not_contains",
                    "`CUMULATIVE_FUNDED`: actual disbursements over a stated period."):
         assert needle in text, needle
     assert "GROSS_FUNDED" not in text

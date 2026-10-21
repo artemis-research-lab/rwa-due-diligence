@@ -136,8 +136,12 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
 ## 4. Evidence rules
 - Register every fetch attempt with add-source, including failures. A checked-and-absent fact is not_found WITH that
   evidence.
-- origin is about who produced the source: first_party, regulator, registry (company, lien and fund registries,
-  GLEIF), auditor, onchain (chain state, a block explorer or an indexer reading it), third_party, analyst.
+- origin is about who produced the source: first_party, regulator, filer, registry (company, lien and fund
+  registries, GLEIF), auditor, onchain (chain state, a block explorer or an indexer reading it), third_party,
+  analyst. A 10-K, 10-Q, 8-K, S-1, prospectus or exhibit filed by a company is source_type regulator_filing with
+  origin filer (first_party when the filer is the project itself): the regulator only hosts it. Origin regulator is
+  only for records the regulator itself issues or keeps (register entries, licences, decisions, orders, filing
+  indexes: source_type regulator_registry), and they establish only what the record states (curator AC-05).
 - Set publisher to the entity id when a source is published by an entity in the document; set subject on a claim when
   it is about one entity or product. A source never verifies claims about its own publisher.
 - Six statuses, kept distinct in the data (curator decision Q6): verified (CONFIRMED: direct, sufficient evidence for
@@ -145,6 +149,13 @@ Questions only the issuer can answer go to issuer_requests with the codes they a
   third_party_reported (a third party reports it; its scope and authority still need assessing); inferred (your
   conclusion from cited facts; the note states the reasoning); not_found (UNRESOLVED); CONFLICTING is derived from
   discrepancy subjects.
+- Every verified claim needs a verification basis: a regulator record, a registry entry, an on-chain read, a tested
+  auditor procedure, or for non-legal facts an independent third party. A company's filing proves that the company
+  said it, not that it is true: classify its statements as the company's (self_reported with origin
+  issuer_documents or borrower when the filer is a party, third_party_reported with origin independent_party when it
+  is not) unless another source verifies them. An agreement's existence or terms in a disclosure never establish its
+  enforceability, perfection or insolvency protection. Correct a wrongly registered source with dd.py
+  correct-source (the ledger records the previous and revised attribution); never re-register it.
 - Legal facts (entities, interfaces, holder_rights, supports, eligibility) are verified only by regulator, registry,
   auditor or onchain sources, and only within the scope those sources cover. On-chain confirmation of pool receipts
   confirms the receipt balances, not the off-chain lender of record or the holder's rights against a borrower; never

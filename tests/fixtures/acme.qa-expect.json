@@ -82,5 +82,23 @@
     "op": "equals",
     "value": "unreconciled_transaction",
     "target": "R1"
+  },
+  {
+    "id": "s2-regulator-record",
+    "case": "S2 is a record the regulator keeps (register entry), so its origin is regulator",
+    "path": "S2.origin",
+    "op": "equals",
+    "value": "regulator"
+  },
+  {
+    "id": "x4-enforcement-basis",
+    "case": "X4 enforcement rests on the offering memorandum: never verified or inferred (AC-05)",
+    "path": "X4.enforcement",
+    "op": "status_in",
+    "value": [
+      "self_reported",
+      "third_party_reported",
+      "not_found"
+    ]
   }
 ]

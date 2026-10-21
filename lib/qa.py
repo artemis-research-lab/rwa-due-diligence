@@ -1,5 +1,5 @@
 """Quantitative and provenance checks (v0.7.0 section 6, v0.7.1 sections 1 and 4, v0.7.2 sections 1 and 2,
-dd.py qa): rules QA1-QA13 and analyst expectations.
+dd.py qa; v0.7.4 QA14 attribution and op status_in): rules QA1-QA14 and analyst expectations.
 
 Each rule recomputes what it asserts from the document (independently of allocation_totals) and compares;
 results are {"id", "rule", "result": "pass"|"fail", "detail", "target", "legacy", "mapping"} with offending ids
@@ -9,14 +9,14 @@ sorted, or `ok`; target, legacy and mapping are null, null and "" for the QA rul
 import json
 import re
 
-from lib import claims, framework, schema
+from lib import claims, framework, schema, validate
 from lib.textutil import load_json_text
 
 STOCK_FLOW = ("CUMULATIVE_FUNDED", "FACILITY_COMMITMENT", "UNDRAWN_COMMITMENT")
 CREDIT_COMPONENTS = ("CORE_CREDIT", "DEFI_LENDING")
 EXPECT_KEYS = ("id", "case", "path", "op", "value")
 EXPECT_OPTIONAL = ("target",)
-TARGET_PATTERN = re.compile(r"^(E|P|T|X|Z|G|D|C|U|R)[1-9][0-9]*$")
+TARGET_PATTERN = re.compile(r"^(S|E|P|T|X|Z|G|D|C|U|R)[1-9][0-9]*$")
 COUNTED_PATH = re.compile(r"^(X[1-9][0-9]*)\.amounts\[([0-9]+)\]$")
 
 
@@ -77,7 +77,7 @@ def _qa1(doc, rows):
 
 
 def run(doc, expectations=None):
-    """Results of QA1-QA13 then one E:<id> result per expectation, in that order."""
+    """Results of QA1-QA14 then one E:<id> result per expectation, in that order."""
     rows = framework.allocation(doc)
     counted = [r for r in rows if r[10]]
     interfaces = {x["id"]: x for x in doc["interfaces"]}
@@ -138,6 +138,12 @@ def run(doc, expectations=None):
         "%s.amounts[%d]" % (x["id"], j) for x in doc["interfaces"] for j, a in enumerate(x["amounts"])
         if framework.retrieval_source(doc, a) is not None]))
 
+    sources_by_id = {s["id"]: s for s in doc["sources"]}
+    attribution = [s["id"] for i, s in enumerate(doc["sources"]) if validate.source_attribution_errors(i, s)]
+    attribution += [framework.claim_id(parts, doc) for parts, claim in schema.iter_claims(doc)
+                    if claims.attribution_errors(parts, claim, sources_by_id)]
+    results.append(_result("QA14", "attribution", attribution))
+
     for entry in expectations or []:
         results.append(check_expectation(doc, entry, rows))
     return results
@@ -172,8 +178,11 @@ def _entry_errors(i, entry):
         return "%s.value: must be a boolean for op %s" % (where, op)
     if op in ("status", "flag", "not_contains") and not isinstance(value, str):
         return "%s.value: must be a string for op %s" % (where, op)
+    if op == "status_in" and (not isinstance(value, list) or not value
+                              or any(v not in schema.ENUMS["claim_status"] for v in value)):
+        return "%s.value: must be a non-empty list of claim statuses for op status_in" % where
     if "target" in entry and not (isinstance(entry["target"], str) and TARGET_PATTERN.match(entry["target"])):
-        return "%s.target: must be an id (E|P|T|X|Z|G|D|C|U|R)<n>" % where
+        return "%s.target: must be an id (S|E|P|T|X|Z|G|D|C|U|R)<n>" % where
     if path.startswith("@") and "target" not in entry:
         return "%s.target: required for a legacy (@) path" % where
     return None
@@ -264,11 +273,11 @@ def check_expectation(doc, entry, rows=None):
                 actual, ok = value, value == expected
             elif op == "in":
                 actual, ok = value, value in expected
-            elif op == "status":
+            elif op in ("status", "status_in"):
                 if kind != "claim":
                     raise KeyError(path)
                 actual = node["status"]
-                ok = actual == expected
+                ok = actual == expected if op == "status" else actual in expected
             elif op == "flag":
                 if kind != "claim":
                     raise KeyError(path)

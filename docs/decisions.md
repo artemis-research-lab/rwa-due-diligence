@@ -86,6 +86,11 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D82 - Package manifest - 2026-10-21 - Finalize writes <slug>.manifest.json (files, roles, SHA-256, run and execution metadata); dd.py verify reproduces the checks read-only (curator AC-04).
 - D83 - Schema unchanged - 2026-10-21 - v0.7.2 closes the curator's v2.2 acceptance tasks without changing schema rwa-dd/2.2 or the accepted classification rules.
 - D84 - Manifest lint count - 2026-10-21 - The manifest records the total number of lint warnings and the count per key, not the number of lint keys.
+- D85 - Filer origin - 2026-10-21 - Source origin gains filer: company filings made to a regulator are the filer's documents; origin regulator is limited to records the regulator issues or keeps (curator AC-05).
+- D86 - Verification basis - 2026-10-21 - A verified claim needs a derived verification basis (regulator record, registry, on-chain read, tested auditor procedure, or an independent third party for non-legal facts); filer and first-party sources never verify.
+- D87 - Enforceability - 2026-10-21 - Enforcement, perfection, enforceability and insolvency-protection claims are never verified or inferred from disclosures alone.
+- D88 - Ledger corrections - 2026-10-21 - Source attribution is corrected by append-only correction lines (dd.py correct-source) that keep the previous value; read_ledger folds them.
+- D89 - QA14 - 2026-10-21 - QA14 attribution asserts D85-D87; derived.json carries verification_basis and amendment_changes.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -98,6 +103,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-20 - Curator review of v2.1 samples: Q8-Q10 decided; minor data-model revision implemented in v0.7.0.
 - 2026-10-21 - Round-1 packets of the 2.2 re-runs (hastra, usd-ai, huma): double-counted measures and Q8 combinations found; fixed in v0.7.1.
 - 2026-10-21 - Curator v2.2 review: design accepted, closure tasks AC-01 to AC-04 requested; tooling in v0.7.2.
+- 2026-10-21 - Curator closed AC-01 to AC-04; AC-05 (regulatory filing attribution) implemented in v0.7.4.
 
 ## Incidents
 

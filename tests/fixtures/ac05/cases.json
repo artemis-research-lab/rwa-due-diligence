@@ -1,0 +1,535 @@
+[
+  {
+    "id": "n-a1-filing-regulator",
+    "kind": "negative",
+    "rule": "A1",
+    "case": "A 10-Q registered with origin regulator (A1; origin regulator off a registry also gives A2)",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "regulator",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [],
+    "errors": [
+      "sources[9].origin: S10 is a filing made to a regulator; its origin is the filer (filer or first_party), not regulator (curator AC-05)",
+      "sources[9].source_type: origin regulator is only for records a regulator issues or keeps (regulator_registry) (curator AC-05)"
+    ],
+    "qa14": "S10",
+    "basis": {}
+  },
+  {
+    "id": "n-a4-10q-regulator-origin",
+    "kind": "negative",
+    "rule": "A4",
+    "case": "A claim citing only a 10-Q takes origin regulator (USD.AI X5.legal_class pattern)",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "interfaces",
+          4,
+          "legal_class"
+        ],
+        "claim": {
+          "value": "DL",
+          "status": "third_party_reported",
+          "evidence": [
+            "S10"
+          ],
+          "subject": "E7",
+          "note": "",
+          "origin": "regulator",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [
+      "interfaces[4].legal_class: origin regulator requires a regulator source in evidence (curator AC-05)"
+    ],
+    "qa14": "X5.legal_class",
+    "basis": {}
+  },
+  {
+    "id": "n-v1-legal-filer-only",
+    "kind": "negative",
+    "rule": "V1",
+    "case": "A legal fact verified only by a filer's disclosure",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "entities",
+          6,
+          "jurisdiction"
+        ],
+        "claim": {
+          "value": "Examplestan",
+          "status": "verified",
+          "evidence": [
+            "S10"
+          ],
+          "subject": "E7",
+          "note": "",
+          "origin": null,
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [
+      "entities[6].jurisdiction: verified needs a verification basis (regulator record, registry, on-chain read, tested auditor procedure, or for non-legal facts an independent third party); a filer's disclosure is not one (curator AC-05)"
+    ],
+    "qa14": "E7.jurisdiction",
+    "basis": {
+      "E7.jurisdiction": []
+    }
+  },
+  {
+    "id": "n-a6-enforcement-inferred",
+    "kind": "negative",
+    "rule": "A6",
+    "case": "Enforcement inferred only from the issuer's own legal document",
+    "ledger_tail": [],
+    "set": [
+      {
+        "path": [
+          "interfaces",
+          3,
+          "enforcement"
+        ],
+        "claim": {
+          "value": "Security trustee can enforce on default",
+          "status": "inferred",
+          "evidence": [
+            "S8"
+          ],
+          "subject": null,
+          "note": "The offering memorandum describes a security trust.",
+          "origin": "analyst",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [
+      "interfaces[3].enforcement: enforceability is not established by a disclosure of an agreement's existence or terms; use self_reported, third_party_reported (for example a legal opinion) or not_found (curator AC-05)"
+    ],
+    "qa14": "X4.enforcement",
+    "basis": {}
+  },
+  {
+    "id": "n-a2-regulator-news",
+    "kind": "negative",
+    "rule": "A2",
+    "case": "Origin regulator on a news source",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://news.example/acme-licence",
+        "title": "Regulator comments on Acme licence",
+        "source_type": "news",
+        "origin": "regulator",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "A spokesperson for the authority said the licence remains active.",
+        "excerpt_sha256": "0ae95e3950f7b4ecb024c1370e3c8745b2a1f6437ac23afcd7bc4d11e13674d6",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [],
+    "errors": [
+      "sources[9].source_type: origin regulator is only for records a regulator issues or keeps (regulator_registry) (curator AC-05)"
+    ],
+    "qa14": "S10",
+    "basis": {}
+  },
+  {
+    "id": "n-a3-filer-project-docs",
+    "kind": "negative",
+    "rule": "A3",
+    "case": "Origin filer on a project_docs source",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://docs.acme-yield.example/risk",
+        "title": "Acme docs: risk factors",
+        "source_type": "project_docs",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "Risk factors as filed.",
+        "excerpt_sha256": "4df6af0977ce7df76834a331a580fb5db85214c09cbbbd2dcfbac2bb64174698",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [],
+    "errors": [
+      "sources[9].source_type: origin filer is only for filings (regulator_filing)"
+    ],
+    "qa14": "S10",
+    "basis": {}
+  },
+  {
+    "id": "p-licence-record",
+    "kind": "positive",
+    "rule": "V1",
+    "case": "A regulator_registry licence record verifies the manager's licence",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://regulator.example/register/licences/AAM-0042",
+        "title": "Licence record AAM-0042 (Examplestan Financial Authority)",
+        "source_type": "regulator_registry",
+        "origin": "regulator",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "Licence AAM-0042, holder Acme Asset Management LLC, type fund manager, status active.",
+        "excerpt_sha256": "3f70d6fd1c826436dc4ee9b37569c9a715264f001d3fe206c1d62727e2354d9b",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "entities",
+          1,
+          "license_status"
+        ],
+        "claim": {
+          "value": "active",
+          "status": "verified",
+          "evidence": [
+            "S10"
+          ],
+          "subject": "E2",
+          "note": "",
+          "origin": "regulator",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {
+      "E2.license_status": [
+        "S10"
+      ]
+    }
+  },
+  {
+    "id": "p-registry-jurisdiction",
+    "kind": "positive",
+    "rule": "V1",
+    "case": "A company registry entry verifies a jurisdiction",
+    "ledger_tail": [],
+    "set": [
+      {
+        "path": [
+          "entities",
+          2,
+          "jurisdiction"
+        ],
+        "claim": {
+          "value": "Examplestan",
+          "status": "verified",
+          "evidence": [
+            "S3"
+          ],
+          "subject": "E3",
+          "note": "",
+          "origin": "registry",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {
+      "E3.jurisdiction": [
+        "S3"
+      ]
+    }
+  },
+  {
+    "id": "p-filer-borrower",
+    "kind": "positive",
+    "rule": "A5",
+    "case": "A borrower's 10-Q statement stays self_reported with origin borrower",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "interfaces",
+          3,
+          "terms"
+        ],
+        "claim": {
+          "value": "Secured equipment loan facility",
+          "status": "self_reported",
+          "evidence": [
+            "S10"
+          ],
+          "subject": "E7",
+          "note": "",
+          "origin": "borrower",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {}
+  },
+  {
+    "id": "p-filer-independent",
+    "kind": "positive",
+    "rule": "A5",
+    "case": "A non-party filer's statement is third_party_reported with origin independent_party",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "strategies",
+          0,
+          "l3_business",
+          "concentration"
+        ],
+        "claim": {
+          "value": "Top lessee 30 percent of receivables",
+          "status": "third_party_reported",
+          "evidence": [
+            "S10"
+          ],
+          "subject": null,
+          "note": "",
+          "origin": "independent_party",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {}
+  },
+  {
+    "id": "p-onchain-amount",
+    "kind": "positive",
+    "rule": "V1",
+    "case": "An on-chain read verifies the X2 balance (fixture claim unchanged)",
+    "ledger_tail": [],
+    "set": [],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {
+      "X2.amounts[0].value": [
+        "S4"
+      ]
+    }
+  },
+  {
+    "id": "p-enforcement-filing",
+    "kind": "positive",
+    "rule": "A6",
+    "case": "Enforcement disclosed in a filing stays self_reported",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "filer",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      }
+    ],
+    "set": [
+      {
+        "path": [
+          "interfaces",
+          3,
+          "enforcement"
+        ],
+        "claim": {
+          "value": "Lender may repossess equipment on default",
+          "status": "self_reported",
+          "evidence": [
+            "S10"
+          ],
+          "subject": "E7",
+          "note": "",
+          "origin": "issuer_documents",
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {}
+  },
+  {
+    "id": "p-auditor-balance",
+    "kind": "positive",
+    "rule": "V1",
+    "case": "A tested auditor procedure verifies a position value",
+    "ledger_tail": [],
+    "set": [
+      {
+        "path": [
+          "interfaces",
+          1,
+          "amounts",
+          1,
+          "value"
+        ],
+        "claim": {
+          "value": 25150000,
+          "status": "verified",
+          "evidence": [
+            "S9"
+          ],
+          "subject": null,
+          "note": "",
+          "origin": "auditor_procedure",
+          "assurance": "TESTED"
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {
+      "X2.amounts[0].value": [
+        "S4"
+      ],
+      "X2.amounts[1].value": [
+        "S9"
+      ]
+    }
+  },
+  {
+    "id": "p-correction-fixes-a1",
+    "kind": "positive",
+    "rule": "A1",
+    "case": "A correction line re-attributes a 10-Q registered as regulator to its filer",
+    "ledger_tail": [
+      {
+        "id": "S10",
+        "url": "https://sec.example/Archives/edgar/data/0001/000100-26-000172.htm",
+        "title": "Form 10-Q of Example Equipment Lessors Ltd (quarter ended 2026-06-30)",
+        "source_type": "regulator_filing",
+        "origin": "regulator",
+        "publisher": null,
+        "retrieved_at": "2026-10-21T08:00:00Z",
+        "fetch": "ok",
+        "excerpt": "The Company is party to a loan and security agreement with Acme Warehouse SPV Ltd secured by substantially all of its equipment.",
+        "excerpt_sha256": "bf17b93277700fe8cd53317c43397c99cc44fc89d93ec026d6ced5d6aff66ac2",
+        "archived": false,
+        "version_date": null,
+        "note": ""
+      },
+      {
+        "correction": "S10",
+        "fields": {
+          "origin": "filer"
+        },
+        "previous": {
+          "origin": "regulator"
+        },
+        "reason": "Form 10-Q is the filer's own document; the regulator only hosts it.",
+        "corrected_at": "2026-10-21T09:00:00Z"
+      }
+    ],
+    "set": [],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {}
+  }
+]

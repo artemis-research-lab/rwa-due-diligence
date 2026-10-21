@@ -766,8 +766,9 @@ def test_finalize_writes_derived_json(tmp_path):
                                        "subjects": ["X6.terms"]}
     assert [q for q, _ in derived["five_questions"]["T1"]][-1] == "Is deployment verified?"
     assert sorted(derived["five_questions"]) == ["T1", "T2"]
-    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 14)] and derived["changes"] == []
-    assert derived["allocation"][0]["valuation_basis"] is None and derived["allocation"][1]["reason"] == "other measure of X2[0]"
+    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 15)] and derived["changes"] == []
+    assert derived["allocation"][0]["valuation_basis"] is None
+    assert derived["allocation"][1]["reason"] == "other measure of X2[0]"
     assert (derived["allocation"][0]["time_basis"], derived["allocation"][0]["observed_at"]) == (
         "block", "2026-10-01T08:15:00Z")
     assert {(r["target"], r["legacy"], r["mapping"]) for r in derived["qa"]} == {(None, None, "")}
