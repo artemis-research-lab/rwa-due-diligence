@@ -42,7 +42,7 @@ def test_skeleton_is_structurally_valid_once_run_is_filled():
 
 
 def test_version_constants():
-    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.2")
+    assert (schema.SCHEMA_VERSION, schema.SKILL_VERSION) == ("rwa-dd/2.2", "0.7.3")
     assert schema.MIGRATED_SCOPE_NOTE == "unchecked (migrated from rwa-dd/2.0)"
     assert schema.MIGRATED_NOTE_21 == schema.MIGRATED_AMOUNT_SCOPE == "unchecked (migrated from rwa-dd/2.1)"
     assert [rule[0] for rule in schema.QA_RULES] == ["QA%d" % i for i in range(1, 14)]

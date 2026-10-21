@@ -1,4 +1,4 @@
-"""Package manifest and verification (v0.7.2 section 3, curator AC-04).
+"""Package manifest and verification (v0.7.2 section 3, curator AC-04; v0.7.3 lint count).
 
 manifest() describes a finalized run: every output, the ledger, the expectations, the run state, the round records
 and the analyst inputs of the run with byte counts and SHA-256, plus execution metadata and the check results.
@@ -51,9 +51,12 @@ def _checks(project, record_bytes, derived, expectations):
     doc = load_json_text(record_bytes.decode("utf-8"))
     errors = validate.validate_document(doc, ledger.read_ledger(project.ledger_file))
     results = qa.run(doc, expectations) if not errors else []
+    # Lint needs a structurally valid document; the counts are warnings, not lint keys (v0.7.3).
+    by_key = {key: len(found) for key, found in sorted(lint.lint(doc).items())} if not errors else {}
     return doc, errors, results, {
         "validate_errors": len(errors),
-        "lint_warnings": len(lint.lint(doc)) if not errors else 0,
+        "lint_warnings": sum(by_key.values()),
+        "lint_by_key": by_key,
         "qa_failed": qa.failed(results),
         "record_sha256_match": derived.get("record_sha256") == _sha256(record_bytes),
     }
@@ -130,7 +133,7 @@ def verify(project):
     stated = man.get("checks") or {}
     if errors:
         failures.append("validate: %d errors (first: %s)" % (len(errors), sorted(errors)[0]))
-    for key in ("validate_errors", "lint_warnings", "qa_failed", "record_sha256_match"):
+    for key in ("validate_errors", "lint_warnings", "lint_by_key", "qa_failed", "record_sha256_match"):
         if checks[key] != stated.get(key):
             failures.append("checks.%s: recomputed %s, manifest %s" % (key, checks[key], stated.get(key)))
     if not checks["record_sha256_match"]:

@@ -220,8 +220,9 @@ Finalize then writes `<slug>.manifest.json` (`manifest_version` `rwa-dd-manifest
 seeded_from, schema_version, skill_version, finalized_at, rounds, `execution` (python, platform, d2),
 `files` (path relative to the project directory, role, bytes, sha256; sorted by path; roles record,
 derived, report, diagram, ledger, expectations, run_state, round_record, analyst_input; never itself) and
-`checks` (validate_errors, lint_warnings, qa_failed, record_sha256_match). `dd.py verify` recomputes them
-read-only and exits 6 when the package does not reproduce.
+`checks` (validate_errors, lint_warnings (total number of lint warnings), lint_by_key (warnings per lint
+key, sorted), qa_failed, record_sha256_match). `dd.py verify` recomputes them read-only and exits 6 when
+the package does not reproduce.
 
 ## Enums
 

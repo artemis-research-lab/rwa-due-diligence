@@ -6,7 +6,7 @@ import platform
 
 import pytest
 
-from test_support import FIXTURES, build_run, clock_at, load_cli, run_cli, walk
+from test_support import FIXTURES, build_run, clock_at, load_cli, load_fixture, run_cli, walk
 from lib import flow, lint, package, runstate, schema
 
 NEEDS_D2 = pytest.mark.skipif(flow.find_d2() is None, reason="d2 %s not on PATH" % flow.D2_VERSION)
@@ -60,10 +60,32 @@ def test_manifest_files_roles_and_metadata(tmp_path):
         data = (project.dir / entry["path"]).read_bytes()
         assert (entry["bytes"], entry["sha256"]) == (len(data), hashlib.sha256(data).hexdigest())
     record = json.loads(project.output("dd.json").read_bytes().decode("utf-8"))
-    assert manifest["checks"] == {"validate_errors": 0, "lint_warnings": len(lint.lint(record)), "qa_failed": [],
+    assert manifest["checks"] == {"validate_errors": 0, "lint_warnings": 0,
+                                  "lint_by_key": {key: 0 for key in sorted(lint.lint(record))}, "qa_failed": [],
                                   "record_sha256_match": True}
+    assert len(manifest["checks"]["lint_by_key"]) == 6
     text = project.output("manifest.json").read_bytes()
     assert text.endswith(b"}\n") and b"\r" not in text
+
+
+def test_manifest_counts_lint_warnings_not_keys(tmp_path):
+    fixture = load_fixture()
+    x2 = next(x for x in fixture["interfaces"] if x["id"] == "X2")
+    assert x2["kind"] == "L1_L2" and x2["amounts"][2]["basis"] == "CUMULATIVE_FUNDED"
+    x2["amounts"][2]["as_of"] = None  # one amount warning: data time not established
+    project = build_run(tmp_path, fixture)
+    manifest = _finalize(tmp_path, project)
+    by_key = manifest["checks"]["lint_by_key"]
+    assert manifest["checks"]["lint_warnings"] == 1 and list(by_key) == sorted(by_key) and len(by_key) == 6
+    assert by_key == dict({key: 0 for key in by_key}, amount_warnings=1)
+    assert package.verify(project) == {"result": "PASS", "failures": []}
+
+
+def test_verify_fails_when_manifest_lint_count_is_edited(tmp_path):
+    project, manifest = _final(tmp_path)
+    manifest["checks"]["lint_warnings"] = 6
+    project.output("manifest.json").write_bytes((json.dumps(manifest, indent=2) + "\n").encode("utf-8"))
+    assert package.verify(project) == {"result": "FAIL", "failures": ["checks.lint_warnings: recomputed 0, manifest 6"]}
 
 
 def test_seeded_run_lists_its_logs_only(tmp_path):

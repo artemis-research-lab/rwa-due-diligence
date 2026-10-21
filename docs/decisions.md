@@ -85,6 +85,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D81 - Amount time basis - 2026-10-21 - An amount's as_of is the data time the source or block establishes; retrieval time is derived observed-at metadata; undated figures are shown, not counted; QA13 (curator AC-03).
 - D82 - Package manifest - 2026-10-21 - Finalize writes <slug>.manifest.json (files, roles, SHA-256, run and execution metadata); dd.py verify reproduces the checks read-only (curator AC-04).
 - D83 - Schema unchanged - 2026-10-21 - v0.7.2 closes the curator's v2.2 acceptance tasks without changing schema rwa-dd/2.2 or the accepted classification rules.
+- D84 - Manifest lint count - 2026-10-21 - The manifest records the total number of lint warnings and the count per key, not the number of lint keys.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
