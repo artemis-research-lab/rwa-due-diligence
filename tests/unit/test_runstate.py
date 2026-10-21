@@ -398,6 +398,55 @@ def test_second_cycle_after_amend(tmp_path):
     assert (project.archive / ("%s.v1" % run_id) / "acme.dd.json").is_file()
 
 
+# --------------------------------------------------------------------------- v0.7.5 amendment history
+
+def _refinalize(tmp_path, project, name):
+    runstate.make_review(tmp_path, "acme")
+    _directives(tmp_path, project, "finalize\n", name=name)
+    runstate.finalize(tmp_path, "acme", clock=clock_at())
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_amendment_history_keeps_every_amendment(tmp_path):
+    project = _final(tmp_path)
+    run_id = runstate.load_state(project)["run_id"]
+    assert runstate.amendment_log(project, runstate.load_state(project), runstate.load_work(project)) == []
+    runstate.amend(tmp_path, "acme", _amend_file(project))
+    runstate.correct_source(tmp_path, "acme", "S5", {"source_type": "legal_doc"}, "A legal opinion, not research.",
+                            clock=clock_at())
+    doc = runstate.load_work(project)
+    doc["interfaces"][1]["terms"]["note"] = "Searched again: no term sheet."
+    runstate.save_work(project, doc)
+    _refinalize(tmp_path, project, "r2.txt")
+    runstate.amend(tmp_path, "acme", _amend_file(project, b"note no content change\n", "amend-2.txt"))
+    _refinalize(tmp_path, project, "r3.txt")
+
+    doc = runstate.load_work(project)
+    history = runstate.amendment_log(project, runstate.load_state(project), doc)
+    assert [(e["amendment"], e["from"], e["to"]) for e in history] == [
+        (1, "%s.v0" % run_id, "%s.v1" % run_id), (2, "%s.v1" % run_id, "current")]
+    ref = doc["interfaces"][1]["id"]
+    assert [(r["ref"], r["path"], r["change"]) for r in history[0]["rows"]] == [
+        ("S5", "source_type", "changed"), (ref, "terms", "changed")]
+    assert history[0]["rows"][0]["after"] == "legal_doc" and "note" not in history[0]
+    assert history[1] == {"amendment": 2, "from": "%s.v1" % run_id, "to": "current", "rows": []}
+    derived = json.loads(project.output("derived.json").read_bytes().decode("utf-8"))
+    assert derived["amendment_changes"] == history
+    report = project.output("report.md").read_bytes().decode("utf-8")
+    assert "### Changes in amendment 1 (%s.v0 -> %s.v1)\n\n| ref |" % (run_id, run_id) in report
+    assert report.index("### Changes in amendment 1") < report.index("### Changes in amendment 2")
+    assert "### Changes in amendment 2 (%s.v1 -> current)\n\nNo changes.\n" % run_id in report
+
+
+def test_amendment_history_notes_a_missing_archive_version(tmp_path):
+    project = build_run(tmp_path)
+    state = dict(runstate.load_state(project), amendment=1)
+    assert runstate.amendment_log(project, state, runstate.load_work(project)) == [
+        {"amendment": 1, "from": "%s.v0" % state["run_id"], "to": "current", "rows": [],
+         "note": "archive version not found"}]
+
+
 @pytest.mark.d2
 @NEEDS_D2
 def test_init_on_final_run_points_to_amend(tmp_path):

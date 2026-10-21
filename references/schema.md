@@ -250,9 +250,12 @@ Finalize writes `<slug>.derived.json` (`derived_version` `rwa-dd-derived/1`) nex
 slug, run_id, schema_version, skill_version, `record_sha256` (SHA-256 of the written dd.json bytes),
 `flags` (claim id -> flag for every claim), `conflicts`, `critical`, `critical_counts`, `allocation`,
 `totals`, `five_questions`, `qa`, `changes`, `verification_basis` (claim id -> sorted source ids for
-every verified claim) and `amendment_changes` (the change rows between the previous final version of an
-amended run, `archive/<run_id>.v<m-1>/<slug>.dd.json`, and the current record; `[]` before any
-amendment). Flags and totals are derived, never stored in the record. Allocation rows carry
+every verified claim) and `amendment_changes` (the amendment history: for k = 1..m, m = the current
+amendment, one entry `{amendment, from, to, rows}` with `from` = `<run_id>.v<k-1>` and `to` =
+`<run_id>.v<k>` or `current` for k = m; `rows` are the change rows between those two versions
+(`archive/<run_id>.v<k>/<slug>.dd.json` or the current record), findings paired by id; a missing archive
+version gives `rows` `[]` and `note` `archive version not found`; `[]` before any amendment). Flags and
+totals are derived, never stored in the record. Allocation rows carry
 `observed_at` and `time_basis`.
 
 ## Ledger corrections

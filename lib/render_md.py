@@ -738,22 +738,24 @@ def _change_table(rows):
                    text(r["after"]), ", ".join(r["evidence_added"]) or "--"] for r in rows])
 
 
-def _changes(doc, rows, amendment=0, amendment_rows=()):
+def _changes(doc, rows, amendments=()):
     out = ["No earlier run."] if doc["run"]["seeded_from"] is None else _change_table(rows)
-    if amendment >= 1:
-        out += ["", "### Changes in amendment %d" % amendment, ""] + _change_table(amendment_rows)
+    for entry in amendments:  # one table per amendment, in amendment order (v0.7.5)
+        out += ["", "### Changes in amendment %d (%s -> %s)" % (entry["amendment"], text(entry["from"]),
+                                                                  text(entry["to"])), ""]
+        out += _change_table(entry["rows"]) if entry["rows"] else ["No changes."]
     return out
 
 
 def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_rows=None, today=None,
-           corrections=(), amendment=0, amendment_rows=()):
+           corrections=(), amendments=()):
     """Render a structurally valid document; rounds = [(heading, text), ...];
     figures = {"T<n>-<view>": SVG text}: a figure gets an image link to <slug>.flow-T<n>-<view>.svg;
     rejected = N ids the analyst rejected, marked in Appendix M (final reports only);
     qa_results = qa.run output (computed without expectations when None); change_rows = changes.diff rows;
     today = the render clock date shown for a draft in the Report generated row; corrections = ledger correction
-    lines (Appendix I); amendment_rows = change rows against the previous final version of amendment
-    <amendment> (Appendix O)."""
+    lines (Appendix I); amendments = the amendment history, entries {amendment, from, to, rows} in amendment
+    order (Appendix O)."""
     figures = figures or {}
     results = qa.run(doc) if qa_results is None else qa_results
     cell = _Cells(doc)
@@ -789,7 +791,7 @@ def render(doc, rounds=(), figures=None, rejected=(), qa_results=None, change_ro
     seeded_from = doc["run"]["seeded_from"]
     sections += (("Appendix N. Quantitative and provenance checks", _checks(results)),
                  ("Appendix O. Changes since %s" % text(seeded_from, 64) if seeded_from else "Appendix O. Changes",
-                  _changes(doc, change_rows or [], amendment, amendment_rows)))
+                  _changes(doc, change_rows or [], amendments)))
     for heading, body in sections:
         while body and body[-1] == "":
             body = body[:-1]
@@ -818,10 +820,10 @@ def verification_bases(doc):
             for parts, claim in schema.iter_claims(doc) if claim["status"] == "verified"}
 
 
-def derived(doc, record_sha256, qa_results, change_rows, amendment_rows=()):
+def derived(doc, record_sha256, qa_results, change_rows, amendments=()):
     """The <slug>.derived.json object: flags, conflicts, section 1 selection, allocation, totals, six questions,
-    QA results, changes, verification bases and amendment changes, tied to the record by its SHA-256; keys
-    sorted."""
+    QA results, changes, verification bases and the amendment history (amendment_changes), tied to the record
+    by its SHA-256; keys sorted."""
     run = doc["run"]
     selected, total, rest = framework.critical_counts(doc)
     conflicts = [{"finding": ident, "conflict_status": status, "scope_match": match, "resolution": resolution,
@@ -842,5 +844,5 @@ def derived(doc, record_sha256, qa_results, change_rows, amendment_rows=()):
         "qa": list(qa_results),
         "changes": list(change_rows),
         "verification_basis": verification_bases(doc),
-        "amendment_changes": list(amendment_rows),
+        "amendment_changes": list(amendments),
     })

@@ -92,6 +92,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D88 - Ledger corrections - 2026-10-21 - Source attribution is corrected by append-only correction lines (dd.py correct-source) that keep the previous value; read_ledger folds them.
 - D89 - QA14 - 2026-10-21 - QA14 attribution asserts D85-D87; derived.json carries verification_basis and amendment_changes.
 - D90 - Audit records - 2026-10-21 - Under audits[] an auditor source is the verification basis for the audit's own auditor, scope, date and report reference.
+- D91 - Amendment history - 2026-10-21 - Amendment change logs pair findings by id (ids are stable within a run) and keep one entry per amendment, so every earlier amendment's changes stay in the derived file and report.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.

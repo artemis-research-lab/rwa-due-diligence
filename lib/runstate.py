@@ -31,9 +31,9 @@ class InvalidError(Exception):
 
 
 # Renderers that finalize runs: (output suffix, function(doc, rounds, figures, rejected=(), qa_results=None,
-# change_rows=None, today=None, corrections=(), amendment=0, amendment_rows=()) -> text); figures maps
+# change_rows=None, today=None, corrections=(), amendments=()) -> text); figures maps
 # "T<n>-<view>" -> sanitized SVG text and may be empty; rejected is a set of N ids; today is the render clock date
-# of a draft; corrections are the ledger correction lines; amendment_rows the change rows of amendment <amendment>.
+# of a draft; corrections are the ledger correction lines; amendments the amendment history (amendment_log).
 RENDERERS = [("report.md", render_md.render)]
 
 FLOW_VIEWS = schema.ENUMS["flow_view"]
@@ -314,23 +314,39 @@ def change_log(project, doc):
 
 
 def amendment_log(project, state, doc):
-    """Change rows between the previous final version of an amended run (archive/<run_id>.v<m-1>/, m = the
-    current amendment) and doc; [] before any amendment or when that record is missing (v0.7.4 section 4)."""
+    """The amendment history (v0.7.5 section 1): for k = 1..m (m = the current amendment) one entry
+    {amendment, from, to, rows} with the change rows between archive/<run_id>.v<k-1>/ and archive/<run_id>.v<k>/
+    (doc for k = m), findings paired by id; a missing archive version gives rows [] and a note; [] before any
+    amendment."""
+    run_id = state["run_id"]
+    records = {}
+
+    def record(k):
+        if k not in records:
+            path = project.archive / ("%s.v%d" % (run_id, k)) / ("%s.dd.json" % project.slug)
+            records[k] = (migrate.migrate_to_current(load_json_text(path.read_bytes().decode("utf-8")), doc["run"])
+                          if path.is_file() else None)
+        return records[k]
+
     m = state.get("amendment", 0)
-    if m < 1:
-        return []
-    path = project.archive / ("%s.v%d" % (state["run_id"], m - 1)) / ("%s.dd.json" % project.slug)
-    if not path.is_file():
-        return []
-    old = load_json_text(path.read_bytes().decode("utf-8"))
-    return changes.diff(migrate.migrate_to_current(old, doc["run"]), doc)
+    out = []
+    for k in range(1, m + 1):
+        entry = {"amendment": k, "from": "%s.v%d" % (run_id, k - 1),
+                 "to": "current" if k == m else "%s.v%d" % (run_id, k)}
+        old, new = record(k - 1), (doc if k == m else record(k))
+        if old is None or new is None:
+            entry.update({"rows": [], "note": "archive version not found"})
+        else:
+            entry["rows"] = changes.diff(old, new, match="id")
+        out.append(entry)
+    return out
 
 
 def _attribution_inputs(project, state, doc):
-    """Renderer keyword arguments of v0.7.4: ledger corrections (Appendix I) and the amendment change rows
-    (Appendix O)."""
-    return {"corrections": ledger.read_corrections(project.ledger_file), "amendment": state.get("amendment", 0),
-            "amendment_rows": amendment_log(project, state, doc)}
+    """Renderer keyword arguments of v0.7.4: ledger corrections (Appendix I) and the amendment history
+    (Appendix O, v0.7.5)."""
+    return {"corrections": ledger.read_corrections(project.ledger_file),
+            "amendments": amendment_log(project, state, doc)}
 
 
 def log_name(state, kind, n):
@@ -535,7 +551,7 @@ def render_draft(root, slug, clock=ledger.system_clock):
                                                  qa_results=results, change_rows=rows, today=today, **extra))))
     record = dump_json(schema.order_like_schema(doc)).encode("utf-8")
     outputs.append(str(project.write_json(draft / ("%s.derived.json" % slug), render_md.derived(
-        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendment_rows"]))))
+        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendments"]))))
     for key, svg in figures.items():
         outputs.append(str(project.write_text(draft / project.flow_output(key).name, svg)))
     result = {"outputs": outputs}
@@ -604,7 +620,7 @@ def finalize(root, slug, clock=ledger.system_clock):
     record = dump_json(doc).encode("utf-8")
     outputs = [project.write_bytes(project.output("dd.json"), record)]
     outputs.append(project.write_json(project.output("derived.json"), render_md.derived(
-        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendment_rows"])))
+        doc, hashlib.sha256(record).hexdigest(), results, rows, extra["amendments"])))
     for suffix, fn in RENDERERS:
         outputs.append(project.write_text(project.output(suffix), fn(doc, rounds, figures, rejected,
                                                                      qa_results=results, change_rows=rows,

@@ -2,6 +2,8 @@
 
 import copy
 
+import pytest
+
 from test_support import build_run, load_fixture, load_v21
 from lib import changes, migrate, runstate
 
@@ -96,3 +98,46 @@ def test_objects_added_and_removed():
     removed = copy.deepcopy(old)
     removed["findings"] = [f for f in removed["findings"] if f["id"] != "C1"]
     assert [(r["ref"], r["change"]) for r in changes.diff(old, removed)] == [("C1", "removed")]
+
+
+# --------------------------------------------------------------------------- v0.7.5 match="id"
+
+def _legacy_carried():
+    """A final version whose findings keep legacy carried_from values that differ from their ids (the fixture
+    already has R1 carried_from G3 and G3 carried_from none)."""
+    doc = load_fixture()
+    for f in doc["findings"]:
+        f["carried_from"] = {"D1": "D2", "D2": None, "U1": "D1"}.get(f["id"], f["carried_from"])
+    return doc
+
+
+def test_match_id_between_versions_of_one_run():
+    old = _legacy_carried()
+    assert changes.diff(old, copy.deepcopy(old), match="id") == []
+    # Paired by carried_from, the same unchanged pair gives the spurious rows the seeded log default would show.
+    spurious = changes.diff(old, copy.deepcopy(old))
+    assert _row(spurious, "D1 -> U1", "type") == {"ref": "D1 -> U1", "path": "type", "change": "changed",
+                                                  "before": "discrepancy", "after": "scope_unresolved",
+                                                  "evidence_added": []}
+    assert _row(spurious, "D2", "")["change"] == "added" and _row(spurious, "U1", "")["change"] == "removed"
+
+
+def test_match_id_shows_a_real_finding_change_once():
+    old = _legacy_carried()
+    new = copy.deepcopy(old)
+    finding = [f for f in new["findings"] if f["id"] == "U1"][0]
+    finding["type"] = "gap"
+    finding["statement"] = "Scope now checked."
+    rows = changes.diff(old, new, match="id")
+    assert [(r["ref"], r["path"], r["change"]) for r in rows] == [("U1", "statement", "changed"),
+                                                                 ("U1", "type", "changed")]
+    assert _row(rows, "U1", "type")["after"] == "gap"
+    new["findings"] = [f for f in new["findings"] if f["id"] != "C1"]
+    assert ("C1", "", "removed") in [(r["ref"], r["path"], r["change"]) for r in changes.diff(old, new, match="id")]
+    new["findings"][0]["carried_from"] = "C1"  # compared like any other leaf
+    assert _row(changes.diff(old, new, match="id"), "G1", "carried_from")["after"] == "C1"
+
+
+def test_match_must_be_known():
+    with pytest.raises(ValueError):
+        changes.diff(load_fixture(), load_fixture(), match="statement")

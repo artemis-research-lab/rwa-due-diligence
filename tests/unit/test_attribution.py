@@ -167,8 +167,9 @@ def test_report_shows_basis_publication_and_corrections():
     assert "### Changes in amendment" not in report
     rows = [{"ref": "S5", "path": "source_type", "change": "changed", "before": "third_party_research",
              "after": "legal_doc", "evidence_added": []}]
-    amended = render_md.render(doc, amendment=1, amendment_rows=rows)
-    assert ("### Changes in amendment 1\n\n| ref | path | change | before | after | evidence added |\n"
+    amended = render_md.render(doc, amendments=[{"amendment": 1, "from": "acme-r.v0", "to": "current", "rows": rows}])
+    assert ("### Changes in amendment 1 (acme-r.v0 -> current)\n\n"
+            "| ref | path | change | before | after | evidence added |\n"
             "|---|---|---|---|---|---|\n| S5 | source\\_type | changed | third\\_party\\_research | legal\\_doc | -- |"
             ) in amended
 
@@ -387,15 +388,18 @@ def test_amendment_changes_against_the_archived_version(tmp_path):
          "evidence_added": []},
         {"ref": "S10", "path": "source_type", "change": "changed", "before": "regulator_registry",
          "after": "regulator_filing", "evidence_added": []}]
-    rows = runstate.amendment_log(project, runstate.load_state(project), doc)
+    history = runstate.amendment_log(project, runstate.load_state(project), doc)
+    assert [(e["amendment"], e["from"], e["to"]) for e in history] == [(1, "%s.v0" % run_id, "current")]
+    rows = history[0]["rows"]
     assert [r for r in rows if r["ref"] == "S10"] == expected
     terms = [r for r in rows if (r["ref"], r["path"]) == ("X4", "terms")]
     assert len(terms) == 1 and terms[0]["after"].startswith("Secured equipment loan facility [self_reported]")
     result = runstate.render_draft(tmp_path, "acme", clock=clock_at())
     derived = json.loads((project.scratch / "draft" / "acme.derived.json").read_bytes().decode("utf-8"))
-    assert derived["amendment_changes"] == rows
+    assert derived["amendment_changes"] == history
     report = (project.scratch / "draft" / "acme.report.md").read_bytes().decode("utf-8")
-    assert "### Changes in amendment 1" in report and "| S10 | origin | changed | regulator | filer | -- |" in report
+    assert "### Changes in amendment 1 (%s.v0 -> current)" % run_id in report
+    assert "| S10 | origin | changed | regulator | filer | -- |" in report
     assert "- S10: origin regulator -> filer; publisher -- -> E7; source\\_type regulator\\_registry -> " \
            "regulator\\_filing (corrected 2026-10-01T08:00:00Z)" in report
     assert result["outputs"]

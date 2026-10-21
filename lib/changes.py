@@ -1,9 +1,10 @@
-"""Change log (v0.7.0 section 7.2): what changed between the record a run was seeded from and the current record.
+"""Change log (v0.7.0 section 7.2): what changed between the record a run was seeded from (or an earlier final
+version of the same run, v0.7.5) and the current record.
 
 The earlier record is first migrated to the current schema (the caller passes migrate_to_current output), so a
 change that is exactly the migration itself never shows. Claims are matched by claim id, objects by their ids
-and findings by carried_from; sources give an added row, or one changed row per corrected attribution field
-(source_type, origin, publisher; v0.7.4). Pure and deterministic.
+and findings by carried_from or by id (diff match); sources give an added row, or one changed row per corrected
+attribution field (source_type, origin, publisher; v0.7.4). Pure and deterministic.
 """
 
 import json
@@ -15,6 +16,8 @@ TEXT_MAX = 80
 # Objects compared leaf by leaf, by id: (section path, id prefix).
 OBJECTS = ((("entities",), "E"), (("project", "products"), "P"), (("strategies",), "T"), (("interfaces",), "X"),
            (("supports",), "Z"), (("issuer_requests",), "Q"))
+# How findings are paired (v0.7.5): carried_from for a seeded run, id between versions of one run.
+MATCHES = ("carried_from", "id")
 
 
 def _clip(text):
@@ -92,9 +95,30 @@ def _split(cid):
     return head.group(1), head.group(3)
 
 
-def diff(old_doc, new_doc):
+def _pair_findings(old_doc, new_doc, match):
+    """[(ref, old finding or None, new finding or None)]: by carried_from (a seeded run, whose ids were
+    re-assigned) or by id (two versions of one run, whose ids are stable; v0.7.5)."""
+    old_findings = {f["id"]: f for f in old_doc["findings"]}
+    pairs = []
+    matched = set()
+    for f in new_doc["findings"]:
+        key = f["id"] if match == "id" else f["carried_from"]
+        source = old_findings.get(key) if key is not None else None
+        if source is None:
+            pairs.append((f["id"], None, f))
+            continue
+        matched.add(source["id"])
+        pairs.append((f["id"] if source["id"] == f["id"] else "%s -> %s" % (source["id"], f["id"]), source, f))
+    pairs += [(ident, f, None) for ident, f in old_findings.items() if ident not in matched]
+    return pairs
+
+
+def diff(old_doc, new_doc, match="carried_from"):
     """Change rows {ref, path, change, before, after, evidence_added} sorted by ref then path; [] when old_doc
-    is None."""
+    is None. match pairs findings by "carried_from" (the seeded change log) or by "id" (amendment change logs,
+    where carried_from is compared like any other leaf)."""
+    if match not in MATCHES:
+        raise ValueError("match must be one of %s, not %r" % (", ".join(MATCHES), match))
     if old_doc is None:
         return []
     rows = []
@@ -112,19 +136,14 @@ def diff(old_doc, new_doc):
             else:
                 _compare_leaves(ident, old[ident], new[ident], rows, skip=("id",))
 
-    old_findings = {f["id"]: f for f in old_doc["findings"]}
-    matched = set()
-    for f in new_doc["findings"]:
-        source = old_findings.get(f["carried_from"]) if f["carried_from"] is not None else None
-        if source is None:
-            rows.append(_row(f["id"], "", "added", None, _json(f["statement"])))
-            continue
-        matched.add(source["id"])
-        ref = f["id"] if source["id"] == f["id"] else "%s -> %s" % (source["id"], f["id"])
-        _compare_leaves(ref, source, f, rows, skip=("id", "carried_from"))
-    for ident, f in old_findings.items():
-        if ident not in matched:
-            rows.append(_row(ident, "", "removed", _json(f["statement"]), None))
+    skip = ("id",) if match == "id" else ("id", "carried_from")
+    for ref, old, new in _pair_findings(old_doc, new_doc, match):
+        if old is None:
+            rows.append(_row(ref, "", "added", None, _json(new["statement"])))
+        elif new is None:
+            rows.append(_row(ref, "", "removed", _json(old["statement"]), None))
+        else:
+            _compare_leaves(ref, old, new, rows, skip=skip)
 
     old_sources = {s["id"]: s for s in old_doc["sources"]}
     for s in new_doc["sources"]:

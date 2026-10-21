@@ -390,3 +390,18 @@ def test_appendix_o_changes():
     assert "| G3 -\\> R1 | type | changed | gap | unreconciled\\_transaction | -- |" in o
     assert "| S9 | -- | added | -- | AUP | -- |" in o
     assert _section(render_md.render(doc), "Appendix O. Changes since acme-20260901T000000Z").endswith("- none\n")
+
+
+def test_appendix_o_amendment_history():
+    doc = load_fixture()
+    assert "### Changes in amendment" not in render_md.render(doc, amendments=[])
+    rows = [{"ref": "S5", "path": "source_type", "change": "changed", "before": "third_party_research",
+             "after": "legal_doc", "evidence_added": []}]
+    history = [{"amendment": 1, "from": "acme-r.v0", "to": "acme-r.v1", "rows": rows},
+               {"amendment": 2, "from": "acme-r.v1", "to": "current", "rows": []}]
+    o = _section(render_md.render(doc, amendments=history), "Appendix O. Changes")
+    assert o == ("## Appendix O. Changes\n\nNo earlier run.\n\n### Changes in amendment 1 (acme-r.v0 -> acme-r.v1)\n\n"
+                 "| ref | path | change | before | after | evidence added |\n|---|---|---|---|---|---|\n"
+                 "| S5 | source\\_type | changed | third\\_party\\_research | legal\\_doc | -- |\n\n"
+                 "### Changes in amendment 2 (acme-r.v1 -> current)\n\nNo changes.\n")
+    assert render_md.derived(doc, "0" * 64, [], [], history)["amendment_changes"] == history
