@@ -22,6 +22,13 @@ SOURCED_CLAIM_ORIGINS = ("regulator", "registry")
 ENFORCEABILITY_FIELDS = {"interfaces": ("enforcement", "perfection"), "supports": ("enforceability",),
                          "holder_rights": ("insolvency_protection",)}
 DISCLOSURE_ORIGINS = ("filer", "first_party")
+# Fields of audits[] that the audit report itself records: an auditor source verifies them (D90). report_ref is a
+# plain source reference, listed with the decision's fields.
+AUDIT_RECORD_FIELDS = ("auditor", "scope", "date", "report_ref")
+
+
+def is_audit_record(parts):
+    return len(parts) == 3 and parts[0] == "audits" and parts[2] in AUDIT_RECORD_FIELDS
 
 
 def is_legal_path(parts):
@@ -87,9 +94,10 @@ def provenance_errors(parts, claim, source_origins):
 
 def verification_basis(parts, claim, sources_by_id):
     """Sorted ids of the cited sources that can verify this claim (v0.7.4 section 3): origin regulator, registry
-    or onchain; auditor only for a tested auditor procedure (Q8); third_party only outside legal paths. Never
-    filer, first_party or analyst, and never a source whose publisher is the claim subject."""
-    tested = claim["origin"] == "auditor_procedure" and claim["assurance"] == "TESTED"
+    or onchain; auditor only for a tested auditor procedure (Q8) or for the audit's own record under audits[]
+    (D90); third_party only outside legal paths. Never filer, first_party or analyst, and never a source whose
+    publisher is the claim subject."""
+    tested = (claim["origin"] == "auditor_procedure" and claim["assurance"] == "TESTED") or is_audit_record(parts)
     basis = set()
     for sid in claim["evidence"]:
         source = sources_by_id.get(sid)

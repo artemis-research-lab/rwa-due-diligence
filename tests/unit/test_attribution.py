@@ -118,6 +118,20 @@ def test_basis_counts_an_auditor_only_for_a_tested_procedure():
         assert claims.verification_basis(parts, dict(tested, origin=origin, assurance=assurance), by_id) == []
 
 
+def test_auditor_source_is_the_basis_of_the_audit_record_only(tmp_path):
+    by_id = _sources(load_fixture())
+    record = claim("Loan sample procedures", "verified", ["S9"])
+    for field in ("auditor", "scope", "date"):
+        assert claims.verification_basis(("audits", 0, field), record, by_id) == ["S9"]
+    assert claims.verification_basis(("strategies", 0, "l3_business", "performance"), record, by_id) == []
+    assert claims.verification_basis(("audits", 0, "scope"), dict(record, evidence=["S1"]), by_id) == []
+    assert claims.AUDIT_RECORD_FIELDS == ("auditor", "scope", "date", "report_ref")
+    doc = load_fixture()
+    doc["strategies"][0]["l3_business"]["performance"].update({"origin": None, "assurance": None})
+    assert "strategies[0].l3_business.performance: verified needs a verification basis" in \
+        " ".join(validate.validate_document(doc))
+
+
 def test_a6_is_not_caught_with_a_verifying_source():
     doc = load_fixture()
     doc["interfaces"][3]["enforcement"] = claim("Enforceable", "inferred", ["S8", "S2"], note="Register shows it.",

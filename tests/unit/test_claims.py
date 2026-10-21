@@ -347,14 +347,13 @@ def test_audit_claims_are_exempt_from_q8():
     from lib import lint, qa
     doc = load_fixture()
     doc["audits"][0]["scope"] = claim("Loan sample procedures", "verified", ["S9"])
-    # The Q8 exemption stays; the verification basis (V1) applies under audits[] too (curator AC-05).
-    assert validate.validate_document(doc) == ["audits[0].scope" + V1]
+    # The Q8 exemption stays; the audit report is the verification basis of the audit's own record (D90).
+    assert validate.validate_document(doc) == []
     assert lint.provenance_warnings(doc) == []
     assert {r["id"]: r for r in qa.run(doc)}["QA7"]["result"] == "pass"
     doc["audits"][0]["scope"]["origin"] = "issuer_management"
     assert validate.validate_document(doc) == [
-        "audits[0].scope: origin issuer_management is an issuer assertion; status must be self_reported (curator Q8)",
-        "audits[0].scope" + V1]
+        "audits[0].scope: origin issuer_management is an issuer assertion; status must be self_reported (curator Q8)"]
 
 
 # --------------------------------------------------------------------------- v0.7.1 provenance combinations P1-P5

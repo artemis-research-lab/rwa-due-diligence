@@ -531,5 +531,73 @@
     "errors": [],
     "qa14": "ok",
     "basis": {}
+  },
+  {
+    "id": "p-audit-record-scope",
+    "kind": "positive",
+    "rule": "D90",
+    "case": "The audit report verifies the audit's own scope (origin null)",
+    "ledger_tail": [],
+    "set": [
+      {
+        "path": [
+          "audits",
+          0,
+          "scope"
+        ],
+        "claim": {
+          "value": "Loan sample procedures",
+          "status": "verified",
+          "evidence": [
+            "S9"
+          ],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [],
+    "qa14": "ok",
+    "basis": {
+      "audits[0].scope": [
+        "S9"
+      ]
+    }
+  },
+  {
+    "id": "n-audit-scope-first-party",
+    "kind": "negative",
+    "rule": "V1",
+    "case": "An audit scope verified only by a first-party page has no verification basis",
+    "ledger_tail": [],
+    "set": [
+      {
+        "path": [
+          "audits",
+          0,
+          "scope"
+        ],
+        "claim": {
+          "value": "Loan sample procedures",
+          "status": "verified",
+          "evidence": [
+            "S1"
+          ],
+          "subject": null,
+          "note": "",
+          "origin": null,
+          "assurance": null
+        }
+      }
+    ],
+    "errors": [
+      "audits[0].scope: verified needs a verification basis (regulator record, registry, on-chain read, tested auditor procedure, or for non-legal facts an independent third party); a filer's disclosure is not one (curator AC-05)"
+    ],
+    "qa14": "audits[0].scope",
+    "basis": {
+      "audits[0].scope": []
+    }
   }
 ]

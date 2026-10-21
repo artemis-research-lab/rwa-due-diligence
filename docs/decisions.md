@@ -91,6 +91,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D87 - Enforceability - 2026-10-21 - Enforcement, perfection, enforceability and insolvency-protection claims are never verified or inferred from disclosures alone.
 - D88 - Ledger corrections - 2026-10-21 - Source attribution is corrected by append-only correction lines (dd.py correct-source) that keep the previous value; read_ledger folds them.
 - D89 - QA14 - 2026-10-21 - QA14 attribution asserts D85-D87; derived.json carries verification_basis and amendment_changes.
+- D90 - Audit records - 2026-10-21 - Under audits[] an auditor source is the verification basis for the audit's own auditor, scope, date and report reference.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
