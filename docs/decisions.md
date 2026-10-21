@@ -113,3 +113,4 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-18 - P1 cloud build cost about 4 USD of cloud credit (whole-dollar display), no plan-limit change.
 - 2026-10-18 - P2 cloud build cost about 3 USD of cloud credit.
 - 2026-10-18 - P3 cloud build cost about 4 USD of cloud credit; P1-P3 total about 11 USD.
+- D92 - Data model accepted - 2026-10-22 - Curator accepted schema rwa-dd/2.2 with the three reference samples (usd-ai, huma, hastra; skill v0.7.5); the schema is frozen and further changes need a new curator review cycle.
