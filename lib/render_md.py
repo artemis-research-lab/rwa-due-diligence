@@ -622,7 +622,9 @@ LEGEND = [
     " regulator, registry, onchain, independent_party, auditor_procedure, analyst); the cited sources are where"
     " it was published; assurance is what an auditor or reviewer tested for this precise claim (TESTED,"
     " NOT_TESTED, NOT_APPLICABLE). An issuer statement quoted in an auditor's publication stays SELF_REPORTED with"
-    " assurance NOT_TESTED; a claim citing an auditor source is CONFIRMED only with assurance TESTED.",
+    " assurance NOT_TESTED; a claim is CONFIRMED through an auditor only with origin auditor_procedure and"
+    " assurance TESTED; a regulator, registry or on-chain verification keeps its origin, and assurance states"
+    " whether a cited auditor also tested it.",
     "- Layers are functions inside one strategy, by position in its financing chain: L1 on-chain capital vault;"
     " L2 credit financing layer; L3 underlying business layer.",
     "- L3-O: optional sub-layer of parties downstream of L3 whose payments repay it; roles contractual_obligor"
