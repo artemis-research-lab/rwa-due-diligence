@@ -81,6 +81,10 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - D77 - Q8 gating - 2026-10-21 - The curator Q8 auditor-source rules apply once a claim's origin is set; a null origin is valid but fails QA7, so finalize refuses; claims under audits[] describe the audit itself and are exempt (decided during the v0.7.0 build).
 - D78 - One measure per edge - 2026-10-21 - Only the first countable amount of an interface is counted; later entries are other measures of the same position (QA12).
 - D79 - Provenance combinations - 2026-10-21 - Assurance needs an auditor source; inferred has origin analyst or null; auditor_procedure TESTED is verified and NOT_TESTED third_party_reported; a regulator, registry or on-chain verification keeps that origin; AUP procedures never establish legal character (lint).
+- D80 - Canonical test targets - 2026-10-21 - Every expectation result names its canonical target and any legacy mapping; a legacy (@) path must declare its target, and a mismatch fails (curator AC-01).
+- D81 - Amount time basis - 2026-10-21 - An amount's as_of is the data time the source or block establishes; retrieval time is derived observed-at metadata; undated figures are shown, not counted; QA13 (curator AC-03).
+- D82 - Package manifest - 2026-10-21 - Finalize writes <slug>.manifest.json (files, roles, SHA-256, run and execution metadata); dd.py verify reproduces the checks read-only (curator AC-04).
+- D83 - Schema unchanged - 2026-10-21 - v0.7.2 closes the curator's v2.2 acceptance tasks without changing schema rwa-dd/2.2 or the accepted classification rules.
 
 ## Validation records
 - 2026-10-18 - probe-1 renderer bake-off and probe-2 manual DD of usd-ai, huma, hastra accepted in the design session; findings folded into schema rwa-dd/1.0.
@@ -92,6 +96,7 @@ Format: `D<n> - <title> - <date> - <one-line decision and why>`
 - 2026-10-20 - Curator review of v2 samples: architecture accepted conditionally; revisions implemented in v0.6.0.
 - 2026-10-20 - Curator review of v2.1 samples: Q8-Q10 decided; minor data-model revision implemented in v0.7.0.
 - 2026-10-21 - Round-1 packets of the 2.2 re-runs (hastra, usd-ai, huma): double-counted measures and Q8 combinations found; fixed in v0.7.1.
+- 2026-10-21 - Curator v2.2 review: design accepted, closure tasks AC-01 to AC-04 requested; tooling in v0.7.2.
 
 ## Incidents
 

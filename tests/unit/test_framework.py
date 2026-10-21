@@ -388,7 +388,8 @@ def test_allocation_rows():
     assert rows == ROWS
     assert [r.valuation_basis for r in rows] == [None, "Fund NAV per unit reported by E5", None, None, None, None]
     assert rows[1].as_object() == dict(zip(framework.ROW_FIELDS, ROWS[1]),
-                                       valuation_basis="Fund NAV per unit reported by E5")
+                                       valuation_basis="Fund NAV per unit reported by E5",
+                                       observed_at="2026-10-01T08:40:00Z", time_basis="source")
     assert framework.total_key(rows[0]) == ("CURRENT_BALANCE", "USDC", "2026-09-30", "")
     assert framework.total_key(rows[1]) == ("POSITION_VALUE", "USD", "2026-09-30", "Fund NAV per unit reported by E5")
 
@@ -414,7 +415,7 @@ def test_allocation_every_reason():
     assert _reasons(doc)[2] == ("X2", 2, False, "basis CUMULATIVE_FUNDED not counted")
     assert _reasons(doc)[3] == ("X13", 0, False, "not a funding edge")
     x2["amounts"][0]["as_of"] = None
-    assert _reasons(doc)[0] == ("X2", 0, False, "no observation time")
+    assert _reasons(doc)[0] == ("X2", 0, False, "data time not established")
     x2["amounts"][0]["scope"] = schema.MIGRATED_AMOUNT_SCOPE
     x2["amounts"][0]["as_of"] = "2026-09-30"
     assert _reasons(doc)[0] == ("X2", 0, False, "migrated scope")
@@ -424,6 +425,51 @@ def test_allocation_every_reason():
     doc["interfaces"][9]["amounts"][0]["basis"] = "CURRENT_BALANCE"  # X10 reserve look-through
     assert [r for r in _reasons(doc) if r[0] == "X10"] == [("X10", 0, False, "not a funding edge")]
     assert framework.allocation_totals(doc)["strategies"] == {"T3": T3_TOTALS}
+
+
+def test_time_basis_and_observed_at_per_row():
+    doc = load_fixture()
+    rows = framework.allocation(doc)
+    assert [(r[2], r[3], r.time_basis, r.observed_at) for r in rows] == [
+        ("X2", 0, "block", "2026-10-01T08:15:00Z"), ("X2", 1, "source", "2026-10-01T08:40:00Z"),
+        ("X2", 2, "source", "2026-10-01T09:00:00Z"), ("X13", 0, "source", "2026-10-01T08:40:00Z"),
+        ("X9", 0, "source", "2026-10-01T08:30:00Z"), ("X10", 0, "source", "2026-10-01T08:30:00Z")]
+    amount = doc["interfaces"][1]["amounts"][1]
+    amount["value"]["evidence"] = ["S6", "S2", "S8", "S4"]  # S6 has no retrieval time
+    assert framework.observed_at(doc, amount) == "2026-10-01T08:40:00Z"
+    amount["value"]["evidence"] = ["S6"]
+    assert framework.observed_at(doc, amount) is None
+    amount["as_of"] = None
+    assert framework.time_basis(amount) == "unresolved"
+    assert framework.allocation(doc)[1].as_object()["time_basis"] == "unresolved"
+    doc["interfaces"][1]["amounts"] = []
+    row = framework.allocation(doc)[0]
+    assert (row.time_basis, row.observed_at) == (None, None)
+
+
+def test_retrieval_source_string_and_instant():
+    doc = load_fixture()
+    amount = doc["interfaces"][1]["amounts"][1]  # cites S8, retrieved 2026-10-01T08:40:00Z
+    assert framework.retrieval_source(doc, amount) is None
+    amount["as_of"] = "2026-10-01T08:40:00Z"
+    assert framework.retrieval_source(doc, amount) == "S8"
+    amount["as_of"] = "2026-10-01"  # a date is never the same instant as a timestamp
+    assert framework.retrieval_source(doc, amount) is None
+    amount["as_of"] = "2026-10-01T08:40:00Z"
+    amount["block"], amount["chain"] = 1, "ethereum"  # a block read keeps its block time
+    assert framework.retrieval_source(doc, amount) is None
+
+
+def test_resolve_target():
+    doc = load_fixture()
+    assert framework.resolve_target(doc, "@G3.type") == ("R1", "G3")
+    assert framework.resolve_target(doc, "@D1") == ("D1", "D1")
+    assert framework.resolve_target(doc, "G3.statement") == ("G3", None)
+    assert framework.resolve_target(doc, "P1.holder_rights.look_through") == ("P1", None)
+    assert framework.resolve_target(doc, "X13.amounts[5]") == ("X13", None)
+    for path in ("@G9", "X99.terms", "x2"):
+        with pytest.raises(KeyError):
+            framework.resolve_target(doc, path)
 
 
 def test_totals_never_merge_keys(monkeypatch):

@@ -57,14 +57,16 @@
     "case": "The former G3 is tracked as an unreconciled transaction",
     "path": "@G3.type",
     "op": "equals",
-    "value": "unreconciled_transaction"
+    "value": "unreconciled_transaction",
+    "target": "R1"
   },
   {
     "id": "sale-no-misconduct",
     "case": "The sale finding draws no misconduct conclusion",
     "path": "@G3.statement",
     "op": "not_contains",
-    "value": "fraud"
+    "value": "fraud",
+    "target": "R1"
   },
   {
     "id": "x13-buyer",
@@ -72,5 +74,13 @@
     "path": "X13.buyer_of_record",
     "op": "exists",
     "value": true
+  },
+  {
+    "id": "r1-carried",
+    "case": "R1 (carried from G3) stays an unreconciled transaction",
+    "path": "R1.type",
+    "op": "equals",
+    "value": "unreconciled_transaction",
+    "target": "R1"
   }
 ]

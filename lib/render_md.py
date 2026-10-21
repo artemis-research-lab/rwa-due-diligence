@@ -1,6 +1,6 @@
 """Markdown report renderer (section 3.8, v0.6.0 section 6, v0.7.0 section 5.2: six reader sections, detail in
-appendices A-O) and the derived data file (v0.7.0 7.3); deterministic, adds only fixed headings, labels and the
-legend."""
+appendices A-O) and the derived data file (v0.7.0 7.3, v0.7.2 sections 1 and 2); deterministic, adds only fixed
+headings, labels and the legend."""
 
 import json
 
@@ -73,11 +73,14 @@ def strategy_title(strategy):
 
 
 def amount_cell(amount, flag=None):
-    """`<value> <unit> <BASIS> @<as_of or n/d> [FLAG] (sources)` for one amount entry."""
+    """`<value> <unit> <BASIS> data <as_of or not established> (<time basis>) [FLAG] (sources)` for one amount
+    entry (v0.7.2 section 2)."""
     claim = amount["value"]
     flag = framework.flag(claim, False) if flag is None else flag
-    return "%s %s %s @%s [%s]%s" % (fmt_value(claim["value"]), md_text(amount["unit"], 20), amount["basis"],
-                                   text(amount["as_of"]), flag, _sources(claim))
+    data = "not established" if amount["as_of"] is None else md_text(amount["as_of"])
+    return "%s %s %s data %s (%s) [%s]%s" % (fmt_value(claim["value"]), md_text(amount["unit"], 20),
+                                             amount["basis"], data, framework.time_basis(amount), flag,
+                                             _sources(claim))
 
 
 def _amount_scopes(interfaces):
@@ -125,12 +128,23 @@ def _alt(x):
 
 # --------------------------------------------------------------------------- metadata
 
-def _observed(doc):
-    """`<earliest> to <latest>` amount observation time, one value when equal, `n/d` without any."""
-    times = sorted(a["as_of"] for x in doc["interfaces"] for a in x["amounts"] if a["as_of"] is not None)
+def _span(times):
+    """`<earliest> to <latest>`, one value when equal, `n/d` without any."""
+    times = sorted(t for t in times if t is not None)
     if not times:
         return "n/d"
     return times[0] if times[0] == times[-1] else "%s to %s" % (times[0], times[-1])
+
+
+def _data_as_of(doc):
+    """Earliest and latest amount data time (as_of)."""
+    return _span(a["as_of"] for x in doc["interfaces"] for a in x["amounts"])
+
+
+def _sources_retrieved(doc):
+    """Earliest and latest retrieved_at among the sources cited by amount values."""
+    cited = {sid for x in doc["interfaces"] for a in x["amounts"] for sid in a["value"]["evidence"]}
+    return _span(s["retrieved_at"] for s in doc["sources"] if s["id"] in cited)
 
 
 def _metadata(doc, rounds=(), today=None):
@@ -148,7 +162,8 @@ def _metadata(doc, rounds=(), today=None):
         ("started", text(run["started_at"])),
         ("finalized", text(run["finalized_at"])),
         ("Report generated", generated),
-        ("Data observed", _observed(doc)),
+        ("Data as of", _data_as_of(doc)),
+        ("Sources retrieved", _sources_retrieved(doc)),
         ("skill version", text(run["skill_version"])),
         ("schema version", text(doc["schema_version"])),
     ]
@@ -241,7 +256,7 @@ def _portfolio(doc, cell):
     out += review.amounts_table(doc) or [NONE]
     out += ["", "### Totals by strategy, component and product", ""]
     out += table(("level", "name", "counted totals"), _totals_rows(totals))
-    return out + ["", "Totals add only amounts with the same basis, unit and observation date; see Appendix N for the"
+    return out + ["", "Totals add only amounts with the same basis, unit and data date; see Appendix N for the"
                       " checks."]
 
 
@@ -641,13 +656,18 @@ LEGEND = [
     "- Components: CORE_CREDIT an underlying real-world financing business; LIQUIDITY_SLEEVE undeployed cash or"
     " stablecoin (issuer and reserves, no L3); DEFI_LENDING lending-market supply with protocol-enforced"
     " entitlements.",
-    "- Amount cell: `<value> <unit> <BASIS> @<observation time> [FLAG] (sources)`; the observation time is when"
-    " the value was observed in the source, never the report date. Bases:",
+    "- Amount cell: `<value> <unit> <BASIS> data <data as of> (<time basis>) [FLAG] (sources)`. Data as of is the"
+    " time the value applies as the source establishes it (statement or report date, API updatedAt, block time),"
+    " `not established` when the source gives none; it is never the time a page was opened or the report date."
+    " Time basis: block (on-chain read at a block, data as of is the block timestamp), source (date given by the"
+    " source), unresolved (no data time; shown, not counted). Observed at is the latest retrieval time of the"
+    " cited sources (Appendix I), metadata only, never a data time (curator AC-03). Bases:",
 ] + ["  - %s: %s." % (name, meaning) for name, meaning in schema.AMOUNT_BASIS_MEANINGS] + [
     "- Counting rule: only CURRENT_BALANCE, POSITION_VALUE and OUTSTANDING_PRINCIPAL amounts on L1_L2 and"
-    " sleeve_holding interfaces, with an observation time, outside alternative groups and not migration"
-    " placeholders, are counted; totals add only amounts with the same basis, unit, valuation basis and"
-    " observation date (label `<sum> <unit> <BASIS> @<date>`); everything else is linked, not summed.",
+    " sleeve_holding interfaces, with a data time established by the source or the block, outside alternative"
+    " groups and not migration placeholders, are counted; totals add only amounts with the same basis, unit,"
+    " valuation basis and data date (label `<sum> <unit> <BASIS> @<date>`); everything else is linked, not"
+    " summed.",
     "- Deployment of a credit strategy: DEPLOYED_VERIFIED (transfers into the credit arrangement verified),"
     " DISCLOSED_UNVERIFIED (path disclosed, settlement not shown), NOT_DEPLOYED, UNRESOLVED.",
     "- Alternative tag: `alt A1a` marks option a of alternative group A1, competing legal paths for one position;"
@@ -663,8 +683,9 @@ LEGEND = [
 
 
 def _checks(results):
-    out = table(("id", "rule", "result", "detail"),
-                [[r["id"], md_text(r["rule"], 120), r["result"], md_text(r["detail"])] for r in results])
+    out = table(("id", "rule", "result", "target", "mapping", "detail"),
+                [[r["id"], md_text(r["rule"], 120), r["result"], text(r["target"]), md_text(r["mapping"]) or "--",
+                  md_text(r["detail"])] for r in results])
     return out + ["", "Rules:", ""] + ["- %s %s: %s" % rule for rule in schema.QA_RULES]
 
 

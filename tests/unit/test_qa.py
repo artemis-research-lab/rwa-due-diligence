@@ -1,4 +1,5 @@
-"""v0.7.0 section 6, v0.7.1: quantitative and provenance checks QA1-QA12 and analyst expectations (lib/qa.py)."""
+"""v0.7.0 section 6, v0.7.1, v0.7.2: quantitative and provenance checks QA1-QA13 and analyst expectations
+(lib/qa.py)."""
 
 import json
 
@@ -7,7 +8,8 @@ import pytest
 from test_support import FIXTURES, load_fixture
 from lib import claims, framework, qa, schema
 
-IDS = ["QA%d" % i for i in range(1, 13)]
+IDS = ["QA%d" % i for i in range(1, 14)]
+RESULT_KEYS = {"id", "rule", "result", "detail", "target", "legacy", "mapping"}
 
 
 def _results(doc, expectations=None):
@@ -80,7 +82,8 @@ def test_qa3_alternative(monkeypatch):
 def test_qa4_proceeds(monkeypatch):
     doc = load_fixture()
     doc["interfaces"][12]["amounts"][0]["value"]["status"] = "verified"
-    assert _results(doc)["QA4"] == {"id": "QA4", "rule": "proceeds", "result": "pass", "detail": "ok"}
+    assert _results(doc)["QA4"] == {"id": "QA4", "rule": "proceeds", "result": "pass", "detail": "ok",
+                                    "target": None, "legacy": None, "mapping": ""}
     _count_also(monkeypatch, "X13")
     assert _detail(load_fixture(), "QA4") == "X13.amounts[0]"
 
@@ -150,9 +153,27 @@ def test_qa11_deployment():
 
 def test_qa12_onemeasure(monkeypatch):
     assert _results(load_fixture())["QA12"] == {"id": "QA12", "rule": "onemeasure", "result": "pass",
-                                                 "detail": "ok"}
+                                                 "detail": "ok", "target": None, "legacy": None, "mapping": ""}
     _one_measure_off(monkeypatch)
     assert _detail(load_fixture(), "QA12") == "X2"
+
+
+def test_qa13_timebasis_retrieval_time():
+    assert _results(load_fixture())["QA13"] == {"id": "QA13", "rule": "timebasis", "result": "pass",
+                                                 "detail": "ok", "target": None, "legacy": None, "mapping": ""}
+    doc = load_fixture()
+    doc["interfaces"][1]["amounts"][1]["as_of"] = "2026-10-01T08:40:00Z"  # the retrieval time of S8
+    assert _detail(doc, "QA13") == "X2.amounts[1]"
+    doc["interfaces"][1]["amounts"][1].update(block=20871240, chain="ethereum")  # a block read keeps its time
+    assert _results(doc)["QA13"]["result"] == "pass"
+
+
+def test_qa13_timebasis_counted_unresolved(monkeypatch):
+    doc = load_fixture()
+    doc["interfaces"][8]["amounts"][0]["as_of"] = None
+    assert _results(doc)["QA13"]["result"] == "pass"  # the counting rule leaves it out
+    _count_also(monkeypatch, "X9")
+    assert _detail(doc, "QA13") == "X9.amounts[0]"
 
 
 # --------------------------------------------------------------------------- expectations
@@ -182,29 +203,81 @@ def test_each_op_passes_and_fails(path, op, good, bad):
     failed = qa.check_expectation(doc, _entry(path, op, bad))
     assert passed["result"] == "pass" and failed["result"] == "fail", (passed, failed)
     assert passed["id"] == "E:e1" and passed["rule"] == "case e1"
-    assert failed["detail"].startswith("%s %s %s -> " % (path, op, json.dumps(bad, sort_keys=True)))
+    target = "R1" if path.startswith("@G3") else path.split(".")[0].split("[")[0]
+    assert passed["target"] == failed["target"] == target
+    assert failed["detail"].startswith("%s: %s %s %s -> " % (target, path, op, json.dumps(bad, sort_keys=True)))
 
 
 def test_expectation_detail_and_missing_paths():
     doc = load_fixture()
     assert qa.check_expectation(doc, _entry("X2.amounts[0].unit", "equals", "USD"))["detail"] == \
-        'X2.amounts[0].unit equals "USD" -> "USDC"'
+        'X2: X2.amounts[0].unit equals "USD" -> "USDC"'
+    missing = qa.check_expectation(doc, _entry("X99.terms", "exists", True))
+    assert (missing["target"], missing["legacy"], missing["mapping"]) == (None, None, "")
+    assert missing["detail"] == "unresolved: X99.terms exists true -> false"
+    legacy = qa.check_expectation(doc, _entry("@G9.type", "exists", True))
+    assert (legacy["target"], legacy["legacy"], legacy["result"]) == (None, "G9", "fail")
     for entry in (_entry("X99.terms", "equals", 1), _entry("X2.amounts", "status", "verified"),
                   _entry("X2.terms", "counted", True), _entry("X2", "flag", "CONFIRMED")):
         result = qa.check_expectation(doc, entry)
         assert result["result"] == "fail" and result["detail"].endswith(" -> missing"), entry
 
 
-def test_fixture_expectations_pass_and_append_after_qa12():
+def test_fixture_expectations_pass_and_append_after_qa13():
     doc = load_fixture()
     entries = qa.parse_expectations((FIXTURES / "acme.qa-expect.json").read_bytes().decode("utf-8"))
     ops = {e["op"] for e in entries}
     assert ops == set(schema.EXPECT_OPS) and any(e["path"].startswith("@") for e in entries) and len(entries) >= 6
+    assert all(e["target"] == "R1" for e in entries if e["path"].startswith("@"))
+    assert any(e["path"].startswith("R1.") for e in entries)  # a plain path on a carried-over finding
     results = qa.run(doc, entries)
     assert [r["id"] for r in results] == IDS + ["E:" + e["id"] for e in entries]
     assert qa.failed(results) == []
+    assert {frozenset(r) for r in results} == {frozenset(RESULT_KEYS)}
+    by_id = {r["id"]: r for r in results}
+    assert by_id["E:g3-retyped"]["mapping"] == ("legacy G3 -> R1 (carried_from G3); current G3 is a different"
+                                                " finding (carried_from none)")
+    assert by_id["E:r1-carried"]["mapping"] == "R1 carried_from G3"
+    assert by_id["E:x2-balance-basis"]["mapping"] == ""
     doc["interfaces"][1]["amounts"][0]["basis"] = "POSITION_VALUE"
     assert qa.failed(qa.run(doc, entries)) == ["E:x2-balance-basis"]
+
+
+def test_target_mismatch_fails():
+    doc = load_fixture()
+    entries = qa.parse_expectations((FIXTURES / "acme.qa-expect.json").read_bytes().decode("utf-8"))
+    wrong = [dict(e, target="G3") if e["id"] == "g3-retyped" else e for e in entries]  # test-local copy
+    result = {r["id"]: r for r in qa.run(doc, wrong)}["E:g3-retyped"]
+    assert result["result"] == "fail" and result["detail"] == "target mismatch: expected G3, resolved R1"
+    assert (result["target"], result["legacy"]) == ("R1", "G3")
+    assert qa.check_expectation(doc, dict(_entry("X99.terms", "exists", False), target="X99"))["detail"] == \
+        "target mismatch: expected X99, resolved none"
+
+
+def test_mapping_texts():
+    doc = load_fixture()
+    entry = dict(_entry("@G3.type", "exists", True), target="R1")
+    assert qa.check_expectation(doc, entry)["mapping"] == (
+        "legacy G3 -> R1 (carried_from G3); current G3 is a different finding (carried_from none)")
+    doc["findings"][2]["carried_from"] = "D9"
+    assert qa.check_expectation(doc, entry)["mapping"] == (
+        "legacy G3 -> R1 (carried_from G3); current G3 is a different finding (carried_from D9)")
+    del doc["findings"][2]  # no current G3
+    assert qa.check_expectation(doc, entry)["mapping"] == "legacy G3 -> R1 (carried_from G3)"
+    doc = load_fixture()
+    assert qa.check_expectation(doc, _entry("R1.type", "exists", True))["mapping"] == "R1 carried_from G3"
+    assert qa.check_expectation(doc, _entry("D1.type", "exists", True))["mapping"] == ""  # carried_from = own id
+    assert qa.check_expectation(doc, _entry("G3.type", "exists", True))["mapping"] == ""  # new in this run
+    assert qa.check_expectation(doc, _entry("X2.terms", "exists", True))["mapping"] == ""
+    fallback = qa.check_expectation(doc, dict(_entry("@D1", "exists", True), target="D1"))
+    assert (fallback["result"], fallback["mapping"]) == ("pass", "legacy D1 -> D1 (carried_from D1)")
+
+
+def test_result_keys_identical_for_qa_and_expectations():
+    entries = qa.parse_expectations((FIXTURES / "acme.qa-expect.json").read_bytes().decode("utf-8"))
+    results = qa.run(load_fixture(), entries)
+    assert all(set(r) == RESULT_KEYS for r in results)
+    assert [list(r) for r in results[:1]] == [list(r) for r in results[-1:]]
 
 
 @pytest.mark.parametrize("text, message", [
@@ -224,6 +297,12 @@ def test_fixture_expectations_pass_and_append_after_qa12():
     ('[{"id": "a", "case": "c", "path": "X2", "op": "flag", "value": 1}]', "expectations[0].value: must be a string"),
     ('[{"id": "a", "case": "c", "path": "X2", "op": "exists", "value": true},'
      ' {"id": "a", "case": "c", "path": "X2", "op": "exists", "value": true}]', "expectations[1].id: duplicate id a"),
+    ('[{"id": "a", "case": "c", "path": "@G3.type", "op": "exists", "value": true}]',
+     "expectations[0].target: required for a legacy (@) path"),
+    ('[{"id": "a", "case": "c", "path": "X2", "op": "exists", "value": true, "target": "x2"}]',
+     "expectations[0].target: must be an id"),
+    ('[{"id": "a", "case": "c", "path": "X2", "op": "exists", "value": true, "extra": 1}]',
+     "expectations[0]: keys must be id, case, path, op, value, optionally target"),
 ])
 def test_malformed_expectations(text, message):
     with pytest.raises(qa.ExpectationError) as exc:

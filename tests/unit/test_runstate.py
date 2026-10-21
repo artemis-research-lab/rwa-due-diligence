@@ -259,7 +259,7 @@ def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
     result = runstate.finalize(tmp_path, "acme", clock=clock_at())
     names = [os.path.basename(p) for p in result["outputs"]]
     assert names == ["acme.dd.json", "acme.derived.json", "acme.report.md"] + [
-        "acme.flow-%s.svg" % k for k in FLOW_KEYS]
+        "acme.flow-%s.svg" % k for k in FLOW_KEYS] + ["acme.manifest.json"]
     for key in FLOW_KEYS:
         assert project.flow_output(key).read_bytes() == (GOLDEN / ("acme.flow-%s.svg" % key)).read_bytes()
     md = project.output("report.md").read_bytes().decode("utf-8")
@@ -267,6 +267,22 @@ def test_finalize_with_d2_writes_svgs_in_outputs(tmp_path):
     assert "![Fund flow T2 settlement](acme.flow-T2-settlement.svg)" in md
     assert [p.name for p in project.outputs()] == names
     assert not any(p.suffix == ".html" for p in project.dir.rglob("*"))
+
+
+@pytest.mark.d2
+@NEEDS_D2
+def test_finalize_writes_manifest_last(tmp_path):
+    project = _ready(tmp_path)
+    result = runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert os.path.basename(result["outputs"][-1]) == "acme.manifest.json"
+    manifest = json.loads(project.output("manifest.json").read_bytes().decode("utf-8"))
+    hashes = {f["path"]: f["sha256"] for f in manifest["files"]}
+    # every listed file, the run state included, already has its final bytes when the manifest is written
+    for path, digest in hashes.items():
+        assert hashlib.sha256((project.dir / path).read_bytes()).hexdigest() == digest, path
+    assert runstate.load_state(project)["phase"] == "final" and "audit/state.json" in hashes
+    assert "acme.manifest.json" not in hashes
+    assert project.output("manifest.json") in project.outputs()
 
 # --------------------------------------------------------------------------- v0.4.1 amend
 
@@ -316,6 +332,7 @@ def test_amend_archives_outputs_and_reopens_round(tmp_path):
     assert result == {"amendment": 1, "round": 2, "phase": "research", "archived_to": str(archive.resolve()),
                       "commands": 2}
     assert sorted(p.name for p in archive.iterdir()) == sorted(outputs)
+    assert "acme.manifest.json" in outputs and (archive / "acme.manifest.json").is_file()
     assert not any(p.exists() for p in project.outputs())
     assert (project.round_dir(2) / "amend.txt").read_bytes() == AMEND
     record = runstate.load_json_text((project.round_dir(2) / "amend.json").read_bytes().decode("utf-8"))
@@ -470,8 +487,8 @@ def test_seed_from_final_v1_run(tmp_path):
                    "work_file": str(project.work_file), "seeded_from": old_id, "sources": 9}
     archive = project.archive / old_id
     assert sorted(p.name for p in archive.iterdir()) == [
-        "acme.dd.json", "acme.derived.json", "acme.flow-P1.svg", "acme.flow-P2.svg", "acme.report.html",
-        "acme.report.md", "audit"]
+        "acme.dd.json", "acme.derived.json", "acme.flow-P1.svg", "acme.flow-P2.svg", "acme.manifest.json",
+        "acme.report.html", "acme.report.md", "audit"]
     assert (archive / "audit" / "state.json").is_file()
     assert project.ledger_file.read_bytes() == ledger_before == (archive / "audit" / "sources.jsonl").read_bytes()
     assert not any(p.exists() for p in project.outputs()) and project.legacy_outputs() == []
@@ -673,7 +690,7 @@ def test_seed_from_final_v21_run(tmp_path):
         schema.MIGRATED_NOTE_21
     runstate.make_review(tmp_path, "acme")
     review = (project.round_dir(1) / "review.md").read_bytes().decode("utf-8")
-    assert "| QA9 | placeholder | fail | D1, D2, U1, X2.amounts\\[0\\], X4.amounts\\[0\\]," in review
+    assert "| QA9 | placeholder | fail | -- | -- | D1, D2, U1, X2.amounts\\[0\\], X4.amounts\\[0\\]," in review
     _directives(tmp_path, project, "finalize\n", name="seeded.txt")
     with pytest.raises(runstate.ContractError) as exc:
         runstate.finalize(tmp_path, "acme", clock=clock_at(LATER))
@@ -724,7 +741,12 @@ def test_finalize_refuses_failing_expectation(tmp_path, monkeypatch):
     (project.audit / "qa-expect.json").write_bytes(b"[{}]")
     with pytest.raises(runstate.ContractError) as exc:
         runstate.finalize(tmp_path, "acme", clock=clock_at())
-    assert str(exc.value) == "expectations[0]: keys must be id, case, path, op, value"
+    assert str(exc.value) == "expectations[0]: keys must be id, case, path, op, value, optionally target"
+    (project.audit / "qa-expect.json").write_bytes(
+        b'[{"id": "a", "case": "c", "path": "@G3.type", "op": "exists", "value": true}]')
+    with pytest.raises(runstate.ContractError) as exc:
+        runstate.finalize(tmp_path, "acme", clock=clock_at())
+    assert str(exc.value) == "expectations[0].target: required for a legacy (@) path"
 
 
 @pytest.mark.d2
@@ -744,8 +766,11 @@ def test_finalize_writes_derived_json(tmp_path):
                                        "subjects": ["X6.terms"]}
     assert [q for q, _ in derived["five_questions"]["T1"]][-1] == "Is deployment verified?"
     assert sorted(derived["five_questions"]) == ["T1", "T2"]
-    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 13)] and derived["changes"] == []
+    assert [r["id"] for r in derived["qa"]] == ["QA%d" % i for i in range(1, 14)] and derived["changes"] == []
     assert derived["allocation"][0]["valuation_basis"] is None and derived["allocation"][1]["reason"] == "other measure of X2[0]"
+    assert (derived["allocation"][0]["time_basis"], derived["allocation"][0]["observed_at"]) == (
+        "block", "2026-10-01T08:15:00Z")
+    assert {(r["target"], r["legacy"], r["mapping"]) for r in derived["qa"]} == {(None, None, "")}
     text = project.output("derived.json").read_bytes()
     assert text.endswith(b"}\n") and b"\r" not in text
 

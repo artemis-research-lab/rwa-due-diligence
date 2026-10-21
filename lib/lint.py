@@ -145,7 +145,7 @@ def amount_warnings(doc):
             if onchain and (a["block"] is None or a["chain"] is None):
                 out.append(_warning(path, "%s: on-chain amount without block and chain" % ref))
             if a["as_of"] is None:
-                out.append(_warning(path, "%s: no observation time; it will not be counted" % ref))
+                out.append(_warning(path, "%s: data time not established; it will not be counted" % ref))
             if a["basis"] == "CUMULATIVE_FUNDED" and not YEAR.search(a["scope"]):
                 out.append(_warning(path, "%s: CUMULATIVE_FUNDED scope should state the period" % ref))
         if x["kind"] in ("L1_L2", "sleeve_holding") and x["amounts"] and not any(

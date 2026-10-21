@@ -1,8 +1,9 @@
-"""Quantitative and provenance checks (v0.7.0 section 6, v0.7.1 sections 1 and 4, dd.py qa): rules QA1-QA12 and
-analyst expectations.
+"""Quantitative and provenance checks (v0.7.0 section 6, v0.7.1 sections 1 and 4, v0.7.2 sections 1 and 2,
+dd.py qa): rules QA1-QA13 and analyst expectations.
 
 Each rule recomputes what it asserts from the document (independently of allocation_totals) and compares;
-results are {"id", "rule", "result": "pass"|"fail", "detail"} with offending ids sorted, or `ok`.
+results are {"id", "rule", "result": "pass"|"fail", "detail", "target", "legacy", "mapping"} with offending ids
+sorted, or `ok`; target, legacy and mapping are null, null and "" for the QA rules.
 """
 
 import json
@@ -14,6 +15,8 @@ from lib.textutil import load_json_text
 STOCK_FLOW = ("CUMULATIVE_FUNDED", "FACILITY_COMMITMENT", "UNDRAWN_COMMITMENT")
 CREDIT_COMPONENTS = ("CORE_CREDIT", "DEFI_LENDING")
 EXPECT_KEYS = ("id", "case", "path", "op", "value")
+EXPECT_OPTIONAL = ("target",)
+TARGET_PATTERN = re.compile(r"^(E|P|T|X|Z|G|D|C|U|R)[1-9][0-9]*$")
 COUNTED_PATH = re.compile(r"^(X[1-9][0-9]*)\.amounts\[([0-9]+)\]$")
 
 
@@ -33,9 +36,15 @@ def _natural(ident):
 def _result(rule_id, name, offenders, info=()):
     offenders = sorted(set(offenders), key=_natural)
     if offenders:
-        return {"id": rule_id, "rule": name, "result": "fail", "detail": ", ".join(offenders)}
+        return _shaped(rule_id, name, "fail", ", ".join(offenders))
     detail = "ok" if not info else "ok; unverified: " + ", ".join(sorted(set(info), key=_natural))
-    return {"id": rule_id, "rule": name, "result": "pass", "detail": detail}
+    return _shaped(rule_id, name, "pass", detail)
+
+
+def _shaped(rule_id, name, result, detail, target=None, legacy=None, mapping=""):
+    """One result object; every result has the same keys (v0.7.2 section 1)."""
+    return {"id": rule_id, "rule": name, "result": result, "detail": detail, "target": target, "legacy": legacy,
+            "mapping": mapping}
 
 
 # --------------------------------------------------------------------------- rules
@@ -68,7 +77,7 @@ def _qa1(doc, rows):
 
 
 def run(doc, expectations=None):
-    """Results of QA1-QA12 then one E:<id> result per expectation, in that order."""
+    """Results of QA1-QA13 then one E:<id> result per expectation, in that order."""
     rows = framework.allocation(doc)
     counted = [r for r in rows if r[10]]
     interfaces = {x["id"]: x for x in doc["interfaces"]}
@@ -125,6 +134,9 @@ def run(doc, expectations=None):
     for r in counted:
         per_interface[r[2]] = per_interface.get(r[2], 0) + 1
     results.append(_result("QA12", "onemeasure", [xid for xid, n in per_interface.items() if n > 1]))
+    results.append(_result("QA13", "timebasis", [_ref(r) for r in counted if r.time_basis == "unresolved"] + [
+        "%s.amounts[%d]" % (x["id"], j) for x in doc["interfaces"] for j, a in enumerate(x["amounts"])
+        if framework.retrieval_source(doc, a) is not None]))
 
     for entry in expectations or []:
         results.append(check_expectation(doc, entry, rows))
@@ -142,8 +154,8 @@ def _entry_errors(i, entry):
     where = "expectations[%d]" % i
     if not isinstance(entry, dict):
         return "%s: must be an object" % where
-    if sorted(entry) != sorted(EXPECT_KEYS):
-        return "%s: keys must be %s" % (where, ", ".join(EXPECT_KEYS))
+    if sorted(entry) not in (sorted(EXPECT_KEYS), sorted(EXPECT_KEYS + EXPECT_OPTIONAL)):
+        return "%s: keys must be %s, optionally %s" % (where, ", ".join(EXPECT_KEYS), ", ".join(EXPECT_OPTIONAL))
     ident, case, path, op = entry["id"], entry["case"], entry["path"], entry["op"]
     if not isinstance(ident, str) or not 1 <= len(ident) <= 20:
         return "%s.id: must be a string of 1..20 characters" % where
@@ -160,6 +172,10 @@ def _entry_errors(i, entry):
         return "%s.value: must be a boolean for op %s" % (where, op)
     if op in ("status", "flag", "not_contains") and not isinstance(value, str):
         return "%s.value: must be a string for op %s" % (where, op)
+    if "target" in entry and not (isinstance(entry["target"], str) and TARGET_PATTERN.match(entry["target"])):
+        return "%s.target: must be an id (E|P|T|X|Z|G|D|C|U|R)<n>" % where
+    if path.startswith("@") and "target" not in entry:
+        return "%s.target: required for a legacy (@) path" % where
     return None
 
 
@@ -202,9 +218,34 @@ def _counted(doc, path, rows):
     return any(row[10] for row in rows if (row[2], row[3]) == entry)
 
 
+def _mapping(doc, canonical, legacy):
+    """Legacy or carried_from mapping text of a finding target; "" for other targets (v0.7.2 section 1)."""
+    findings = {f["id"]: f for f in doc["findings"]}
+    found = findings.get(canonical)
+    if found is None:
+        return ""
+    carried = found["carried_from"]
+    if legacy is None:
+        return "%s carried_from %s" % (canonical, carried) if carried not in (None, canonical) else ""
+    if carried == legacy:
+        text = "legacy %s -> %s (carried_from %s)" % (legacy, canonical, legacy)
+    else:
+        text = "legacy %s -> %s (no finding carried from %s)" % (legacy, canonical, legacy)
+    current = findings.get(legacy)
+    if current is not None and current is not found:
+        text += "; current %s is a different finding (carried_from %s)" % (
+            legacy, "none" if current["carried_from"] is None else current["carried_from"])
+    return text
+
+
 def check_expectation(doc, entry, rows=None):
     rows = framework.allocation(doc) if rows is None else rows
     op, path, expected = entry["op"], entry["path"], entry["value"]
+    legacy = path[1:].split(".", 1)[0].split("[", 1)[0] if path.startswith("@") else None
+    try:
+        canonical, legacy = framework.resolve_target(doc, path)
+    except KeyError:
+        canonical = None
     try:
         if op == "exists":
             try:
@@ -239,5 +280,9 @@ def check_expectation(doc, entry, rows=None):
         actual_text = _text(actual)
     except KeyError:
         ok, actual_text = False, "missing"
-    return {"id": "E:" + entry["id"], "rule": entry["case"], "result": "pass" if ok else "fail",
-            "detail": "%s %s %s -> %s" % (path, op, _text(expected), actual_text)}
+    detail = "%s: %s %s %s -> %s" % (canonical or "unresolved", path, op, _text(expected), actual_text)
+    target = entry.get("target")
+    if target is not None and target != canonical:
+        ok, detail = False, "target mismatch: expected %s, resolved %s" % (target, canonical or "none")
+    mapping = "" if canonical is None else _mapping(doc, canonical, legacy)
+    return _shaped("E:" + entry["id"], entry["case"], "pass" if ok else "fail", detail, canonical, legacy, mapping)

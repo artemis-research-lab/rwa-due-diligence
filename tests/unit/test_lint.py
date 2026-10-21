@@ -213,8 +213,9 @@ def test_amount_warning_no_observation_time():
     x2 = _x(doc, "X2")
     x2["amounts"].append(dict(copy.deepcopy(x2["amounts"][1]), basis="CURRENT_BALANCE", as_of=None,
                               valuation_basis=None))
-    assert lint.amount_warnings(doc) == [{"path": "interfaces[1].amounts[3]",
-                                          "message": "X2.amounts[3]: no observation time; it will not be counted"}]
+    assert lint.amount_warnings(doc) == [{
+        "path": "interfaces[1].amounts[3]",
+        "message": "X2.amounts[3]: data time not established; it will not be counted"}]
 
 
 def test_amount_warning_no_countable_basis():

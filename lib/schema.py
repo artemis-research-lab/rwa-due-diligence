@@ -4,7 +4,7 @@ references/schema.md is generated from this module (`dd.py schema-doc`).
 """
 
 SCHEMA_VERSION = "rwa-dd/2.2"
-SKILL_VERSION = "0.7.1"
+SKILL_VERSION = "0.7.2"
 
 ENUMS = {
     "source_type": (
@@ -666,9 +666,9 @@ def _doc_tree(node, name, depth, lines):
 
 # Curator meanings of the amount bases (v0.7.0 9.1); legend and schema doc.
 AMOUNT_BASIS_MEANINGS = (
-    ("CURRENT_BALANCE", "token or asset holdings at the observation time"),
+    ("CURRENT_BALANCE", "token or asset holdings at the data time"),
     ("POSITION_VALUE", "value of a position under a stated valuation basis"),
-    ("OUTSTANDING_PRINCIPAL", "loan principal unpaid at the observation time (recorded unbilled principal goes"
+    ("OUTSTANDING_PRINCIPAL", "loan principal unpaid at the data time (recorded unbilled principal goes"
                               " here with the scope saying so)"),
     ("CUMULATIVE_FUNDED", "actual disbursements over a stated period"),
     ("FACILITY_COMMITMENT", "contractual ceiling"),
@@ -683,7 +683,7 @@ COUNTABLE = ("CURRENT_BALANCE", "POSITION_VALUE", "OUTSTANDING_PRINCIPAL")
 
 # Quantitative and provenance checks (v0.7.0 6.1): (id, rule name, text).
 QA_RULES = (
-    ("QA1", "basis", "No total mixes amount bases, units, valuation bases or observation dates (each total"
+    ("QA1", "basis", "No total mixes amount bases, units, valuation bases or data dates (each total"
                      " recomputed from the allocation rows has one total key and the same sum)."),
     ("QA2", "lookthrough", "No RESERVE_LOOKTHROUGH amount and no reserve_lookthrough interface is counted."),
     ("QA3", "alternative", "No amount on an interface with an alternative group is counted."),
@@ -704,6 +704,8 @@ QA_RULES = (
                            " status verified."),
     ("QA12", "onemeasure", "No interface has more than one counted amount (entry 0 or the first countable entry is"
                            " the position measure; later entries are other measures of the same position)."),
+    ("QA13", "timebasis", "No counted amount lacks an established data time, and no data time is a source retrieval"
+                          " time (curator AC-03)."),
 )
 
 # Expectation operators (v0.7.0 6.2).
@@ -739,8 +741,9 @@ def schema_doc():
         "  protection_provider, reserve_assets, auditor and other.",
         "- `interfaces[].alternative`: `group` and `option` are both null or both set; a group has at least two",
         "  distinct options and all its interfaces belong to one strategy.",
-        "- `interfaces[].as_of` is the date the legal terms were observed; amounts carry their own observation",
-        "  times; the report generation time is `run.finalized_at` (never merged with either).",
+        "- `interfaces[].as_of` is the date the legal terms were observed; an amount's `as_of` is its data time",
+        "  (see Amounts); source retrieval times are `sources[].retrieved_at`; the report generation time is",
+        "  `run.finalized_at` (never merged with any of them).",
         "- `supports[]`: `strategies` are T ids, `provider` an E id, `beneficiary` an E or P id or null.",
         "- `findings[].subjects` name claims or objects by claim id (see Evidence flags); the path must resolve.",
         "- `history` is sorted by date, nulls last.",
@@ -811,9 +814,23 @@ def schema_doc():
         "### Amounts",
         "",
         "Each `interfaces[].amounts[]` entry is one measured number: `basis`, `value` (a claim that is not",
-        "not_found), `unit` (token symbol or currency, non-empty), `as_of` (observation time of the value, never",
-        "the report date), `block` and `chain` (chain required when block is set), `scope` (what is measured,",
-        "non-empty) and `valuation_basis` (required for POSITION_VALUE). Bases:",
+        "not_found), `unit` (token symbol or currency, non-empty), `as_of` (data time, see below), `block` and",
+        "`chain` (chain required when block is set), `scope` (what is measured, non-empty) and `valuation_basis`",
+        "(required for POSITION_VALUE).",
+        "",
+        "Time basis (curator AC-03):",
+        "",
+        "- `as_of` is data_as_of: the date or time the value applies, as established by the source (a statement",
+        "  or report date, an API `updatedAt`, or the block time of an on-chain read); null when the source does",
+        "  not establish it. It is never the time a page was opened or the report date.",
+        "- block_timestamp: when `block` is set, `as_of` is that block's time and must be a full timestamp.",
+        "- Without a block, `as_of` never equals (same string, or same instant when both are timestamps) the",
+        "  `retrieved_at` of a source cited in the value's evidence.",
+        "- observed_at (derived, never stored): the latest `retrieved_at` among the sources cited in the value's",
+        "  evidence; null when none has one.",
+        "- time basis (derived): `block` (block set), `source` (as_of set, no block), `unresolved` (as_of null).",
+        "",
+        "Bases:",
         "",
     ]
     lines += ["- `%s`: %s." % (name, meaning) for name, meaning in AMOUNT_BASIS_MEANINGS]
@@ -862,13 +879,14 @@ def schema_doc():
         "- Allocation rows: one per amount entry on interfaces of kind L1_L2, sleeve_holding, reserve_lookthrough",
         "  and asset_sale; such an interface without amounts gives one row with reason `no amount`.",
         "- Counted only when the kind is L1_L2 or sleeve_holding, the basis is %s, the value" % ", ".join(COUNTABLE),
-        "  is set, as_of is set, alternative.group is null and the scope is not the migration placeholder.",
+        "  is set, as_of (the data time) is set, alternative.group is null and the scope is not the migration",
+        "  placeholder.",
         "- One edge is one position: only the first entry (lowest index) of an interface that meets these",
         "  conditions is counted; each later one gets reason `other measure of X<n>[<k>]` (k the counted entry).",
         "- Reasons (first that applies): `alternative A<n><o>`, `not a funding edge`, `basis <BASIS> not counted`,",
-        "  `no amount`, `no observation time`, `migrated scope`, `other measure of X<n>[<k>]`, `counted`.",
+        "  `no amount`, `data time not established`, `migrated scope`, `other measure of X<n>[<k>]`, `counted`.",
         "- Totals per strategy, component and product add only counted amounts with the same total key (basis,",
-        "  unit, observation date YYYY-MM-DD, valuation basis); two keys are never added. Label:",
+        "  unit, data date YYYY-MM-DD, valuation basis); two keys are never added. Label:",
         "  `<sum> <unit> <BASIS> @<date>`.",
         "",
         "## Quality checks (dd.py qa)",
@@ -879,9 +897,15 @@ def schema_doc():
         "",
         "Expectations (`--expect <file>`, default `audit/qa-expect.json` when it exists; written by the analyst and",
         'never edited by the agent): a JSON array of `{"id": <1..20 chars>, "case": <<=120 chars>, "path": <path>,',
-        '"op": <op>, "value": <json>}`. Paths: `(@?)(E|P|T|X|Z|G|D|C|U|R)<n>` followed by `.field` and `[i]`',
-        "parts; `@<id>` selects the finding carried from that id. Ops: %s." % ", ".join(EXPECT_OPS),
-        "Each gives a result `E:<id>` after QA12. `dd.py qa` exits 5 when any check fails.",
+        '"op": <op>, "value": <json>}`, optionally with `"target": <id>` (`(E|P|T|X|Z|G|D|C|U|R)<n>`, the',
+        "canonical id the path must resolve to). Paths: `(@?)(E|P|T|X|Z|G|D|C|U|R)<n>` followed by `.field` and",
+        "`[i]` parts; `@<id>` selects the finding carried from that id and needs `target` (curator AC-01).",
+        "Ops: %s." % ", ".join(EXPECT_OPS),
+        "Each gives a result `E:<id>` after QA13. Every result has `id`, `rule`, `result`, `detail`, `target`",
+        "(canonical id, null when unresolved or for QA rules), `legacy` (the `@` id or null) and `mapping` (legacy",
+        "or carried_from mapping text, empty when none); an expectation detail starts with `<canonical id>: `, and",
+        "a `target` that differs from the resolved id fails with `target mismatch: expected <a>, resolved <b>`.",
+        "`dd.py qa` exits 5 when any check fails.",
         "",
         "## Derived output",
         "",
@@ -889,6 +913,16 @@ def schema_doc():
         "slug, run_id, schema_version, skill_version, `record_sha256` (SHA-256 of the written dd.json bytes),",
         "`flags` (claim id -> flag for every claim), `conflicts`, `critical`, `critical_counts`, `allocation`,",
         "`totals`, `five_questions`, `qa` and `changes`. Flags and totals are derived, never stored in the record.",
+        "Allocation rows carry `observed_at` and `time_basis`.",
+        "",
+        "## Package manifest",
+        "",
+        "Finalize then writes `<slug>.manifest.json` (`manifest_version` `rwa-dd-manifest/1`): slug, run_id,",
+        "seeded_from, schema_version, skill_version, finalized_at, rounds, `execution` (python, platform, d2),",
+        "`files` (path relative to the project directory, role, bytes, sha256; sorted by path; roles record,",
+        "derived, report, diagram, ledger, expectations, run_state, round_record, analyst_input; never itself) and",
+        "`checks` (validate_errors, lint_warnings, qa_failed, record_sha256_match). `dd.py verify` recomputes them",
+        "read-only and exits 6 when the package does not reproduce.",
         "",
         "## Enums",
         "",

@@ -68,7 +68,10 @@ thresholds, limits or loss estimates.
   credit arrangement are verified; DISCLOSED_UNVERIFIED when the issuer discloses the path but settlement is not shown;
   NOT_DEPLOYED or UNRESOLVED otherwise. No observed transfer in a sampled window does not prove that no funding path
   exists.
-- interfaces[].as_of is the date the legal terms were observed; amounts carry their own observation times.
+- interfaces[].as_of is the date the legal terms were observed. An amount's as_of is the time the value applies as
+  the source establishes it (statement or report date, API updatedAt, block time); never the time you opened the
+  page. An undated web figure keeps as_of null: it is shown, not counted. For an on-chain read set block and chain and
+  use the block time. Retrieval times live in the source ledger and are shown as observed-at (curator AC-03).
 - A product may feed several strategies; a strategy may serve several products. Pure principal commodity purchase and
   resale (PT) is trade finance: business_type trade_finance_pt or mixed.
 

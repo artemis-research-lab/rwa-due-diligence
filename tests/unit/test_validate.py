@@ -567,6 +567,44 @@ def test_amount_entry_rules():
     assert errors_for(bad_unit) == ["interfaces[8].amounts[0].unit: longer than 20 characters"]
 
 
+def test_amount_time_basis_rules():
+    """v0.7.2 section 2 (curator AC-03): block reads carry the block timestamp; as_of is never a retrieval time."""
+    def block_date(doc):
+        _amount(doc, "X2")["as_of"] = "2026-09-30"
+    assert errors_for(block_date) == [
+        "interfaces[1].amounts[0].as_of: a block read needs the block timestamp (curator AC-03)"]
+
+    def block_null(doc):
+        _amount(doc, "X2")["as_of"] = None
+    assert errors_for(block_null) == [
+        "interfaces[1].amounts[0].as_of: a block read needs the block timestamp (curator AC-03)"]
+
+    def page_view(doc):
+        _amount(doc, "X2", 1)["as_of"] = "2026-10-01T08:40:00Z"  # S8 retrieved_at
+    assert errors_for(page_view) == [
+        "interfaces[1].amounts[1].as_of: equals the retrieval time of S8; record the time the source gives for the"
+        " value, or null (curator AC-03)"]
+
+    def page_view_second_source(doc):
+        _amount(doc, "X9")["value"]["evidence"] = ["S7", "S2"]
+        _amount(doc, "X9")["as_of"] = "2026-10-01T08:05:00Z"  # S2 retrieved_at, same instant
+    assert errors_for(page_view_second_source) == [
+        "interfaces[8].amounts[0].as_of: equals the retrieval time of S2; record the time the source gives for the"
+        " value, or null (curator AC-03)"]
+
+    def same_day_date(doc):
+        _amount(doc, "X9")["as_of"] = "2026-10-01"  # S7 retrieved on that day: a date is not the retrieval instant
+    assert errors_for(same_day_date) == []
+
+    def block_at_retrieval(doc):
+        _amount(doc, "X2")["as_of"] = "2026-10-01T08:15:00Z"  # S4 retrieved_at; the block time is authoritative
+    assert errors_for(block_at_retrieval) == []
+
+    def uncited(doc):
+        _amount(doc, "X9")["as_of"] = "2026-10-01T08:40:00Z"  # S8's time, but X9 cites S7 only
+    assert errors_for(uncited) == []
+
+
 def test_amount_kind_constraints():
     def holder(doc):
         _x(doc, "X1")["amounts"] = copy.deepcopy(_x(doc, "X9")["amounts"])

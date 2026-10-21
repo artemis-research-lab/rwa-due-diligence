@@ -248,7 +248,7 @@ def _alternative_errors(interfaces, errors):
             errors.append("alternative group %s spans strategies" % group)
 
 
-def _amount_errors(x, path, errors):
+def _amount_errors(doc, x, path, errors):
     kind = x["kind"]
     if x["amounts"] and kind not in AMOUNT_KINDS:
         errors.append("%s.amounts: not allowed on %s" % (path, kind))
@@ -266,6 +266,12 @@ def _amount_errors(x, path, errors):
             errors.append("%s.valuation_basis: required for POSITION_VALUE" % where)
         if a["block"] is not None and a["chain"] is None:
             errors.append("%s.chain: required when block is set" % where)
+        if a["block"] is not None and (a["as_of"] is None or len(a["as_of"]) != len("YYYY-MM-DDTHH:MM:SSZ")):
+            errors.append("%s.as_of: a block read needs the block timestamp (curator AC-03)" % where)
+        retrieved = framework.retrieval_source(doc, a)
+        if retrieved is not None:
+            errors.append("%s.as_of: equals the retrieval time of %s; record the time the source gives for the value,"
+                          " or null (curator AC-03)" % (where, retrieved))
         kinds = BASIS_KINDS.get(a["basis"])
         if kinds is not None and kind not in kinds:
             errors.append("%s.basis: %s not allowed on %s" % (where, a["basis"], kind))
@@ -375,7 +381,7 @@ def _framework_errors(doc, ids, errors):
             if x["kind"] not in kinds and (claim["status"] != "not_found" or claim["evidence"]):
                 errors.append("%s.%s: must be not_found without evidence unless kind is %s"
                               % (path, field, " or ".join(kinds)))
-        _amount_errors(x, path, errors)
+        _amount_errors(doc, x, path, errors)
         _supply_errors(x, path, errors)
     _alternative_errors(interfaces, errors)
     for i, t in enumerate(strategies):

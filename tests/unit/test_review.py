@@ -72,11 +72,20 @@ def test_portfolio_amounts_and_alternatives():
         _section(text, "Portfolio components")
     assert "| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | 5000000 USDC" in text
     amounts = _section(text, "Amounts")
-    assert ("| T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | AUP loan sample: 12 loans funded"
-            " 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |"
+    assert ("| strategy | interface | entry | kind | value | unit | basis | data as of | time basis | observed at |"
+            " scope | counted | reason |") in amounts
+    assert ("| T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | block |"
+            " 2026-10-01T08:15:00Z |") in amounts
+    assert ("| T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | source | 2026-10-01T09:00:00Z |"
+            " AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no |"
+            " basis CUMULATIVE_FUNDED not counted |") in amounts
+    assert ("| T3 | X10 | 0 | reserve_lookthrough | 5000000 | USD | RESERVE_LOOKTHROUGH | 2026-09-30 | source |"
+            " 2026-10-01T08:30:00Z | Reserve assets of E11 backing the sleeve stablecoin | no | not a funding edge |"
             ) in amounts
-    assert ("| T3 | X10 | 0 | reserve_lookthrough | 5000000 | USD | RESERVE_LOOKTHROUGH | 2026-09-30 | Reserve assets"
-            " of E11 backing the sleeve stablecoin | no | not a funding edge |") in amounts
+    doc = load_fixture()
+    doc["interfaces"][8]["amounts"][0]["as_of"] = None
+    assert ("| T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | not established | unresolved |"
+            " 2026-10-01T08:30:00Z |") in _section(review.render(doc, 1), "Amounts")
     assert _section(text, "Alternative paths") == "## Alternative paths\n\n- A1 (T2): a X11; b X12\n"
     assert "| T3 Acme treasury sleeve |" not in _section(text, "Framework completeness")
 
@@ -92,10 +101,12 @@ def test_section1_preview_conflicts_provenance_qa():
     assert _section(text, "Provenance").split("\n")[4:6] == [
         "| T1.l3\\_business.performance | verified | auditor_procedure | TESTED | S9 |",
         "| X2.amounts\\[2\\].value | self_reported | issuer_management | NOT_TESTED | S9 |"]
-    assert "| QA9 | placeholder | pass | ok |" in _section(text, "QA")
-    results = [{"id": "E:a", "rule": "case a", "result": "fail", "detail": "X2 exists true -> false"}]
-    assert "| E:a | case a | fail | X2 exists true -\\> false |" in _section(review.render(load_fixture(), 1, results),
-                                                                          "QA")
+    assert "| id | rule | result | target | mapping | detail |" in _section(text, "QA")
+    assert "| QA9 | placeholder | pass | -- | -- | ok |" in _section(text, "QA")
+    results = [{"id": "E:a", "rule": "case a", "result": "fail", "detail": "R1: @G3 exists true -> false",
+                "target": "R1", "legacy": "G3", "mapping": "legacy G3 -> R1 (carried_from G3)"}]
+    assert ("| E:a | case a | fail | R1 | legacy G3 -\\> R1 (carried\\_from G3) | R1: @G3 exists true -\\> false |"
+            in _section(review.render(load_fixture(), 1, results), "QA"))
 
 
 def test_material_and_migration_sections():
@@ -113,7 +124,7 @@ def test_material_and_migration_sections():
     assert "**D1**" in pending and "**D2**" not in pending
     assert ("- **X9.amounts[0]** CURRENT_BALANCE 5000000 USDC -- scope: unchecked (migrated from rwa-dd/2.1)"
             in pending)
-    assert "| QA9 | placeholder | fail | D1, X9.amounts\\[0\\] |" in review.render(doc, 1)
+    assert "| QA9 | placeholder | fail | -- | -- | D1, X9.amounts\\[0\\] |" in review.render(doc, 1)
 
 
 def test_directives_template_accepts_u_and_r():

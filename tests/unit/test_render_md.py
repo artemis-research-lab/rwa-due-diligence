@@ -243,17 +243,19 @@ def test_critical_findings_list_and_count_line():
 def test_metadata_generated_and_observed_rows():
     text = render_md.render(load_fixture(), today="2026-10-20")
     assert ("| started | 2026-10-01T08:00:00Z |\n| finalized | -- |\n| Report generated | draft 2026-10-20 |\n"
-            "| Data observed | 2026-06-30 to 2026-10-01 |\n") in text
+            "| Data as of | 2026-06-30 to 2026-10-01 |\n| Sources retrieved | 2026-10-01T08:15:00Z to"
+            " 2026-10-01T09:00:00Z |\n") in text
+    assert "Data observed" not in text
     assert "| Report generated | draft |" in render_md.render(load_fixture())
     final = _final_doc()
     assert "| Report generated | 2026-10-02T00:00:00Z |" in render_md.render(final, today="2026-10-20")
     doc = load_fixture()
     for x in doc["interfaces"]:
         x["amounts"] = [a for a in x["amounts"] if a["as_of"] == "2026-08-15"]
-    assert "| Data observed | 2026-08-15 |" in render_md.render(doc)
+    assert "| Data as of | 2026-08-15 |\n| Sources retrieved | 2026-10-01T08:40:00Z |" in render_md.render(doc)
     for x in doc["interfaces"]:
         x["amounts"] = []
-    assert "| Data observed | n/d |" in render_md.render(doc)
+    assert "| Data as of | n/d |\n| Sources retrieved | n/d |" in render_md.render(doc)
 
 
 def test_portfolio_allocation_and_totals():
@@ -261,13 +263,15 @@ def test_portfolio_allocation_and_totals():
     assert ("| T1 Acme equipment credit | CORE_CREDIT | DEPLOYED\\_VERIFIED [CONFIRMED] (S4) -- Transfers from E1"
             " into the E5 pool observed on-chain. | P1 |") in s2
     assert "| T3 Acme treasury sleeve | LIQUIDITY_SLEEVE | -- [UNRESOLVED] | P2 | -- [UNRESOLVED] |" in s2
-    assert ("| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale"
-            " to E13 | no | not a funding edge |") in s2
+    assert ("| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | source | 2026-10-01T08:40:00Z"
+            " | Proceeds of the X13 loan sale to E13 | no | not a funding edge |") in s2
     assert "| strategy | T1 | 25000000 USDC CURRENT\\_BALANCE @2026-09-30 |" in s2
-    assert ("| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP"
-            " | no | other measure of X2[0] |") in s2
+    assert ("| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | source | 2026-10-01T08:40:00Z |"
+            " E1 units in Acme Credit Fund LP | no | other measure of X2[0] |") in s2
+    assert ("| strategy | interface | entry | kind | value | unit | basis | data as of | time basis | observed at |"
+            " scope | counted | reason |") in s2
     assert "| product | P2 | 5000000 USDC CURRENT\\_BALANCE @2026-10-01 |" in s2
-    assert s2.rstrip("\n").endswith("Totals add only amounts with the same basis, unit and observation date; see"
+    assert s2.rstrip("\n").endswith("Totals add only amounts with the same basis, unit and data date; see"
                                     " Appendix N for the checks.")
     doc = load_fixture()
     doc["strategies"][2]["products"] = ["P1", "P2"]
@@ -280,10 +284,11 @@ def test_deployment_tables():
         "### L1 -> L2", "### L2 -> L3", "### Liquidity sleeves", "### Asset sales"]
     assert ("| id | strategy | from -> to | route | legal class | counterparty | instrument | claim holder | amounts |"
             " supply concentration | alternative | terms | governing law |") in s4
-    assert ("| 25000000 USDC CURRENT_BALANCE @2026-09-30T12:00:00Z [CONFIRMED] (S4); 25150000 USD POSITION_VALUE"
-            " @2026-09-30 [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED @2026-06-30 [SELF_REPORTED] (S9;"
-            " origin issuer_management; assurance NOT_TESTED) | 0.5 [CONFIRMED] (Pool shares held by E1 / Total pool"
-            " share supply @2026-09-30T12:00:00Z, 20871234, ethereum) (S4) |") in s4
+    assert ("| 25000000 USDC CURRENT_BALANCE data 2026-09-30T12:00:00Z (block) [CONFIRMED] (S4); 25150000 USD"
+            " POSITION_VALUE data 2026-09-30 (source) [SELF_REPORTED] (S8); 18000000 USD CUMULATIVE_FUNDED data"
+            " 2026-06-30 (source) [SELF_REPORTED] (S9; origin issuer_management; assurance NOT_TESTED) | 0.5"
+            " [CONFIRMED] (Pool shares held by E1 / Total pool share supply @2026-09-30T12:00:00Z, 20871234,"
+            " ethereum) (S4) |") in s4
     assert "\nAmount scopes:\n\n- X2[0]: USDC supplied by E1 to the E5 credit pool, read at the block\n" in s4
     assert "- X4[1]: Undrawn part of the E6 to E7 equipment loan facility\n" in s4
     assert "| X11 | T2 | E1 -\\> E9 (L2\\_L3) | REPO [SELF_REPORTED] (S7) |" in s4 and "| A1a |" in s4
@@ -299,9 +304,11 @@ def test_deployment_tables():
 
 def test_amount_cell():
     a = load_fixture()["interfaces"][1]["amounts"][1]
-    assert render_md.amount_cell(a) == "25150000 USD POSITION_VALUE @2026-09-30 [SELF_REPORTED] (S8)"
+    assert render_md.amount_cell(a) == "25150000 USD POSITION_VALUE data 2026-09-30 (source) [SELF_REPORTED] (S8)"
     assert render_md.amount_cell(dict(a, as_of=None), "CONFLICTING") == \
-        "25150000 USD POSITION_VALUE @-- [CONFLICTING] (S8)"
+        "25150000 USD POSITION_VALUE data not established (unresolved) [CONFLICTING] (S8)"
+    assert render_md.amount_cell(dict(a, as_of="2026-09-30T12:00:00Z", block=1, chain="ethereum")) == \
+        "25150000 USD POSITION_VALUE data 2026-09-30T12:00:00Z (block) [SELF_REPORTED] (S8)"
 
 
 def test_supports_and_functions_tables():
@@ -355,12 +362,19 @@ def test_legend_bases_q8_conflicts_deployment():
 
 def test_appendix_n_checks():
     n = _section(render_md.render(load_fixture()), "Appendix N. Quantitative and provenance checks")
-    assert "| QA1 | basis | pass | ok |" in n and "| QA11 | deployment | pass | ok |" in n
-    assert "| QA4 | proceeds | pass | ok; unverified: X13.amounts\\[0\\] |" in n
+    assert "| id | rule | result | target | mapping | detail |" in n
+    assert "| QA1 | basis | pass | -- | -- | ok |" in n and "| QA11 | deployment | pass | -- | -- | ok |" in n
+    assert "| QA4 | proceeds | pass | -- | -- | ok; unverified: X13.amounts\\[0\\] |" in n
+    assert "| QA13 | timebasis | pass | -- | -- | ok |" in n
     assert "\nRules:\n\n- QA1 basis: No total mixes amount bases" in n
-    results = [{"id": "E:x1", "rule": "case", "result": "fail", "detail": "X2 exists true -> false"}]
+    results = [{"id": "E:x1", "rule": "case", "result": "fail", "detail": "X2: X2 exists true -> false",
+                "target": "X2", "legacy": None, "mapping": ""},
+               {"id": "E:x2", "rule": "legacy", "result": "pass", "detail": "R1: @G3 exists true -> true",
+                "target": "R1", "legacy": "G3", "mapping": "legacy G3 -> R1 (carried_from G3)"}]
     n = _section(render_md.render(load_fixture(), qa_results=results), "Appendix N. Quantitative and provenance checks")
-    assert "| E:x1 | case | fail | X2 exists true -\\> false |" in n and "| QA1 |" not in n
+    assert "| E:x1 | case | fail | X2 | -- | X2: X2 exists true -\\> false |" in n and "| QA1 |" not in n
+    assert ("| E:x2 | legacy | pass | R1 | legacy G3 -\\> R1 (carried\\_from G3) | R1: @G3 exists true -\\> true |"
+            in n)
 
 
 def test_appendix_o_changes():

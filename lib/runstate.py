@@ -7,7 +7,7 @@ import hashlib
 import re
 from pathlib import Path
 
-from lib import changes, directives, flow, ledger, migrate, qa, render_md, review, schema, validate
+from lib import changes, directives, flow, ledger, migrate, package, qa, render_md, review, schema, validate
 from lib.textutil import dump_json, id_key, load_json_text
 
 PHASE_RESEARCH = "research"
@@ -86,7 +86,8 @@ class Project:
 
     def outputs(self):
         return ([self.output("dd.json"), self.output("derived.json")]
-                + [self.output(suffix) for suffix, _ in RENDERERS] + self.flow_outputs())
+                + [self.output(suffix) for suffix, _ in RENDERERS] + self.flow_outputs()
+                + [self.output("manifest.json")])
 
     def round_dir(self, k):
         return self.rounds / ("r%d" % k)
@@ -548,6 +549,8 @@ def finalize(root, slug, clock=ledger.system_clock):
     state["status"] = "final"
     state["phase"] = PHASE_FINAL
     save_state(project, state)
+    # The manifest is written last: it lists every other file of the package (v0.7.2 section 3).
+    outputs.append(project.write_json(project.output("manifest.json"), package.manifest(project, state, doc)))
     return {"project_dir": str(project.safe(project.dir)), "outputs": [str(p) for p in outputs],
             "audit_dir": str(project.safe(project.audit)), "scratch_dir": str(project.safe(project.scratch)),
             "rounds": state["round"]}
@@ -613,3 +616,9 @@ def change_rows(root, slug):
     if errors:
         raise InvalidError(sorted(set(errors)))
     return change_log(project, doc)
+
+
+def verify(root, slug):
+    """dd.py verify: {"result": "PASS"|"FAIL", "failures": [...]} for the finalized package; writes nothing."""
+    project = open_project(root, slug)
+    return package.verify(project)

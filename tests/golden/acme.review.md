@@ -51,14 +51,14 @@
 
 ## Amounts
 
-| strategy | interface | entry | kind | value | unit | basis | as_of | scope | counted | reason |
-|---|---|---|---|---|---|---|---|---|---|---|
-| T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | USDC supplied by E1 to the E5 credit pool, read at the block | yes | counted |
-| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | E1 units in Acme Credit Fund LP | no | other measure of X2[0] |
-| T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |
-| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | Proceeds of the X13 loan sale to E13 | no | not a funding edge |
-| T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | 2026-10-01 | Stablecoin held by E1 in the treasury sleeve | yes | counted |
-| T3 | X10 | 0 | reserve_lookthrough | 5000000 | USD | RESERVE_LOOKTHROUGH | 2026-09-30 | Reserve assets of E11 backing the sleeve stablecoin | no | not a funding edge |
+| strategy | interface | entry | kind | value | unit | basis | data as of | time basis | observed at | scope | counted | reason |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| T1 | X2 | 0 | L1_L2 | 25000000 | USDC | CURRENT_BALANCE | 2026-09-30T12:00:00Z | block | 2026-10-01T08:15:00Z | USDC supplied by E1 to the E5 credit pool, read at the block | yes | counted |
+| T1 | X2 | 1 | L1_L2 | 25150000 | USD | POSITION_VALUE | 2026-09-30 | source | 2026-10-01T08:40:00Z | E1 units in Acme Credit Fund LP | no | other measure of X2[0] |
+| T1 | X2 | 2 | L1_L2 | 18000000 | USD | CUMULATIVE_FUNDED | 2026-06-30 | source | 2026-10-01T09:00:00Z | AUP loan sample: 12 loans funded 2026-01-01 to 2026-06-30 (S9); management figure, not tested | no | basis CUMULATIVE_FUNDED not counted |
+| T1 | X13 | 0 | asset_sale | 3000000 | USD | SALE_PROCEEDS | 2026-08-15 | source | 2026-10-01T08:40:00Z | Proceeds of the X13 loan sale to E13 | no | not a funding edge |
+| T3 | X9 | 0 | sleeve_holding | 5000000 | USDC | CURRENT_BALANCE | 2026-10-01 | source | 2026-10-01T08:30:00Z | Stablecoin held by E1 in the treasury sleeve | yes | counted |
+| T3 | X10 | 0 | reserve_lookthrough | 5000000 | USD | RESERVE_LOOKTHROUGH | 2026-09-30 | source | 2026-10-01T08:30:00Z | Reserve assets of E11 backing the sleeve stablecoin | no | not a funding edge |
 
 ## Alternative paths
 
@@ -82,20 +82,21 @@
 
 ## QA
 
-| id | rule | result | detail |
-|---|---|---|---|
-| QA1 | basis | pass | ok |
-| QA2 | lookthrough | pass | ok |
-| QA3 | alternative | pass | ok |
-| QA4 | proceeds | pass | ok; unverified: X13.amounts\[0\] |
-| QA5 | asof | pass | ok |
-| QA6 | stockflow | pass | ok |
-| QA7 | provenance | pass | ok |
-| QA8 | conflicts | pass | ok |
-| QA9 | placeholder | pass | ok |
-| QA10 | section1 | pass | ok |
-| QA11 | deployment | pass | ok |
-| QA12 | onemeasure | pass | ok |
+| id | rule | result | target | mapping | detail |
+|---|---|---|---|---|---|
+| QA1 | basis | pass | -- | -- | ok |
+| QA2 | lookthrough | pass | -- | -- | ok |
+| QA3 | alternative | pass | -- | -- | ok |
+| QA4 | proceeds | pass | -- | -- | ok; unverified: X13.amounts\[0\] |
+| QA5 | asof | pass | -- | -- | ok |
+| QA6 | stockflow | pass | -- | -- | ok |
+| QA7 | provenance | pass | -- | -- | ok |
+| QA8 | conflicts | pass | -- | -- | ok |
+| QA9 | placeholder | pass | -- | -- | ok |
+| QA10 | section1 | pass | -- | -- | ok |
+| QA11 | deployment | pass | -- | -- | ok |
+| QA12 | onemeasure | pass | -- | -- | ok |
+| QA13 | timebasis | pass | -- | -- | ok |
 
 ## Migration checks pending
 

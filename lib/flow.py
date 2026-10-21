@@ -160,6 +160,19 @@ def check_d2(path):
         raise DependencyError("d2 %s required, found %s" % (D2_VERSION, found or "no version"))
 
 
+def d2_version():
+    """First line of `d2 --version`, or `n/d` when d2 is missing or does not run (package manifest)."""
+    path = find_d2()
+    if path is None:
+        return "n/d"
+    try:
+        proc = subprocess.run([path, "--version"], capture_output=True, timeout=30, check=False, shell=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return "n/d"
+    lines = proc.stdout.decode("utf-8", errors="replace").strip().splitlines()
+    return lines[0].strip() if lines else "n/d"
+
+
 def render_svg(d2_source, d2_path, env=None):
     """Run d2 on the source; env is for tests only (None inherits the caller's environment)."""
     try:

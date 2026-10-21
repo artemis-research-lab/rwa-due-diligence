@@ -26,9 +26,11 @@ data. It does not score risk and never transacts.
 - Findings: gaps, discrepancies (same-scope conflicts that flag claims CONFLICTING), scope-unresolved items,
   unreconciled transactions and structural changes, each with scope match, assertions, resolution, framework checks,
   impact and priority; findings carried from an earlier run keep their earlier id.
-- Counting: only stock amounts (balances, position values, outstanding principal) on funding edges, with an
-  observation time and outside alternative paths, are summed, one measure per edge, and only within the same basis,
-  unit and date.
+- Counting: only stock amounts (balances, position values, outstanding principal) on funding edges, with a data time
+  established by the source or the block, outside alternative paths, are summed, one measure per edge, and only within
+  the same basis, unit and date. Retrieval times are observed-at metadata, never data times.
+- Package: finalize writes a manifest of every output, ledger, expectation, round record and analyst input with
+  SHA-256 and execution metadata; `dd.py verify` reproduces the checks from the package.
 - Framework completeness K1-K7 and six questions per credit strategy (who holds, deploys, receives, repays,
   enforces, and whether deployment is verified).
 

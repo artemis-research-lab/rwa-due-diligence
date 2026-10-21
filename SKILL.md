@@ -36,7 +36,8 @@ Never write anywhere else. Run the scripts from the skill directory: `python <sk
    attempt, failed ones included, with `dd.py add-source`; never type a timestamp. Use `dd.py fetch-file` and
    `dd.py pdf-text` for PDFs. Edit `audit/dd.work.json` only; run `dd.py validate` until it exits 0, then
    `dd.py lint` and fix every warning (address, layer, claim, path, amount and provenance warnings), then `dd.py qa`
-   (exit 5 lists failed checks). In a run seeded from an earlier schema, re-check every carried-over amount (basis,
+   (exit 5 lists failed checks; `dd.py verify` exit 6 after finalize means the package does not reproduce). In a run
+   seeded from an earlier schema, re-check every carried-over amount (basis,
    unit, observation time, scope) and the scope note, scope match and assertions of every carried-over discrepancy and
    scope-unresolved finding: finalize refuses migration placeholders and failed checks. If the user supplies a
    regression expectations file, save it verbatim as `audit/qa-expect.json`; never edit it.

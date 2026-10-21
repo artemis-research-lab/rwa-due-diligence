@@ -61,7 +61,8 @@ def test_e2e_two_rounds_to_finalize(tmp_path, capsys):
     assert Path(result["project_dir"]) == base
     assert [Path(p).name for p in result["outputs"]] == ["acme.dd.json", "acme.derived.json", "acme.report.md",
                                                          "acme.flow-T1-settlement.svg", "acme.flow-T1-claim.svg",
-                                                         "acme.flow-T1-repayment.svg", "acme.flow-T2-settlement.svg"]
+                                                         "acme.flow-T1-repayment.svg", "acme.flow-T2-settlement.svg",
+                                                         "acme.manifest.json"]
     for p in result["outputs"] + [result["audit_dir"], result["scratch_dir"]]:
         assert os.path.exists(p) and base in Path(p).resolve().parents
 
@@ -310,7 +311,7 @@ def test_qa_exit_codes(tmp_path):
     assert (code, err) == (0, "")
     result = json.loads(out)
     assert list(result) == ["results", "failed"] and result["failed"] == []
-    assert [r["id"] for r in result["results"]] == ["QA%d" % i for i in range(1, 13)]
+    assert [r["id"] for r in result["results"]] == ["QA%d" % i for i in range(1, 14)]
     doc = runstate.load_work(project)
     doc["interfaces"][8]["amounts"][0]["scope"] = "unchecked (migrated from rwa-dd/2.1)"
     runstate.save_work(project, doc)

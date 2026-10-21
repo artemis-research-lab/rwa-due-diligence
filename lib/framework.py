@@ -1,10 +1,11 @@
-"""Framework view (D40, D41, v0.6.0 section 3, v0.7.0 section 3, v0.7.1 section 1): claim ids, evidence flags,
-conflict statuses, completeness checklist, chain lines, allocation with its counting rule, the six questions, the
-section 1 selection and path resolution.
+"""Framework view (D40, D41, v0.6.0 section 3, v0.7.0 section 3, v0.7.1 section 1, v0.7.2 sections 1 and 2): claim
+ids, evidence flags, conflict statuses, completeness checklist, chain lines, allocation with its counting rule and
+time basis, the six questions, the section 1 selection and path resolution.
 
 Pure, deterministic functions over a structurally valid rwa-dd/2.2 document.
 """
 
+import datetime
 import json
 import re
 
@@ -325,17 +326,59 @@ ROW_FIELDS = ("strategy", "component", "interface", "entry", "kind", "value", "u
 
 class Row(tuple):
     """One allocation row (ROW_FIELDS); compares as a plain tuple and also carries the valuation basis that
-    total_key needs."""
+    total_key needs, the derived observed_at and the time basis (v0.7.2 section 2)."""
 
-    def __new__(cls, fields, valuation_basis=None):
+    def __new__(cls, fields, valuation_basis=None, observed_at=None, time_basis=None):
         row = super().__new__(cls, fields)
         row.valuation_basis = valuation_basis
+        row.observed_at = observed_at
+        row.time_basis = time_basis
         return row
 
     def as_object(self):
         out = dict(zip(ROW_FIELDS, self))
         out["valuation_basis"] = self.valuation_basis
+        out["observed_at"] = self.observed_at
+        out["time_basis"] = self.time_basis
         return out
+
+
+def time_basis(amount):
+    """`block` (block set), `source` (as_of set, no block) or `unresolved` (as_of null) (curator AC-03)."""
+    if amount["block"] is not None:
+        return "block"
+    return "source" if amount["as_of"] is not None else "unresolved"
+
+
+def _instant(text):
+    try:
+        return datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError):
+        return None
+
+
+def retrieval_source(doc, amount):
+    """Id of the first source cited in the amount's value evidence whose retrieved_at equals its as_of (same
+    string, or same instant when both are timestamps), for an amount without a block; None otherwise (AC-03)."""
+    as_of = amount["as_of"]
+    if amount["block"] is not None or as_of is None:
+        return None
+    retrieved = {s["id"]: s["retrieved_at"] for s in doc["sources"]}
+    for sid in amount["value"]["evidence"]:
+        moment = retrieved.get(sid)
+        if moment is None:
+            continue
+        if moment == as_of or (_instant(as_of) is not None and _instant(as_of) == _instant(moment)):
+            return sid
+    return None
+
+
+def observed_at(doc, amount):
+    """Latest retrieved_at among the sources cited in the amount's value evidence; None when none has one."""
+    retrieved = {s["id"]: s["retrieved_at"] for s in doc["sources"]}
+    times = [retrieved.get(sid) for sid in amount["value"]["evidence"]]
+    times = [t for t in times if t is not None]
+    return max(times) if times else None
 
 
 def _reason(x, amount):
@@ -351,7 +394,7 @@ def _reason(x, amount):
     if amount["value"]["value"] is None:
         return "no amount"
     if amount["as_of"] is None:
-        return "no observation time"
+        return "data time not established"
     if amount["scope"] == schema.MIGRATED_AMOUNT_SCOPE:
         return "migrated scope"
     return "counted"
@@ -381,12 +424,13 @@ def allocation(doc):
         reasons = _one_measure(x, [_reason(x, a) for a in x["amounts"]])
         for j, (a, reason) in enumerate(zip(x["amounts"], reasons)):
             rows.append(Row(head + (j, x["kind"], a["value"]["value"], a["unit"], a["basis"], a["as_of"], a["scope"],
-                                    reason == "counted", reason), a["valuation_basis"]))
+                                    reason == "counted", reason), a["valuation_basis"], observed_at(doc, a),
+                            time_basis(a)))
     return rows
 
 
 def total_key(row):
-    """(basis, unit, observation date YYYY-MM-DD, valuation basis or "") of an allocation row."""
+    """(basis, unit, data date YYYY-MM-DD, valuation basis or "") of an allocation row."""
     as_of = row[8]
     return (row[7], row[6], as_of[:10] if as_of else "", row.valuation_basis or "")
 
@@ -589,3 +633,17 @@ def resolve(doc, path):
     if isinstance(node, list):
         return "list", node
     return "scalar", node
+
+
+def resolve_target(doc, path):
+    """(canonical id, legacy id or None) of an expectation path: the id of the object the path's head resolves to
+    (for `@<id>` the finding found through carried_from, legacy `<id>`; for `P<n>.holder_rights` the product id).
+    KeyError as resolve when the head does not match the grammar or names nothing."""
+    match = RESOLVE_PATTERN.match(path) if isinstance(path, str) else None
+    if match is None:
+        raise KeyError(path)
+    head = match.group(1)
+    _, node = resolve(doc, head)
+    if head.startswith("@"):
+        return node["id"], head[1:]
+    return head, None

@@ -1,4 +1,5 @@
-"""Review packet renderer (section 3.7, v0.5 section 5, v0.6.0 section 5, v0.7.0 section 5.1); deterministic."""
+"""Review packet renderer (section 3.7, v0.5 section 5, v0.6.0 section 5, v0.7.0 section 5.1, v0.7.2 sections 1
+and 2); deterministic."""
 
 from lib import framework, qa, schema
 from lib.textutil import finding_line, id_key, md_text, number_text, request_line, search_line, totals_text
@@ -114,10 +115,13 @@ def _deployment(doc, t):
 
 
 def amounts_table(doc):
-    return _table(("strategy", "interface", "entry", "kind", "value", "unit", "basis", "as_of", "scope", "counted",
-                   "reason"),
+    """Allocation rows with data as of, time basis and observed at (curator AC-03)."""
+    return _table(("strategy", "interface", "entry", "kind", "value", "unit", "basis", "data as of", "time basis",
+                   "observed at", "scope", "counted", "reason"),
                   [[row[0], row[2], _code(row[3]), row[4], amount_text(row[5]), _cell(row[6], 20), _code(row[7]),
-                    _code(row[8]), _cell(row[9], 200), "yes" if row[10] else "no", row[11]]
+                    "not established" if row[3] is not None and row[8] is None else _code(row[8]),
+                    _code(row.time_basis), _code(row.observed_at), _cell(row[9], 200), "yes" if row[10] else "no",
+                    row[11]]
                    for row in framework.allocation(doc)])
 
 
@@ -148,8 +152,9 @@ def provenance_table(doc):
 
 
 def qa_table(results):
-    return _table(("id", "rule", "result", "detail"),
-                  [[r["id"], md_text(r["rule"], 120), r["result"], md_text(r["detail"])] for r in results])
+    return _table(("id", "rule", "result", "target", "mapping", "detail"),
+                  [[r["id"], md_text(r["rule"], 120), r["result"], _code(r["target"]), md_text(r["mapping"]) or "--",
+                    md_text(r["detail"])] for r in results])
 
 
 def migration_pending(doc):

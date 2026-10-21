@@ -2,7 +2,7 @@
 
 Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state; also a
 malformed expectation file), 4 diagram renderer d2 missing, wrong version or failed; pypdf missing; download
-failed, 5 quality check failed (qa only).
+failed, 5 quality check failed (qa only), 6 package does not reproduce (verify only).
 """
 
 import argparse
@@ -21,6 +21,7 @@ EXIT_INVALID = 2
 EXIT_CONTRACT = 3
 EXIT_DEPENDENCY = 4
 EXIT_QA = 5
+EXIT_VERIFY = 6
 
 
 def _out(text):
@@ -39,7 +40,8 @@ def build_parser():
                     "diagrams.",
         epilog="Exit codes: 0 ok, 2 invalid document, directives or input, 3 contract violation (paths or state; "
                "malformed expectation file), 4 diagram renderer d2 missing, wrong version or failed; pypdf "
-               "missing; download failed, 5 quality check failed (qa only).")
+               "missing; download failed, 5 quality check failed (qa only), 6 package does not reproduce "
+               "(verify only).")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     def with_slug(name, help_text):
@@ -77,7 +79,7 @@ def build_parser():
     with_slug("validate", "validate audit/dd.work.json against the schema and the ledger")
     with_slug("lint", "print address, layer, claim, path, amount and provenance warnings for audit/dd.work.json "
                       "as JSON (read-only, any phase; needs a structurally valid document)")
-    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA12 and the analyst expectations on "
+    p = with_slug("qa", "run the quantitative and provenance checks QA1-QA13 and the analyst expectations on "
                         "audit/dd.work.json; prints results and failed ids as JSON; exit 5 when any check fails")
     p.add_argument("--expect", default=None,
                    help="expectation file (default: audit/qa-expect.json when it exists)")
@@ -87,7 +89,9 @@ def build_parser():
     p.add_argument("--file", required=True, help="file holding the analyst reply verbatim")
     with_slug("render", "draft render into .scratch/draft/ (any phase)")
     with_slug("status", "print run state, counts and the next run-scoped log names as JSON")
-    with_slug("finalize", "write the final outputs (after a finalize directive)")
+    with_slug("finalize", "write the final outputs and the package manifest (after a finalize directive)")
+    with_slug("verify", "recompute the package manifest of a finalized run (hashes, validation, lint, QA, record "
+                        "hash) read-only; prints PASS or FAIL with failures as JSON; exit 6 on FAIL")
     p = with_slug("amend", "reopen a final run for one more research round (moves outputs to archive/)")
     p.add_argument("--file", required=True, help="file holding the amendment verbatim (note, add-source, answer, drop)")
     p = with_slug("fetch-file", "download one public HTTPS file into .scratch/raw/NAME (does not add a source)")
@@ -155,6 +159,11 @@ def run(args):
         _json(runstate.status(args.root, args.slug))
     elif cmd == "finalize":
         _json(runstate.finalize(args.root, args.slug))
+    elif cmd == "verify":
+        result = runstate.verify(args.root, args.slug)
+        _json(result)
+        if result["result"] != "PASS":
+            return EXIT_VERIFY
     elif cmd == "amend":
         _json(runstate.amend(args.root, args.slug, args.file))
     elif cmd == "fetch-file":
